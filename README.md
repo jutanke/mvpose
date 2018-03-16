@@ -7,7 +7,7 @@ The following additional (non-standard) libraries are needed:
 
 **c3d**: for reading 3d data
 ```bash
-conda install -c auto c3d
+pip install c3d
 ```
 
 **h5py**: for storing large datasets
