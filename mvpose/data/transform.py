@@ -69,7 +69,7 @@ def get_from_cmu_panoptic(cmu_root, seq_name):
     if not is_X_memmapped:  # then we generate it!
         #X = np.memmap(X_fmmap, dtype='uint8', mode='w+', shape=shape)
         f = h5py.File(X_fmmap, 'w')
-        X = f.create_dataset('X', shape, dtype='uint8', compression='gzip')
+        X = f.create_dataset('X', shape, dtype='uint8')
 
     for i, video in enumerate(all_videos):
         # -- calibration --
