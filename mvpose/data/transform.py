@@ -15,10 +15,14 @@
 * right-knee (13)
 * right-foot (14)
 """
+import cv2
 import numpy as np
 import json
-from os.path import join, isdir
+from os import listdir
+from scipy.ndimage import imread
+from os.path import join, isdir, isfile
 from pak.datasets.UMPM import UMPM
+import h5py
 
 # ========= CMU =========
 
@@ -33,6 +37,8 @@ def get_from_cmu_panoptic(cmu_root, seq_name):
     :return:
     """
     seq_dir = join(cmu_root, seq_name); assert isdir(seq_dir)
+    X_fmmap = join(seq_dir, 'X.hdf5')
+    is_X_memmapped = isfile(X_fmmap)
 
     vga_skel_json_path = join(seq_dir, 'vgaPose3d_stage1')
     vga_img_path = join(seq_dir, 'vgaImgs')
@@ -50,6 +56,54 @@ def get_from_cmu_panoptic(cmu_root, seq_name):
         cam['distCoef'] = np.array(cam['distCoef'])
         cam['R'] = np.matrix(cam['R'])
         cam['t'] = np.array(cam['t']).reshape((3, 1))
+
+    Calib = []
+    # get all the videos
+    all_videos = sorted([d for d in listdir(vga_img_path) if isdir(join(vga_img_path,d))])
+    nbr_videos = len(all_videos)
+    w = 640; h = 480  # vga resolution!
+    # get shortest video
+    nbr_frames = min([len(listdir(join(vga_img_path, v))) for v in all_videos])
+    shape = (nbr_videos, nbr_frames, h, w, 3)
+
+    if not is_X_memmapped:  # then we generate it!
+        #X = np.memmap(X_fmmap, dtype='uint8', mode='w+', shape=shape)
+        f = h5py.File(X_fmmap, 'w')
+        X = f.create_dataset('X', shape, dtype='uint8', compression='gzip')
+
+    for i, video in enumerate(all_videos):
+        # -- calibration --
+        cam_key = tuple([int(v) for v in video.split('_')])
+        assert cam_key in cameras, 'Cannot find tuple ' + str(cam_key) + ' in cameras'
+        cam = {
+            'K': cameras[cam_key]['K'],
+            'tvec': cameras[cam_key]['t'],
+            'rvec': cv2.Rodrigues(cameras[cam_key]['R'])[0],
+            'distCoeff': cameras[cam_key]['distCoef']
+        }
+        Calib.append(cam)
+
+        print('handling video', video)
+
+        # -- load all frames --
+        if not is_X_memmapped:  # load the data
+            video_loc = join(vga_img_path, video)
+            all_videos = listdir(video_loc); assert len(all_videos) >= nbr_frames
+            for j, frame in enumerate(sorted(all_videos)[0:nbr_frames]):
+                I = imread(join(video_loc, frame))
+                X[i,j] = I
+
+    if not is_X_memmapped:  # flush it to file
+        f.flush()
+        f.close()
+        #del X
+
+    f = h5py.File(X_fmmap, 'r')
+    X = f['X']
+
+    #X = np.memmap(X_fmmap, dtype='uint8', mode='r', shape=shape)
+
+    return X, Calib
 
 
 # ========= UMPM =========
