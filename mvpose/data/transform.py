@@ -24,6 +24,43 @@ from os.path import join, isdir, isfile
 from pak.datasets.UMPM import UMPM
 import h5py
 
+# ========= OpenPose ========
+
+
+def transform_from_openpose(Y):
+    """ transforms the data from the openpose system into
+        our reduced set:
+
+
+    :param Y: (n, m, 18, 2)
+    :return:
+    """
+    #   1    2     3     4     5     6      7    8     9     10    11    12     13    14   15    16     17    18    19
+    # [nose, neck, Rsho, Relb, Rwri, Lsho, Lelb, Lwri, Rhip, Rkne, Rank, Lhip, Lkne, Lank, Leye, Reye, Lear, Rear, pt19]
+    result = []
+    for frame in Y:
+        new_frame = []
+        for user in frame:
+            new_frame.append((
+                user[0,:],
+                user[1,:],
+                user[7,:],
+                user[8,:],
+                user[9,:],
+                user[4,:],
+                user[5,:],
+                user[6,:],
+                user[13,:],
+                user[14,:],
+                user[15,:],
+                user[10,:],
+                user[11,:],
+                user[12, :]
+            ))
+        result.append(np.array(new_frame))
+    return result
+
+
 # ========= CMU =========
 
 def get_from_cmu_panoptic(cmu_root, seq_name):
