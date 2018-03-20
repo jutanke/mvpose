@@ -42,20 +42,20 @@ def transform_from_openpose(Y):
         new_frame = []
         for user in frame:
             new_frame.append((
-                user[0,:],
-                user[1,:],
-                user[5,:],
-                user[6,:],
-                user[7,:],
-                user[2,:],
-                user[3,:],
-                user[4,:],
-                user[11,:],
-                user[12,:],
-                user[13,:],
-                user[8,:],
-                user[9,:],
-                user[10, :]
+                user[0,0:2],
+                user[1,0:2],
+                user[5,0:2],
+                user[6,0:2],
+                user[7,0:2],
+                user[2,0:2],
+                user[3,0:2],
+                user[4,0:2],
+                user[11,0:2],
+                user[12,0:2],
+                user[13,0:2],
+                user[8,0:2],
+                user[9,0:2],
+                user[10,0:2]
             ))
         result.append(np.array(new_frame))
     return result
