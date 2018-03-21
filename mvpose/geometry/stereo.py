@@ -18,8 +18,8 @@ def get_epipoles_flat(K1, rvec1, tvec1, distCoef1, K2, rvec2, tvec2, distCoef2):
     :param distCoef2:
     :return:
     """
-    pos1 = gm.get_camera_pos_in_world_coords(rvec1, tvec1)
-    pos2 = gm.get_camera_pos_in_world_coords(rvec2, tvec2)
+    pos1 = gm.get_camera_pos_in_world_coords_flat(rvec1, tvec1)
+    pos2 = gm.get_camera_pos_in_world_coords_flat(rvec2, tvec2)
 
     e2 = cv2.projectPoints(np.array([pos2]), rvec1, tvec1, K1, distCoef1)[0]
     e1 = cv2.projectPoints(np.array([pos1]), rvec2, tvec2, K2, distCoef2)[0]
