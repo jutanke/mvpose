@@ -24,7 +24,10 @@ def remove_distortion(I, cam):
     """
     K = np.array(cam['K'])
     distCoef = np.array(cam['distCoeff'])
-    h,w,_ = I.shape
+    if len(I.shape) == 3:
+        h,w,_ = I.shape
+    else:
+        h,w = I.shape
     alpha = 0  # all pixels are valid
     K_new, roi = cv2.getOptimalNewCameraMatrix(K, distCoef, (w,h), alpha)
     mapx, mapy = cv2.initUndistortRectifyMap(K, distCoef, None, K_new, (w, h), 5)
