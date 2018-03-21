@@ -27,6 +27,20 @@ def get_epipoles_flat(K1, rvec1, tvec1, distCoef1, K2, rvec2, tvec2, distCoef2):
     return np.squeeze(e2), np.squeeze(e1)
 
 
+def get_epipoles_undistorted(K1, rvec1, tvec1, K2, rvec2, tvec2):
+    """
+    Get the epipoles assuming no distortion on the cameras
+    :param K1:
+    :param rvec1:
+    :param tvec1:
+    :param K2:
+    :param rvec2:
+    :param tvec2:
+    :return:
+    """
+    return get_epipoles_flat(K1, rvec1, tvec1, 0, K2, rvec2, tvec2, 0)
+
+
 def get_epipoles(cam1, cam2):
     """
     Calculates the respective epipoles of the two cameras
