@@ -57,9 +57,9 @@ def get_fundamental_matrix_flat(K1, rvec1, tvec1, distCoef1,
     points3d = rnd.randint(-top_z, top_z, (100, 3)).astype('float32')
 
     points1 = np.squeeze(
-        cv2.projectPoints(points3d, rvec1, tvec1, K1, 0)[0])
+        cv2.projectPoints(points3d, rvec1, tvec1, K1, distCoef1)[0])
     points2 = np.squeeze(
-        cv2.projectPoints(points3d, rvec2, tvec2, K2, 0)[0])
+        cv2.projectPoints(points3d, rvec2, tvec2, K2, distCoef2)[0])
 
     F, mask = cv2.findFundamentalMat(
         points1, points2, cv2.FM_8POINT,
