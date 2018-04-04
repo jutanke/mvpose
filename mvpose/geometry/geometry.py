@@ -40,7 +40,13 @@ def to_homogeneous(x):
     :param x:
     :return:
     """
-    return np.concatenate([x, [1]])
+    if len(x.shape) == 1:
+        return np.concatenate([x, [1]])
+    else:
+        assert len(x.shape) == 2
+        n = x.shape[0]
+        ones = np.ones((n, 1))
+        return np.hstack([x, ones])
 
 
 def from_homogeneous(x):
