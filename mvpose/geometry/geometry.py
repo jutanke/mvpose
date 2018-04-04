@@ -1,5 +1,12 @@
 import cv2
 import numpy as np
+from numba import vectorize, float32
+from math import sqrt
+
+
+@vectorize([float32(float32,float32,float32,float32,float32)])
+def line_to_point_distance(a,b,c,x,y):
+    return abs(a*x + b*y + c) / sqrt(a**2 + b**2)
 
 
 def get_camera_parameters(cam):
@@ -64,9 +71,9 @@ def from_homogeneous(x):
             return None
     else:
         assert len(x.shape) == 2
-        h = x[:,-1]
-        x = x/h
-        return x[:,0:-1]
+        h = np.expand_dims(x[:, -1], axis=1)
+        x = x / h
+        return x[:, 0:-1]
 
 
 def get_camera_pos_in_world_coords_flat(rvec, tvec):
