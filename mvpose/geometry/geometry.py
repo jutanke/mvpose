@@ -55,12 +55,18 @@ def from_homogeneous(x):
     :param x:
     :return:
     """
-    h = x[-1]
-    if h != 0:
-        x = x/h
-        return x[0:-1]
+    if len(x.shape) == 1:
+        h = x[-1]
+        if h != 0:
+            x = x/h
+            return x[0:-1]
+        else:
+            return None
     else:
-        return None
+        assert len(x.shape) == 2
+        h = x[:,-1]
+        x = x/h
+        return x[:,0:-1]
 
 
 def get_camera_pos_in_world_coords_flat(rvec, tvec):
