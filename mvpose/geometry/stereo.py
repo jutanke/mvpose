@@ -54,7 +54,7 @@ def get_fundamental_matrix_flat(K1, rvec1, tvec1, distCoef1,
     pos2 = gm.get_camera_pos_in_world_coords_flat(rvec2, tvec2)
 
     top_z = max(pos1[2], pos2[2])
-    points3d = rnd.randint(-top_z, top_z, (100, 3)).astype('float32')
+    points3d = rnd.randint(-top_z, top_z, (8, 3)).astype('float32')
 
     points1 = np.squeeze(
         cv2.projectPoints(points3d, rvec1, tvec1, K1, distCoef1)[0])

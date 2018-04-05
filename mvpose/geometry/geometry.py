@@ -41,12 +41,28 @@ def remove_distortion(I, cam):
     return cv2.remap(I, mapx, mapy, cv2.INTER_LINEAR), K_new
 
 
+def apply_undistortion(I, K, K_new, distCoef):
+    """
+    un-distorts the image given an already undistorted camera matrix
+    :param I:
+    :param K:
+    :param K_new:
+    :param distCoef:
+    :return:
+    """
+    w,h,_ = I.shape
+    mapx, mapy = cv2.initUndistortRectifyMap(K, distCoef, None, K_new, (w, h), 5)
+    return cv2.remap(I, mapx, mapy, cv2.INTER_LINEAR)
+
+
 def to_homogeneous(x):
     """
     convert to homogeneous coordinate
     :param x:
     :return:
     """
+    if not isinstance(x, np.ndarray):
+        x = np.array(x)
     if len(x.shape) == 1:
         return np.concatenate([x, [1]])
     else:
@@ -62,6 +78,8 @@ def from_homogeneous(x):
     :param x:
     :return:
     """
+    if not isinstance(x, np.ndarray):
+        x = np.array(x)
     if len(x.shape) == 1:
         h = x[-1]
         if h != 0:
