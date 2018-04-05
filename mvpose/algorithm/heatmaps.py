@@ -1,4 +1,5 @@
 from skimage.feature import peak_local_max
+from mvpose.algorithm.peaks import Peaks
 
 
 def get_all_peaks(heatmap, threshold=0.1):
@@ -19,4 +20,4 @@ def get_all_peaks(heatmap, threshold=0.1):
         for x,y in local_peaks:
             found_peaks.append((y,x,hm[x,y]))
         peaks.append(found_peaks)
-    return peaks
+    return Peaks(peaks)

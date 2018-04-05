@@ -1,7 +1,8 @@
 import numpy as np
-from numba import jit
-import math
 import numpy.linalg as la
+from numba import jit
+
+
 
 
 @jit('double[:,:](double[:,:], double[:,:], double[:,:,:])', nopython=True, nogil=True)

@@ -1,10 +1,10 @@
 import cv2
 import numpy as np
-from numba import vectorize, float32
+from numba import vectorize, float64
 from math import sqrt
 
 
-@vectorize([float32(float32,float32,float32,float32,float32)])
+@vectorize([float64(float64,float64,float64,float64,float64)])
 def line_to_point_distance(a,b,c,x,y):
     return abs(a*x + b*y + c) / sqrt(a**2 + b**2)
 
