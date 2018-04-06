@@ -18,10 +18,10 @@ class Peaks:
             total += len(peaks_per_joint)
 
         # data is: (x,y,score)
-        data = np.zeros((total, 3), 'float32')
+        data = np.zeros((total, 3), 'float64')
 
         # lookup is organized as follows: (start,end]
-        lookup = np.zeros((self.n_joints, 2), 'uint32')
+        lookup = np.zeros((self.n_joints, 2), 'int32')
 
         j = 0
         for i, peaks_per_joint in enumerate(aslist):
@@ -31,8 +31,12 @@ class Peaks:
                 j += 1
             lookup[i, 1] = j
 
+        lookup[-1, 1] -= 1  # the last item
+
         self.data = data
+        self.data.setflags(write=False)
         self.lookup = lookup
+        self.lookup.setflags(write=False)
 
     def __getitem__(self, jid):
         """
