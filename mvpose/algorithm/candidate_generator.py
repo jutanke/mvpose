@@ -2,6 +2,7 @@
 Generate 3D candidates for the problem
 """
 import numpy as np
+import mvpose.geometry.geometry as gm
 import mvpose.algorithm.heatmaps as mvhm
 import mvpose.algorithm.part_affinity_fields as mvpafs
 from mvpose.data.default_limbs import  DEFAULT_LIMB_SEQ, DEFAULT_MAP_IDX
@@ -29,8 +30,13 @@ def generate_candidates(Calib, heatmaps, pafs, limbSeq=DEFAULT_LIMB_SEQ, mapIdx=
 
     for cid, cam in enumerate(Calib):
         hm = heatmaps[cid]
+        paf = pafs[cid]
         peaks = mvhm.get_all_peaks(hm)
+        limbs = mvpafs.calculate_limb_weights(peaks, paf)
 
+        K, rvec, tvec, distCoef = gm.get_camera_parameters(cam)
+        hm_ud, K_ud = gm.remove_distortion(hm, cam)  #TODO make this faster... this is not effiencent
 
         for a,b in limbSeq:
             print("a:" + str(a) + ", b:" + str(b))
+
