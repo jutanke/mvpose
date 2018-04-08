@@ -35,8 +35,10 @@ def generate_candidates(Calib, heatmaps, pafs, limbSeq=DEFAULT_LIMB_SEQ, mapIdx=
         limbs = mvpafs.calculate_limb_weights(peaks, paf)
 
         K, rvec, tvec, distCoef = gm.get_camera_parameters(cam)
-        hm_ud, K_ud = gm.remove_distortion(hm, cam)  #TODO make this faster... this is not effiencent
 
-        for a,b in limbSeq:
-            print("a:" + str(a) + ", b:" + str(b))
+        hm_ud, K_ud = gm.remove_distortion(hm, cam)     # TODO make this faster... this is not effiencent
+        peaks_undist = mvhm.get_all_peaks(hm_ud)        # ...
+
+        # for a,b in limbSeq:
+        #     print("a:" + str(a) + ", b:" + str(b))
 

@@ -38,6 +38,13 @@ class Peaks:
         self.lookup = lookup
         self.lookup.setflags(write=False)
 
+    def get_all(self):
+        """
+            returns all point independent of the type
+        :return:
+        """
+        return self.data
+
     def __getitem__(self, jid):
         """
         :param jid: joint id
