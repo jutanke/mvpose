@@ -41,6 +41,97 @@ class TestPeaks(unittest.TestCase):
         joint2 = peaks[1]
         print(joint2)
 
+    def test_simple_peaks3d(self):
+
+        data = [
+            np.array([
+                (1, 0, 0, 0.5),
+                (5, 0, 0, 0.6)
+            ]),np.array([
+                (0, 1, 0, 0.9),
+                (0, 5, 0, 0.3)
+            ]),np.array([
+                (0, 0, 1, 0.6),
+                (0, 0, 5, 0.1)
+            ])
+        ]
+
+        peaks = mvpeaks.Peaks3D(data)
+        self.assertEqual(peaks.n_joints, 3)
+
+    def test_merge_peaks3d(self):
+
+        data1 = [
+            np.array([
+                (1, 0, 0, 0.5),
+                (5, 0, 0, 0.6)
+            ]), None, np.array([
+                (0, 0, 1, 0.6),
+                (0, 0, 5, 0.1)
+            ])
+        ]
+
+        data2 = [
+            np.array([
+                (10, 0, 0, 0.5),
+                (50, 0, 0, 0.6)
+            ]), np.array([
+                (0, 10, 0, 0.9),
+                (0, 50, 0, 0.3)
+            ]), np.array([
+                (0, 0, 10, 0.6),
+                (0, 0, 50, 0.1)
+            ])
+        ]
+
+        peaks1 = mvpeaks.Peaks3D(data1)
+        peaks2 = mvpeaks.Peaks3D(data2)
+        self.assertEqual(peaks1.n_joints, 3)
+        self.assertEqual(peaks2.n_joints, 3)
+
+        peaks1.merge(peaks2)
+        self.assertEqual(len(peaks1[0]), 4)
+        self.assertEqual(len(peaks1[1]), 2)
+        self.assertEqual(len(peaks1[2]), 4)
+
+
+    def test_reverse_merge_peaks3d(self):
+
+        data1 = [
+            np.array([
+                (1, 0, 0, 0.5),
+                (5, 0, 0, 0.6)
+            ]), None, np.array([
+                (0, 0, 1, 0.6),
+                (0, 0, 5, 0.1)
+            ])
+        ]
+
+        data2 = [
+            np.array([
+                (10, 0, 0, 0.5),
+                (50, 0, 0, 0.6)
+            ]), np.array([
+                (0, 10, 0, 0.9),
+                (0, 50, 0, 0.3)
+            ]), np.array([
+                (0, 0, 10, 0.6),
+                (0, 0, 50, 0.1)
+            ])
+        ]
+
+        peaks1 = mvpeaks.Peaks3D(data1)
+        peaks2 = mvpeaks.Peaks3D(data2)
+        self.assertEqual(peaks1.n_joints, 3)
+        self.assertEqual(peaks2.n_joints, 3)
+
+        peaks2.merge(peaks1)
+        self.assertEqual(len(peaks2[0]), 4)
+        self.assertEqual(len(peaks2[1]), 2)
+        self.assertEqual(len(peaks2[2]), 4)
+
+
+
 # -------------------------------
 # RUN IT
 # -------------------------------
