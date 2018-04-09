@@ -152,11 +152,11 @@ def _sub_triangulate(P1, P2, pts1, pts2, epilines_1to2):
 def triangulate(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2):
     """
         triangulate
-    :param peaks1:
+    :param peaks1: {Peaks}
     :param K1:
     :param rvec1:
     :param tvec1:
-    :param peaks2:
+    :param peaks2: {Peaks}
     :param K2:
     :param rvec2:
     :param tvec2:
@@ -188,7 +188,6 @@ def triangulate(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2):
             if len(epilines_2to1.shape) <= 1:
                 epilines_2to1 = np.expand_dims(epilines_2to1, axis=0)
 
-            # points3d_per_joint = []
             points3d_per_joint1 = _sub_triangulate(P1, P2, pts1, pts2, epilines_1to2)
             points3d_per_joint2 = _sub_triangulate(P2, P1, pts2, pts1, epilines_2to1)
 
