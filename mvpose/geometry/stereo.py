@@ -3,6 +3,7 @@ import numpy.linalg as la
 import numpy.random as rnd
 import cv2
 from mvpose.geometry import geometry as gm
+from mvpose.algorithm.peaks import Peaks3D
 import mvpose.math as mvmath
 
 
@@ -193,4 +194,4 @@ def triangulate(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2):
 
             joints_3d[j] = np.concatenate([points3d_per_joint1, points3d_per_joint2], axis=0)
 
-    return joints_3d
+    return Peaks3D(joints_3d)
