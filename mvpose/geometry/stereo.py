@@ -125,4 +125,72 @@ def get_epipoles(cam1, cam2):
     return get_epipoles_flat(K1, rvec1, tvec1, distCoef1, K2, rvec2, tvec2, distCoef2)
 
 
+def _sub_triangulate(P1, P2, pts1, pts2, epilines_1to2):
+    points3d_per_joint = np.zeros((0, 4))
+    for p, l in zip(pts1, epilines_1to2):
+        x1, y1, _ = p
+        a, b, c = l
+        distance = gm.line_to_point_distance(
+            a, b, c, pts2[:, 0], pts2[:, 1])
+        weights = np.expand_dims(1 / distance, axis=1)
 
+        # triangulate..
+        n = len(pts2)
+        Pts2 = np.transpose(pts2[:, 0:2])
+        Pt1 = np.transpose(np.expand_dims(p[0:2], axis=0).repeat(n, axis=0))
+
+        pts3d = np.transpose(cv2.triangulatePoints(P1, P2, Pt1, Pts2))
+        pts3d = gm.from_homogeneous(pts3d)
+        pts3d = np.concatenate([pts3d, weights], axis=1)
+        points3d_per_joint = np.concatenate(
+            [points3d_per_joint, pts3d], axis=0)
+
+    return points3d_per_joint
+
+
+def triangulate(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2):
+    """
+        triangulate
+    :param peaks1:
+    :param K1:
+    :param rvec1:
+    :param tvec1:
+    :param peaks2:
+    :param K2:
+    :param rvec2:
+    :param tvec2:
+    :return:
+    """
+    assert peaks1.n_joints == peaks2.n_joints
+    n_joints = peaks1.n_joints
+
+    P1 = gm.get_projection_matrix_flat(K1, rvec1, tvec1)
+    P2 = gm.get_projection_matrix_flat(K2, rvec2, tvec2)
+
+    F = get_fundamental_matrix_flat(K1, rvec1, tvec1, 0,
+                                           K2, rvec2, tvec2, 0)
+
+    joints_3d = [None] * n_joints
+
+    for j in range(n_joints):
+        pts1 = peaks1[j]
+        pts2 = peaks2[j]
+
+        if len(pts1) > 0 and len(pts2) > 0:
+            epilines_1to2 = np.squeeze(
+                cv2.computeCorrespondEpilines(pts1, 1, F))
+            if len(epilines_1to2.shape) <= 1:
+                epilines_1to2 = np.expand_dims(epilines_1to2, axis=0)
+
+            epilines_2to1 = np.squeeze(
+                cv2.computeCorrespondEpilines(pts2, 2, F))
+            if len(epilines_2to1.shape) <= 1:
+                epilines_2to1 = np.expand_dims(epilines_2to1, axis=0)
+
+            # points3d_per_joint = []
+            points3d_per_joint1 = _sub_triangulate(P1, P2, pts1, pts2, epilines_1to2)
+            points3d_per_joint2 = _sub_triangulate(P2, P1, pts2, pts1, epilines_2to1)
+
+            joints_3d[j] = np.concatenate([points3d_per_joint1, points3d_per_joint2], axis=0)
+
+    return joints_3d
