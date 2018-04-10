@@ -188,9 +188,37 @@ def triangulate(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2):
             if len(epilines_2to1.shape) <= 1:
                 epilines_2to1 = np.expand_dims(epilines_2to1, axis=0)
 
-            points3d_per_joint1 = _sub_triangulate(P1, P2, pts1, pts2, epilines_1to2)
-            points3d_per_joint2 = _sub_triangulate(P2, P1, pts2, pts1, epilines_2to1)
+            # ----
+            # TODO this can be easily optimized with numba
 
-            joints_3d[j] = np.concatenate([points3d_per_joint1, points3d_per_joint2], axis=0)
+            W = []
+            Pt1 = []; Pt2 = []
+            for p1, (a1, b1, c1) in zip(pts1, epilines_1to2):
+                for p2, (a2, b2, c2), in zip(pts2, epilines_2to1):
+                    w1 = 1/gm.line_to_point_distance(a1, b1, c1, p2[0], p2[1])
+                    w2 = 1/gm.line_to_point_distance(a2, b2, c2, p1[0], p1[1])
+                    w3 = p1[2] * p2[2]  # TODO play around with the formulas
+                    w = (min(1, w1) + min(1, w2) + w3)/3
+                    W.append(w)
+                    Pt1.append(p1[0:2])
+                    Pt2.append(p2[0:2])
+
+            Pt1 = np.transpose(np.array(Pt1))
+            Pt2 = np.transpose(np.array(Pt2))
+            W = np.array(W)
+            W = np.expand_dims(W, axis=1)
+
+            pts3d = gm.from_homogeneous(
+                np.transpose(cv2.triangulatePoints(P1, P2, Pt1, Pt2)))
+
+            joints_3d[j] = np.concatenate([pts3d, W], axis=1)
+
+
+            # ---
+            #points3d_per_joint1 = _sub_triangulate(P1, P2, pts1, pts2, epilines_1to2)
+            #points3d_per_joint2 = _sub_triangulate(P2, P1, pts2, pts1, epilines_2to1)
+
+            #joints_3d[j] = np.concatenate([points3d_per_joint1, points3d_per_joint2], axis=0)
+            # ---
 
     return Peaks3D(joints_3d)
