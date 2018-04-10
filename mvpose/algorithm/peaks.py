@@ -75,16 +75,21 @@ class Peaks3D:
         """
         return self.data[jid]
 
-    def merge(self, other):
+    def merge(self, other, simple=False):
         """
 
         :param other: {Peaks3D}
+        :param simple: {boolean} if true simply append the data to each other
         :return:
         """
         assert other.n_joints == self.n_joints
-        for j in range(self.n_joints):
-            if self.data[j] is None:
-                self.data[j] = other.data[j]
-            elif other.data[j] is not None:
-                self.data[j] = np.concatenate(
-                    [self.data[j], other.data[j]], axis=0)
+
+        if simple:
+            for j in range(self.n_joints):
+                if self.data[j] is None:
+                    self.data[j] = other.data[j]
+                elif other.data[j] is not None:
+                    self.data[j] = np.concatenate(
+                        [self.data[j], other.data[j]], axis=0)
+        else:
+            raise NotImplementedError("not yet")

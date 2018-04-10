@@ -89,11 +89,10 @@ class TestPeaks(unittest.TestCase):
         self.assertEqual(peaks1.n_joints, 3)
         self.assertEqual(peaks2.n_joints, 3)
 
-        peaks1.merge(peaks2)
+        peaks1.merge(peaks2, simple=True)
         self.assertEqual(len(peaks1[0]), 4)
         self.assertEqual(len(peaks1[1]), 2)
         self.assertEqual(len(peaks1[2]), 4)
-
 
     def test_reverse_merge_peaks3d(self):
 
@@ -125,11 +124,10 @@ class TestPeaks(unittest.TestCase):
         self.assertEqual(peaks1.n_joints, 3)
         self.assertEqual(peaks2.n_joints, 3)
 
-        peaks2.merge(peaks1)
+        peaks2.merge(peaks1, simple=True)
         self.assertEqual(len(peaks2[0]), 4)
         self.assertEqual(len(peaks2[1]), 2)
         self.assertEqual(len(peaks2[2]), 4)
-
 
 
 # -------------------------------
