@@ -126,29 +126,6 @@ def get_epipoles(cam1, cam2):
     return get_epipoles_flat(K1, rvec1, tvec1, distCoef1, K2, rvec2, tvec2, distCoef2)
 
 
-def _sub_triangulate(P1, P2, pts1, pts2, epilines_1to2):
-    points3d_per_joint = np.zeros((0, 4))
-    for p, l in zip(pts1, epilines_1to2):
-        x1, y1, _ = p
-        a, b, c = l
-        distance = gm.line_to_point_distance(
-            a, b, c, pts2[:, 0], pts2[:, 1])
-        weights = np.expand_dims(1 / distance, axis=1)
-
-        # triangulate..
-        n = len(pts2)
-        Pts2 = np.transpose(pts2[:, 0:2])
-        Pt1 = np.transpose(np.expand_dims(p[0:2], axis=0).repeat(n, axis=0))
-
-        pts3d = np.transpose(cv2.triangulatePoints(P1, P2, Pt1, Pts2))
-        pts3d = gm.from_homogeneous(pts3d)
-        pts3d = np.concatenate([pts3d, weights], axis=1)
-        points3d_per_joint = np.concatenate(
-            [points3d_per_joint, pts3d], axis=0)
-
-    return points3d_per_joint
-
-
 def triangulate(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2):
     """
         triangulate
@@ -212,13 +189,5 @@ def triangulate(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2):
                 np.transpose(cv2.triangulatePoints(P1, P2, Pt1, Pt2)))
 
             joints_3d[j] = np.concatenate([pts3d, W], axis=1)
-
-
-            # ---
-            #points3d_per_joint1 = _sub_triangulate(P1, P2, pts1, pts2, epilines_1to2)
-            #points3d_per_joint2 = _sub_triangulate(P2, P1, pts2, pts1, epilines_2to1)
-
-            #joints_3d[j] = np.concatenate([points3d_per_joint1, points3d_per_joint2], axis=0)
-            # ---
 
     return Peaks3D(joints_3d)
