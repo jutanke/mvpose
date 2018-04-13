@@ -12,7 +12,7 @@ def m(y, Nx, sigma):
     div = 0
 
     for i in range(num):
-        result += Nx[i ,0:3] * G[i] * Nx[i,3]
-        div += G[i] * Nx[i,3]
+        result += Nx[i ,0:3] * G[i]
+        div += G[i]
 
     return result /div
