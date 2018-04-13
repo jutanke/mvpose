@@ -1,4 +1,12 @@
 import numpy as np
+from math import exp, sqrt, pi
+from numba import vectorize, float64
+
+
+@vectorize([float64(float64,float64,float64,float64)])
+def gauss3d(x,y,z,sigma):
+    N = 1/sqrt(2**3 * sigma**6 * pi**2)
+    return N * exp(- (x*x + y*y + z*z) / sigma**2)
 
 
 def cross_product_matrix3d(a):

@@ -66,8 +66,8 @@ def calculate_limb_weights(peaks, pafs, limbSeq=DEFAULT_LIMB_SEQ, mapIdx=DEFAULT
     return limbWeights
 
 
-@jit([float64[:, :](float64_2d_const, int32_2d_const, int32_2d_const, int32_2d_const, float64[:, :, :])], nopython=True,
-     nogil=True)
+@jit([float64[:, :](float64_2d_const, int32_2d_const, int32_2d_const, int32_2d_const, float64[:, :, :])],
+     nopython=True, nogil=True)
 def calculate_weights_for_all(data, lookup, limbSeq, mapIdx, pafs):
     """
 
