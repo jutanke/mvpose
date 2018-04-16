@@ -76,25 +76,6 @@ class Peaks3D:
         """
         return self.data[jid]
 
-    def cluster(self, min_distance=20):
-        """
-            cluster the different joints and drop any cluster
-            that has weights smaller than 1 (this means either it
-            is not very trustworthy OR that it was visible only from
-            one pair)
-        :param min_distance:
-        :return:
-        """
-        for k in range(self.n_joints):
-            X = self.data[k]
-            n = len(X)
-
-            X_new = []
-            for i in range(n-1):
-                p_i = X[i,0:3]; w_i = X[i,3]
-                for j in range(i+1, n):
-                    p_j = X[j,0:3]; w_j = X[j,3]
-
     def merge(self, other):
         """
 
