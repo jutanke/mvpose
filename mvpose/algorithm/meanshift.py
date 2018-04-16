@@ -54,32 +54,3 @@ def m(y, Nx, sigma):
         div += G[i] * Nx[i, 3]
 
     return result /div
-
-
-# @jit([float64[:](float64[:], float64[: ,:], float64, int32)], nopython=True, nogil=True)
-# def meanshift_native(y, Nx, sigma, max_iteration):
-#     """
-#         executes the whole meanshift algorithm
-#     :param y:
-#     :param Nx:
-#     :param sigma:
-#     :param max_iteration:
-#     :return:
-#     """
-#     eps = 0.000001
-#     y_t = y
-#     if max_iteration > 0:
-#         for i in range(max_iteration):
-#             y_tp1 = m(y_t, Nx, sigma)
-#             step_size = la.norm(y_tp1 - y_t)
-#             if step_size < eps:
-#                 break
-#             y_t = y_tp1
-#         return y_tp1
-#     else:  # run until 'convergence'
-#         while True:
-#             y_tp1 = m(y_t, Nx, sigma)
-#             step_size = la.norm(y_tp1 - y_t)
-#             if step_size < eps:
-#                 return y_tp1
-#             y_t = y_tp1
