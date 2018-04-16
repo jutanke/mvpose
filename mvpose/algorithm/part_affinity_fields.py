@@ -19,7 +19,7 @@ class LimbWeights:
         self.cost_by_limb = []
         total = 0
         for i in range(len(limbSeq)):
-            a = limbSeq[i, 0];
+            a = limbSeq[i, 0]
             b = limbSeq[i, 1]
             nA = lookup[a, 1] - lookup[a, 0]
             nB = lookup[b, 1] - lookup[b, 0]
@@ -29,7 +29,7 @@ class LimbWeights:
 
         cur_item = 0
         for i in range(len(limbSeq)):
-            a = limbSeq[i, 0];
+            a = limbSeq[i, 0]
             b = limbSeq[i, 1]
             nA = lookup[a, 1] - lookup[a, 0]
             nB = lookup[b, 1] - lookup[b, 0]

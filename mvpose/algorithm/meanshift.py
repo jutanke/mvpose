@@ -17,7 +17,7 @@ def find_all_modes(X, r, sigma=None, max_iterations=1000):
     if sigma is None:
         sigma = r
 
-    # calculate the peak from ALL points
+    # calculate the peaks from ALL points
     # TODO check if this can be done probabilistically,
     # TODO e.g. using the weights of the points as Pr()
     n = len(X)
@@ -31,9 +31,7 @@ def find_all_modes(X, r, sigma=None, max_iterations=1000):
                              max_iterations=max_iterations)
         all_centers[i] = [cx,cy,cz,w]
 
-
-
-    # merge centers
+    # --- merge centers ---
     # TODO: make this more efficient
     lookup = KDTree(all_centers[:,0:3])
     allready_handled = set()
@@ -56,7 +54,7 @@ def find_all_modes(X, r, sigma=None, max_iterations=1000):
         W = np.expand_dims(N[:, 3]/total_w, axis=1)
         Modes.append(np.sum(Pts * W, axis=0))
 
-    return np.array(Modes)
+    return np.array(Modes), Peaks
 
 
 def meanshift(y, X, r, sigma=None, max_iterations=1000):
