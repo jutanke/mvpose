@@ -95,7 +95,6 @@ class Peaks3D:
                 for j in range(i+1, n):
                     p_j = X[j,0:3]; w_j = X[j,3]
 
-
     def merge(self, other):
         """
 

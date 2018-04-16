@@ -1,5 +1,26 @@
 import numpy as np
 
+DEFAULT_LIMB_NAMES = [
+    'Nose',
+    'Neck',
+    'Shoulder right',
+    'Elbow right',
+    'Hand right',
+    'Shoulder left',
+    'Elbow left',
+    'Hand left',
+    'Hip right',
+    'Knee right',
+    'Foot right',
+    'Hip left',
+    'Knee left',
+    'Foot left',
+    'Eye right',
+    'Eye left',
+    'Ear right',
+    'Ear left'
+]
+
 # assuming 18 joints
 DEFAULT_LIMB_SEQ = np.array(
     [[1,2], [1,5], [2,3], [3,4], [5,6], [6,7], [1,8], [8,9],
