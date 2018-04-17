@@ -62,6 +62,7 @@ class Peaks:
         data = other.data
         data_undist = gm.undistort_points(data, mapx, mapy)
         peaks_undist = Peaks()
+        peaks_undist.n_joints = other.n_joints
         peaks_undist.data = data_undist
         peaks_undist.data.setflags(write=False)
         peaks_undist.lookup = other.lookup
