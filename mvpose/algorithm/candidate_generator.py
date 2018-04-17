@@ -1,10 +1,9 @@
 """
 Generate 3D candidates for the problem
 """
-import numpy as np
 import mvpose.geometry.geometry as gm
-import mvpose.algorithm.heatmaps as mvhm
-import mvpose.algorithm.part_affinity_fields as mvpafs
+import mvpose.pose_estimation.heatmaps as mvhm
+import mvpose.pose_estimation.part_affinity_fields as mvpafs
 from mvpose.data.default_limbs import  DEFAULT_LIMB_SEQ, DEFAULT_MAP_IDX
 
 
