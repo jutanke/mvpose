@@ -1,22 +1,22 @@
 import numpy as np
 
 DEFAULT_JOINT_NAMES = [
-    'Nose',
+    'Nose',             # 0
     'Neck',
     'Shoulder right',
     'Elbow right',
     'Hand right',
-    'Shoulder left',
+    'Shoulder left',    # 5
     'Elbow left',
     'Hand left',
     'Hip right',
     'Knee right',
-    'Foot right',
+    'Foot right',       # 10
     'Hip left',
     'Knee left',
     'Foot left',
     'Eye right',
-    'Eye left',
+    'Eye left',         # 15
     'Ear right',
     'Ear left'
 ]
