@@ -148,6 +148,8 @@ def triangulate(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2):
 
     joints_3d = [None] * n_joints
 
+    idx_pairs_all = [None] * n_joints
+
     for j in range(n_joints):
         pts1 = peaks1[j]
         pts2 = peaks2[j]
@@ -168,7 +170,9 @@ def triangulate(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2):
 
             W = []
             Pt1 = []; Pt2 = []
+            idx_pairs = []; idx1 = 0
             for p1, (a1, b1, c1) in zip(pts1, epilines_1to2):
+                idx2 = 0
                 for p2, (a2, b2, c2), in zip(pts2, epilines_2to1):
                     w1 = 1/gm.line_to_point_distance(a1, b1, c1, p2[0], p2[1])
                     w2 = 1/gm.line_to_point_distance(a2, b2, c2, p1[0], p1[1])
@@ -177,6 +181,9 @@ def triangulate(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2):
                     W.append(w)
                     Pt1.append(p1[0:2])
                     Pt2.append(p2[0:2])
+                    idx_pairs.append((idx1, idx2))
+                    idx2 += 1
+                idx1 += 1
 
             Pt1 = np.transpose(np.array(Pt1))
             Pt2 = np.transpose(np.array(Pt2))
@@ -187,5 +194,7 @@ def triangulate(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2):
                 np.transpose(cv2.triangulatePoints(P1, P2, Pt1, Pt2)))
 
             joints_3d[j] = np.concatenate([pts3d, W], axis=1)
+            idx_pairs_all[j] = np.array(idx_pairs)
+            assert len(idx_pairs) == joints_3d[j].shape[0]
 
-    return Peaks3D(joints_3d)
+    return Peaks3D(joints_3d), idx_pairs_all

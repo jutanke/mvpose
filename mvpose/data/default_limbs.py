@@ -1,6 +1,6 @@
 import numpy as np
 
-DEFAULT_LIMB_NAMES = [
+DEFAULT_JOINT_NAMES = [
     'Nose',
     'Neck',
     'Shoulder right',

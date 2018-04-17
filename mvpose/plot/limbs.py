@@ -19,7 +19,7 @@ def plot(ax, im, peaks, limbs, limbSeq=DEFAULT_LIMB_SEQ):
         candA = peaks[a]
         candB = peaks[b]
         W_limb = limbs[idx]
-        nA = len(candA);
+        nA = len(candA)
         nB = len(candB)
         if nA > 0 and nB > 0:
             for i in range(nA):

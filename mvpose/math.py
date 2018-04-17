@@ -1,6 +1,26 @@
 import numpy as np
 from math import exp, sqrt, pi
-from numba import vectorize, float64
+from numba import jit, vectorize, float64
+
+
+@jit([float64[:,:](float64[:], float64[:])], nopython=True, nogil=True)
+def sum_1v1(a, b):
+    """
+        calculates the sum of all elements of one list against the elements
+        of another one:
+
+        c[i,j] = a[i] + b[j]
+    :param a: [ ... ] \in |R
+    :param b: [ ... ] \in |R
+    :return: c
+    """
+    nA = len(a)
+    nB = len(b)
+    c = np.zeros((nA, nB))
+    for x in range(nA):
+        for y in range(nB):
+            c[x,y] = a[x] + b[y]
+    return c
 
 
 @vectorize([float64(float64,float64,float64,float64)])

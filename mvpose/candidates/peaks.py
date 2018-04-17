@@ -76,16 +76,6 @@ class Peaks3D:
         """
         return self.data[jid]
 
-    def get_2d_pairs(self, cam1, cam2):
-        """
-            Returns the indexes in the list of 3d points
-            that correspond to the 2d pairs in the 3d view
-        :param cam1:
-        :param cam2:
-        :return:
-        """
-        pass
-
     def merge(self, other):
         """
             merges two {Peaks3D} sets. From a camera id perspective thus function
