@@ -1,5 +1,5 @@
 from skimage.feature import peak_local_max
-from mvpose.algorithm.peaks import Peaks
+from mvpose.candidates.peaks import Peaks
 
 
 def get_all_peaks(heatmap, threshold=0.1):

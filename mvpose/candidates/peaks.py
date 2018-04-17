@@ -1,5 +1,4 @@
 import numpy as np
-import numpy.linalg as la
 
 
 class Peaks:
@@ -68,6 +67,7 @@ class Peaks3D:
         """
         self.n_joints = len(data)
         self.data = data
+        self.current_view = 0
 
     def __getitem__(self, jid):
         """
@@ -76,9 +76,21 @@ class Peaks3D:
         """
         return self.data[jid]
 
+    def get_2d_pairs(self, cam1, cam2):
+        """
+            Returns the indexes in the list of 3d points
+            that correspond to the 2d pairs in the 3d view
+        :param cam1:
+        :param cam2:
+        :return:
+        """
+        pass
+
     def merge(self, other):
         """
-
+            merges two {Peaks3D} sets. From a camera id perspective thus function
+            MUST be called IN ORDER (cam0 -> cam1 -> cam2 -> cam3) to ensure that
+            the ids in "get_2d_pairs" work properly!
         :param other: {Peaks3D}
         :return:
         """

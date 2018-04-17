@@ -1,10 +1,8 @@
 import numpy as np
-import numpy.linalg as la
 import numpy.random as rnd
 import cv2
 from mvpose.geometry import geometry as gm
-from mvpose.algorithm.peaks import Peaks3D
-import mvpose.math as mvmath
+from mvpose.candidates.peaks import Peaks3D
 
 
 def get_fundamental_matrix(cam1, cam2):

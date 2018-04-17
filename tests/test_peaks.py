@@ -2,7 +2,7 @@ import unittest
 import sys
 sys.path.insert(0, '../')
 import numpy as np
-from mvpose.algorithm import peaks as mvpeaks
+from mvpose.candidates import peaks as mvpeaks
 
 
 class TestPeaks(unittest.TestCase):
