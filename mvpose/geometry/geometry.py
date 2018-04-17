@@ -41,6 +41,26 @@ def remove_distortion(I, cam):
     return cv2.remap(I, mapx, mapy, cv2.INTER_LINEAR), K_new
 
 
+def undistort_points(points, mapx, mapy):
+    """
+
+    :param points:
+    :param mapx:
+    :param mapy:
+    :return:
+    """
+    # TODO maybe use numba
+    new_points = points.copy()
+    for idx,(x,y,_) in enumerate(points):
+        x = int(x)
+        y = int(y)
+        dx = x - mapx[y, x]
+        dy = y - mapy[y, x]
+        new_points[idx, 0] = x + dx
+        new_points[idx, 1] = y + dy
+    return new_points
+
+
 def apply_undistortion(I, K, K_new, distCoef):
     """
     un-distorts the image given an already undistorted camera matrix
