@@ -48,7 +48,7 @@ class LimbWeights3d:
         represents the limb weights in 3d space
     """
 
-    def __init__(self, peaks3d, all_idx_pairs, limb_pairs, limbSeq):
+    def __init__(self, peaks3d, all_idx_pairs, limb_pairs, limbSeq, transfer=None):
         """
             Generates the 3d weights for the limbs
         :param peaks3d: ALL 3d points that were generated from
@@ -61,10 +61,14 @@ class LimbWeights3d:
                         in order of how the different cameras are
                         combined
         :param limbSeq: limbSeq: {np.array[m x 2]} ids represent the joint (relative to the heatmaps)
+        :param transfer: transfer function for the weights
         """
         n_limbs = limbSeq.shape[0]
         assert len(all_idx_pairs) == len(limb_pairs)
         assert limbSeq.shape[1] == 2
+
+        if transfer is None:
+            transfer = lambda x: np.exp(x)  # make range [0 --- + infty]
 
         W_all_limbs_last_xy = [(0, 0)] * n_limbs
         W_all_limbs = [None] * n_limbs
@@ -101,7 +105,7 @@ class LimbWeights3d:
 
                     for u,(a1,b1) in enumerate(pairs1):
                         for v,(a2,b2) in enumerate(pairs2):
-                            W_limb[mx+u,my+v] = W1[a1,a2] + W2[b1,b2]
+                            W_limb[mx+u,my+v] = transfer(W1[a1,a2] + W2[b1,b2])
 
                 W_all_limbs_last_xy[lid] = (mx+nA1*nA2, my+nB1*nB2)
 
