@@ -1,7 +1,7 @@
 from mvpose.pose_estimation import limb_weights
 import mvpose.geometry.geometry as gm
 from mvpose.geometry import stereo
-from mvpose.data.default_limbs import  DEFAULT_LIMB_SEQ
+from mvpose.data.default_limbs import  DEFAULT_LIMB_SEQ, DEFAULT_SENSIBLE_LIMB_LENGTH
 
 
 class Candidates3d:
@@ -20,13 +20,16 @@ class Candidates3d:
         """
         return self.peaks3d[k]
 
-    def triangulate(self, peaks, limbs, Calib, limbSeq=DEFAULT_LIMB_SEQ):
+    def triangulate(self, peaks, limbs, Calib,
+                    limbSeq=DEFAULT_LIMB_SEQ,
+                    sensible_limb_length=DEFAULT_SENSIBLE_LIMB_LENGTH):
         """
             triangulate all points in the cameras
         :param peaks: [{Peaks}]
         :param limbs: [{LimbWeights}]
         :param Calib: [{Camera}] The camera parameters MUST BE undistorted!
         :param limbSeq: {np.array[m x 2]} ids represent the joint (relative to the heatmaps)
+        :param sensible_limb_length: {np.array[m x 2]} (low, high) of sensible limb length'
         :return: {Peaks3}, {LimbWeights3d}
         """
         n_cameras = len(Calib)
@@ -63,7 +66,8 @@ class Candidates3d:
                 IDX_PAIRS.append(idx_pairs)
 
         # ---
-        self.lw = limb_weights.LimbWeights3d(self.peaks3d, IDX_PAIRS, LIMB_PAIRS, limbSeq)
+        self.lw = limb_weights.LimbWeights3d(self.peaks3d, IDX_PAIRS, LIMB_PAIRS,
+                                             limbSeq, sensible_limb_length)
 
         # sanity check
         for lid, (k1, k2) in enumerate(limbSeq):

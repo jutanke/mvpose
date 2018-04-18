@@ -21,6 +21,30 @@ DEFAULT_JOINT_NAMES = [
     'Ear left'
 ]
 
+# [ ... ( low, high) ... ]
+DEFAULT_SENSIBLE_LIMB_LENGTH = np.array([
+    (30, 300),  # neck - shoulder right
+    (30, 300),  # neck - shoulder left
+    (150, 400),  # shoulder right - elbow right
+    (150, 600),  # elbow right - hand right
+    (150, 400),  # shoulder left - elbow left
+    (150, 600),  # elbow left - hand left
+    (200, 800),  # neck - hip right
+    (200, 800),  # hip right - knee right
+    (200, 800),  # knee right - foot right
+    (200, 800),  # neck - hip left
+    (200, 800),  # hip left - knee left
+    (200, 800),  # knee left - foot left,
+    (50, 450),  # neck - nose
+    (5, 150),  # nose - eye right
+    (5, 150),  # eye right - ear right
+    (5, 150),  # nose - eye left
+    (5, 150),  # eye left - ear left
+    (0, 40),  # shoulder right - ear right
+    (0, 40)  # shoulder left - ear left
+])
+DEFAULT_SENSIBLE_LIMB_LENGTH.setflags(write=False)  # read-only
+
 # assuming 18 joints
 DEFAULT_LIMB_SEQ = np.array(
     [[1,2], [1,5], [2,3], [3,4], [5,6], [6,7], [1,8], [8,9],
@@ -33,3 +57,6 @@ DEFAULT_MAP_IDX = np.array(
      [0,  1], [2,  3], [4, 5], [6, 7], [8, 9], [10, 11], [28, 29],
      [30, 31], [34, 35], [32, 33], [36, 37], [18, 19], [26, 27]], 'int32')
 DEFAULT_MAP_IDX.setflags(write=False)
+
+assert len(DEFAULT_SENSIBLE_LIMB_LENGTH) == len(DEFAULT_LIMB_SEQ)
+assert len(DEFAULT_MAP_IDX) == len(DEFAULT_LIMB_SEQ)

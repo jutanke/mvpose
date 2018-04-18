@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.linalg as la
 
 
 class LimbWeights:
@@ -48,7 +49,8 @@ class LimbWeights3d:
         represents the limb weights in 3d space
     """
 
-    def __init__(self, peaks3d, all_idx_pairs, limb_pairs, limbSeq, transfer=None):
+    def __init__(self, peaks3d, all_idx_pairs, limb_pairs, limbSeq,
+                 sensible_limb_length, transfer=None):
         """
             Generates the 3d weights for the limbs
         :param peaks3d: ALL 3d points that were generated from
@@ -61,6 +63,7 @@ class LimbWeights3d:
                         in order of how the different cameras are
                         combined
         :param limbSeq: limbSeq: {np.array[m x 2]} ids represent the joint (relative to the heatmaps)
+        :param sensible_limb_length: {np.array[m x 2]} (low, high) of sensible limb length'
         :param transfer: transfer function for the weights
         """
         n_limbs = limbSeq.shape[0]
@@ -105,7 +108,14 @@ class LimbWeights3d:
 
                     for u,(a1,b1) in enumerate(pairs1):
                         for v,(a2,b2) in enumerate(pairs2):
-                            W_limb[mx+u,my+v] = transfer(W1[a1,a2] + W2[b1,b2])
+
+                            # check if points are in range
+                            point1 = peaks3d[k1][mx + u][0:3]
+                            point2 = peaks3d[k2][my + v][0:3]
+                            distance = la.norm(point1 - point2)
+                            if distance > sensible_limb_length[lid][0] and\
+                                    distance < sensible_limb_length[lid][1]:
+                                W_limb[mx+u,my+v] = transfer(W1[a1,a2] + W2[b1,b2])
 
                 W_all_limbs_last_xy[lid] = (mx+nA1*nA2, my+nB1*nB2)
 
