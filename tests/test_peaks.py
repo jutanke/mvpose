@@ -39,7 +39,28 @@ class TestPeaks(unittest.TestCase):
         self.assertEqual(1, joint1[0,0])
 
         joint2 = peaks[1]
-        print(joint2)
+
+    def test_with_holes_at_end(self):
+        peaks_list = [
+            [(1, 1, 0.5),
+            (2, 2, 0.3)],
+            [(5, 1, 0.9),
+            (1, 5, 0.1)],
+            []
+        ]
+
+        peaks = mvpeaks.Peaks(peaks_list)
+        self.assertEqual(3, peaks.n_joints)
+
+        joint1 = peaks[0]
+        self.assertEqual(2, joint1.shape[0])
+        self.assertEqual(1, joint1[0,0])
+
+        lookup = peaks.lookup
+        nB = lookup[2, 1] - lookup[2, 0]
+
+        self.assertTrue(nB >= 0)
+
 
     def test_simple_peaks3d(self):
 
