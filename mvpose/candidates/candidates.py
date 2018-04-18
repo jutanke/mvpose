@@ -64,4 +64,12 @@ class Candidates3d:
 
         # ---
         self.lw = limb_weights.LimbWeights3d(self.peaks3d, IDX_PAIRS, LIMB_PAIRS, limbSeq)
+
+        # sanity check
+        for lid, (k1, k2) in enumerate(limbSeq):
+            n,m = self.lw[lid].shape
+            n_j1 = len(self.peaks3d[k1])
+            n_j2 = len(self.peaks3d[k2])
+            assert n == n_j1 and m == n_j2
+
         return self.peaks3d, self.lw
