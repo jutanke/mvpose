@@ -12,7 +12,7 @@ class Peaks:
 
         :param aslist:
         """
-        if not aslist is None:
+        if aslist is not None:
             self.n_joints = len(aslist)
 
             total = 0
@@ -91,6 +91,17 @@ class Peaks3D:
         :return:
         """
         return self.data[jid]
+
+    def count_per_joint(self):
+        """
+            Counts the number of 3d points for each joint
+            separably
+        :return:
+        """
+        result = [0] * self.n_joints
+        for k in range(self.n_joints):
+            result[k] = len(self.data[k])
+        return result
 
     def merge(self, other):
         """
