@@ -100,7 +100,10 @@ class Peaks3D:
         """
         result = [0] * self.n_joints
         for k in range(self.n_joints):
-            result[k] = len(self.data[k])
+            if self.data[k] is None:
+                result[k] = 0
+            else:
+                result[k] = len(self.data[k])
         return result
 
     def merge(self, other):
