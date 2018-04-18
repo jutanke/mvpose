@@ -29,7 +29,6 @@ class Candidates3d:
         :param limbSeq: {np.array[m x 2]} ids represent the joint (relative to the heatmaps)
         :return: {Peaks3}, {LimbWeights3d}
         """
-        n_limbs = limbSeq.shape[0]
         n_cameras = len(Calib)
         assert n_cameras == len(limbs)
         assert n_cameras == len(peaks)
