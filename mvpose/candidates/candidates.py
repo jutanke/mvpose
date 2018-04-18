@@ -2,6 +2,8 @@ from mvpose.pose_estimation import limb_weights
 import mvpose.geometry.geometry as gm
 from mvpose.geometry import stereo
 from mvpose.data.default_limbs import  DEFAULT_LIMB_SEQ, DEFAULT_SENSIBLE_LIMB_LENGTH
+from mvpose.algorithm.meanshift import find_all_modes
+import numpy as np
 
 
 class Candidates3d:
@@ -19,6 +21,61 @@ class Candidates3d:
         :return:
         """
         return self.peaks3d[k]
+
+    def calculate_modes(self, r, sigma=None, limbSeq=DEFAULT_LIMB_SEQ):
+        """
+        :param r: radius
+        :param sigma:
+        :param limbSeq: {np.array[m x 2]} ids represent the joint (relative to the heatmaps)
+        :return:
+        """
+        n_limbs = len(limbSeq)
+        assert self.lw is not None
+        assert self.peaks3d is not None
+        if sigma is None:
+            sigma = r
+
+        lw = self.lw
+        pts3d = self.peaks3d
+
+        # store [ .. ( [modes], [[idxs],...])...
+        modes = []
+
+        for k in range(pts3d.n_joints):
+            modes.append(
+                find_all_modes(
+                    pts3d[k], r, sigma
+                )
+            )
+
+        # [ [nxm] ... ]
+        W_limbs = [None] * n_limbs
+
+        for lid, (k1, k2) in enumerate(limbSeq):
+            W = lw[lid]
+
+            modes1 = modes[k1]
+            modes2 = modes[k2]
+
+            n = len(modes1[1]); m = len(modes2[1])
+            W_modes = np.zeros((n,m))
+
+            for a in range(n):
+                items1 = modes1[1][a]
+                for b in range(m):
+                    items2 = modes2[1][b]
+                    for i in items1:
+                        for j in items2:
+                            W_modes[a,b] += W[i,j]
+
+            W_limbs[lid] = W_modes
+
+        modes_only = []
+        for modes, idxs in modes:
+            modes_only.append(modes)
+
+        return modes_only, W_limbs
+
 
     def triangulate(self, peaks, limbs, Calib,
                     limbSeq=DEFAULT_LIMB_SEQ,

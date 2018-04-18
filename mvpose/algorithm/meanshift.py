@@ -14,6 +14,7 @@ def find_all_modes(X, r, sigma=None, max_iterations=1000):
     :param max_iterations:
     :return:
     """
+    r = float(r)
     if sigma is None:
         sigma = r
 
