@@ -31,8 +31,10 @@ class LimbWeights:
             nA = lookup[a, 1] - lookup[a, 0]
             nB = lookup[b, 1] - lookup[b, 0]
             length = nA * nB
-
-            assert cur_item + length <= total
+               
+            assert nA >= 0 and nB >= 0, 'nA=' + str(nA) + ', nB=' + str(nB)
+            assert cur_item + length <= total, 'total=' + str(total) +\
+                ' but ci+l=' + str(cur_item) + '+' + str(length)
             data = W[cur_item:cur_item + length].reshape((nA, nB))
             data.setflags(write=False)
             self.cost_by_limb.append(data)
