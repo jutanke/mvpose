@@ -38,31 +38,30 @@ def calculate_weights_for_all(data, lookup, limbSeq, mapIdx, pafs):
     :return:
     """
     mid_num = 10
-    n_limbs = limbSeq.shape[0]
 
     total = 0
     for i in range(len(limbSeq)):
-        a = limbSeq[i, 0];
+        a = limbSeq[i, 0]
         b = limbSeq[i, 1]
-        nA = lookup[a, 1] - lookup[a, 0]
-        nB = lookup[b, 1] - lookup[b, 0]
+        nA = max(0, lookup[a, 1] - lookup[a, 0])
+        nB = max(0, lookup[b, 1] - lookup[b, 0])
         total += nA * nB
 
     W = np.zeros((total, 1))
 
     cur_item = 0
     for k in range(len(limbSeq)):
-        a = limbSeq[k, 0];
+        a = limbSeq[k, 0]
         b = limbSeq[k, 1]
         candA = data[lookup[a, 0]:lookup[a, 1]]
         candB = data[lookup[b, 0]:lookup[b, 1]]
 
-        l = mapIdx[k, 0];
+        l = mapIdx[k, 0]
         r = mapIdx[k, 1] + 1
         score_mid = pafs[:, :, l:r]
         # score_mid = pafs[:,:,[x for x in mapIdx[k]]]
 
-        nA = len(candA);
+        nA = len(candA)
         nB = len(candB)
 
         for i in range(nA):
