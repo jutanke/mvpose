@@ -18,6 +18,23 @@ Given a set of joints, generate a skeleton
 import numpy as np
 
 
+def generate3d(ax, human, limbSeq, color, alpha=0.4):
+    """
+
+    :param human: [ (x,y,z) ... * m]
+    :param limbSeq: {np.array[m x 2]} ids represent the joint (relative to the heatmaps)
+    :return:
+    """
+
+    for k1, k2 in limbSeq:
+        p1 = human[k1]
+        p2 = human[k2]
+        if p1 is not None and p2 is not None:
+            x1, y1, z1 = p1
+            x2, y2, z2 = p2
+            ax.plot([x1, x2], [y1, y2], [z1, z2], color=color, alpha=alpha, linewidth=5)
+
+
 def generate(Y):
     """ Given a set of joints, generate a skeleton
     :param Y: [14*#persons, (x,y)]
