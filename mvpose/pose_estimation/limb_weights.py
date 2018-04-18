@@ -113,8 +113,8 @@ class LimbWeights3d:
                             point1 = peaks3d[k1][mx + u][0:3]
                             point2 = peaks3d[k2][my + v][0:3]
                             distance = la.norm(point1 - point2)
-                            if distance > sensible_limb_length[lid][0] and\
-                                    distance < sensible_limb_length[lid][1]:
+                            LENGTH_low, LENGTH_high = sensible_limb_length[lid]
+                            if LENGTH_low < distance < LENGTH_high:
                                 W_limb[mx+u,my+v] = transfer(W1[a1,a2] + W2[b1,b2])
 
                 W_all_limbs_last_xy[lid] = (mx+nA1*nA2, my+nB1*nB2)
