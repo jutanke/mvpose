@@ -18,8 +18,8 @@ class LimbWeights:
         for i in range(len(limbSeq)):
             a = limbSeq[i, 0]
             b = limbSeq[i, 1]
-            nA = lookup[a, 1] - lookup[a, 0]
-            nB = lookup[b, 1] - lookup[b, 0]
+            nA = min(0, lookup[a, 1] - lookup[a, 0])
+            nB = min(0, lookup[b, 1] - lookup[b, 0])
             total += nA * nB
 
         assert total == W.shape[0]  # sanity check
@@ -28,8 +28,8 @@ class LimbWeights:
         for i in range(len(limbSeq)):
             a = limbSeq[i, 0]
             b = limbSeq[i, 1]
-            nA = lookup[a, 1] - lookup[a, 0]
-            nB = lookup[b, 1] - lookup[b, 0]
+            nA = min(0, lookup[a, 1] - lookup[a, 0])
+            nB = min(0, lookup[b, 1] - lookup[b, 0])
             length = nA * nB
                
             assert nA >= 0 and nB >= 0, 'nA=' + str(nA) + ', nB=' + str(nB)
