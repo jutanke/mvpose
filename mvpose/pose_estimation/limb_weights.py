@@ -1,5 +1,6 @@
 import numpy as np
 import numpy.linalg as la
+import deprecation
 
 
 class LimbWeights:
@@ -46,6 +47,7 @@ class LimbWeights:
         return self.cost_by_limb[lid]
 
 
+@deprecation.deprecated(deprecated_in="0.1.0", removed_in="1.0.0")
 class LimbWeights3d:
     """
         represents the limb weights in 3d space
@@ -78,7 +80,6 @@ class LimbWeights3d:
         for idx_pairs, (limbs1, limbs2) in zip(all_idx_pairs, limb_pairs):
             # idx_pairs contains the order in which the points where
             # added to peaks3d
-            pass
 
             for lid, (k1, k2) in enumerate(limbSeq):
                 W1 = limbs1[lid]

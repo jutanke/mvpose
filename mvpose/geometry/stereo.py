@@ -150,7 +150,7 @@ def triangulate_argmax(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2):
 
     joints_3d = [np.zeros((0, 4))] * n_joints
 
-    idx_pairs_all = [None] * n_joints
+    idx_pairs_all = [np.zeros((0, 0))] * n_joints
 
     for k in range(n_joints):
         pts1 = peaks1[k]
@@ -206,7 +206,7 @@ def triangulate_argmax(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2):
             joints_3d[k] = np.concatenate([pts3d, W_], axis=1)
             assert len(idx_pairs_all[k]) == joints_3d[k].shape[0]
 
-    return Peaks3D(joints_3d), idx_pairs_all
+    return joints_3d, idx_pairs_all
 
 
 def triangulate(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2):

@@ -4,8 +4,27 @@ from mvpose.geometry import stereo
 from mvpose.data.default_limbs import  DEFAULT_LIMB_SEQ, DEFAULT_SENSIBLE_LIMB_LENGTH
 from mvpose.algorithm.meanshift import find_all_modes
 import numpy as np
+import deprecation
 
 
+class Candidates:
+
+    def __init__(self, peaks, limbs, Calib,
+                 limbSeq=DEFAULT_LIMB_SEQ,
+                 sensible_limb_length=DEFAULT_SENSIBLE_LIMB_LENGTH):
+        """
+            triangulate all points in the cameras
+        :param peaks: [{Peaks}]
+        :param limbs: [{LimbWeights}]
+        :param Calib: [{Camera}] The camera parameters MUST BE undistorted!
+        :param limbSeq: {np.array[m x 2]} ids represent the joint (relative to the heatmaps)
+        :param sensible_limb_length: {np.array[m x 2]} (low, high) of sensible limb length'
+        :return: {Peaks3}, {LimbWeights3d}
+        """
+        pass
+
+
+@deprecation.deprecated(deprecated_in="0.1.0", removed_in="1.0.0")
 class Candidates3d:
     """
         Represents the 3d candidates
