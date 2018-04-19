@@ -77,7 +77,6 @@ class Candidates3d:
 
         return modes_only, W_limbs
 
-
     def triangulate(self, peaks, limbs, Calib,
                     limbSeq=DEFAULT_LIMB_SEQ,
                     sensible_limb_length=DEFAULT_SENSIBLE_LIMB_LENGTH):

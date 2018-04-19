@@ -52,7 +52,7 @@ class LimbWeights3d:
     """
 
     def __init__(self, peaks3d, all_idx_pairs, limb_pairs, limbSeq,
-                 sensible_limb_length, transfer=None):
+                 sensible_limb_length):
         """
             Generates the 3d weights for the limbs
         :param peaks3d: ALL 3d points that were generated from

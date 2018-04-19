@@ -3,6 +3,7 @@ import numpy.random as rnd
 import cv2
 from mvpose.geometry import geometry as gm
 from mvpose.candidates.peaks import Peaks3D
+from scipy.optimize import linear_sum_assignment
 
 
 def get_fundamental_matrix(cam1, cam2):
@@ -122,6 +123,90 @@ def get_epipoles(cam1, cam2):
     distCoef1 = np.array(cam1['distCoeff'])
     distCoef2 = np.array(cam2['distCoeff'])
     return get_epipoles_flat(K1, rvec1, tvec1, distCoef1, K2, rvec2, tvec2, distCoef2)
+
+
+def triangulate_argmax(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2):
+    """
+        triangulates to sets of points and chooses only the pairs
+        for which the points are closest to their epipolar line
+    :param peaks1:
+    :param K1:
+    :param rvec1:
+    :param tvec1:
+    :param peaks2:
+    :param K2:
+    :param rvec2:
+    :param tvec2:
+    :return:
+    """
+    assert peaks1.n_joints == peaks2.n_joints
+    n_joints = peaks1.n_joints
+
+    P1 = gm.get_projection_matrix_flat(K1, rvec1, tvec1)
+    P2 = gm.get_projection_matrix_flat(K2, rvec2, tvec2)
+
+    F = get_fundamental_matrix_flat(K1, rvec1, tvec1, 0,
+                                    K2, rvec2, tvec2, 0)
+
+    joints_3d = [np.zeros((0, 4))] * n_joints
+
+    idx_pairs_all = [None] * n_joints
+
+    for k in range(n_joints):
+        pts1 = peaks1[k]
+        pts2 = peaks2[k]
+
+        if len(pts1) > 0 and len(pts2) > 0:
+            epilines_1to2 = np.squeeze(
+                cv2.computeCorrespondEpilines(pts1, 1, F))
+            if len(epilines_1to2.shape) <= 1:
+                epilines_1to2 = np.expand_dims(epilines_1to2, axis=0)
+
+            epilines_2to1 = np.squeeze(
+                cv2.computeCorrespondEpilines(pts2, 2, F))
+            if len(epilines_2to1.shape) <= 1:
+                epilines_2to1 = np.expand_dims(epilines_2to1, axis=0)
+
+            W = np.zeros((len(pts1), len(pts2)))
+            Pt1 = []
+            Pt2 = []
+            idx_pairs = []
+            Ep_distances = np.zeros((len(pts1), len(pts2)))
+
+            for idx1, (p1, (a1, b1, c1)) in enumerate(
+                    zip(pts1, epilines_1to2)):
+                for idx2, (p2, (a2, b2, c2)) in enumerate(
+                        zip(pts2, epilines_2to1)):
+                    d1 = gm.line_to_point_distance(a1, b1, c1, p2[0], p2[1])
+                    d2 = gm.line_to_point_distance(a2, b2, c2, p1[0], p1[1])
+                    w1 = p1[2] ** 2
+                    w2 = p2[2] ** 2
+                    w = (w1 + w2) / 2  # TODO play around with this
+                    W[idx1, idx2] = w
+                    Ep_distances[idx1, idx2] = (d1 + d2) # TODO play with this
+                    Pt1.append(p1[0:2])
+                    Pt2.append(p2[0:2])
+                    idx_pairs.append((idx1, idx2))
+
+            W = np.array(W)
+            Pt1 = np.array(Pt1)
+            Pt2 = np.array(Pt2)
+
+            row_idx, col_idx = linear_sum_assignment(Ep_distances)
+
+            Pt1 = np.transpose(Pt1[row_idx])
+            Pt2 = np.transpose(Pt2[col_idx])
+            W_ = np.array([W[i, j] for i, j in zip(row_idx, col_idx)])
+            W_ = np.expand_dims(W_, axis=1)
+
+            pts3d = gm.from_homogeneous(
+                np.transpose(cv2.triangulatePoints(P1, P2, Pt1, Pt2)))
+
+            idx_pairs_all[k] = np.array(list(zip(row_idx, col_idx)))
+            joints_3d[k] = np.concatenate([pts3d, W_], axis=1)
+            assert len(idx_pairs_all[k]) == joints_3d[k].shape[0]
+
+    return Peaks3D(joints_3d), idx_pairs_all
 
 
 def triangulate(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2):
