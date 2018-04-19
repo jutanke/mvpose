@@ -91,15 +91,26 @@ class LimbWeights3d:
 
                 mx, my = W_all_limbs_last_xy[lid]
 
+                # https://github.com/jutanke/mvpose/issues/12
+                # ~
+                if W_all_limbs[lid] is None:
+                    n = n_per_joints[k1]
+                    m = n_per_joints[k2]
+                    W_limb = np.zeros((n, m))
+                    W_all_limbs[lid] = W_limb
+                else:
+                    W_limb = W_all_limbs[lid]
+                # ~
+
                 if pairs1 is not None and pairs2 is not None:
 
-                    if W_all_limbs[lid] is None:
-                        n = n_per_joints[k1]
-                        m = n_per_joints[k2]
-                        W_limb = np.zeros((n, m))
-                        W_all_limbs[lid] = W_limb
-                    else:
-                        W_limb = W_all_limbs[lid]
+                    # if W_all_limbs[lid] is None:
+                    #     n = n_per_joints[k1]
+                    #     m = n_per_joints[k2]
+                    #     W_limb = np.zeros((n, m))
+                    #     W_all_limbs[lid] = W_limb
+                    # else:
+                    #     W_limb = W_all_limbs[lid]
 
                     assert len(pairs1) == nA1 * nA2
                     assert len(pairs2) == nB1 * nB2

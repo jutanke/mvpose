@@ -14,6 +14,9 @@ def find_all_modes(X, r, sigma=None, max_iterations=1000):
     :param max_iterations:
     :return:
     """
+    if X is None or X.shape[0] == 0:  # no detections at all!
+        return np.array([]), []
+
     r = float(r)
     if sigma is None:
         sigma = r

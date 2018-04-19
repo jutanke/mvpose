@@ -13,6 +13,7 @@ class Candidates3d:
 
     def __init__(self):
         self.peaks3d = None
+        self.lw = None
 
     def get_3d_points(self, k):
         """

@@ -85,6 +85,12 @@ class Peaks3D:
         self.data = data
         self.current_view = 0
 
+        # fix https://github.com/jutanke/mvpose/issues/12
+        for k in range(self.n_joints):
+            if self.data[k] is None:
+                self.data[k] = np.zeros((0, 4))
+        # ~
+
     def __getitem__(self, jid):
         """
         :param jid: joint id
