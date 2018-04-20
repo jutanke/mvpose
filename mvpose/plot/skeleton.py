@@ -30,8 +30,12 @@ def generate3d(ax, human, limbSeq, color, alpha=0.4):
         p1 = human[k1]
         p2 = human[k2]
         if p1 is not None and p2 is not None:
-            x1, y1, z1 = p1
-            x2, y2, z2 = p2
+            try:
+                x1, y1, z1 = p1
+                x2, y2, z2 = p2
+            except ValueError:
+                x1, y1, z1, _ = p1
+                x2, y2, z2, _ = p2
             ax.plot([x1, x2], [y1, y2], [z1, z2], color=color, alpha=alpha, linewidth=5)
 
 
