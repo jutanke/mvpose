@@ -3,9 +3,11 @@ import numpy.linalg as la
 import mvpose.math as mvmath
 from scipy.spatial import KDTree
 from numba import jit, float64
+import mvpose.geometry.clustering as cl
 
 
-def find_all_modes(X, r, sigma=None, max_iterations=1000, lim=1):
+def find_all_modes(X, r, sigma=None,
+                   max_iterations=1000, lim=1, between_distance=50):
     """
         finds all modes in the data
     :param X: [ (x,y,z,score), ... ]
@@ -13,6 +15,8 @@ def find_all_modes(X, r, sigma=None, max_iterations=1000, lim=1):
     :param sigma:
     :param max_iterations:
     :param lim: how many views must see a point to be valid
+    :param between_distance: the maximal distance between
+            two points of a cluster
     :return:
     """
     if X is None or X.shape[0] == 0:  # no detections at all!
@@ -37,19 +41,11 @@ def find_all_modes(X, r, sigma=None, max_iterations=1000, lim=1):
         all_centers[i] = [cx,cy,cz,w]
 
     # --- merge centers ---
-    # TODO: make this more efficient
-    lookup = KDTree(all_centers[:,0:3])
-    allready_handled = set()
-
+    Clusters = cl.cluster(all_centers[:,0:3], between_distance=between_distance)
     Peaks = []
-
-    for idx, c in enumerate(all_centers):
-        if idx not in allready_handled:
-            N = lookup.query_ball_point(c[0:3], 50)
-            for n in N:
-                allready_handled.add(n)
-            if len(N) > lim:
-                Peaks.append(N)
+    for cluster in Clusters:
+        if len(cluster) > lim:
+            Peaks.append(cluster)
 
     Modes = []
     for peaks in Peaks:
