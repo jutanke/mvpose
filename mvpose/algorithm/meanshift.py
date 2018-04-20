@@ -5,13 +5,14 @@ from scipy.spatial import KDTree
 from numba import jit, float64
 
 
-def find_all_modes(X, r, sigma=None, max_iterations=1000):
+def find_all_modes(X, r, sigma=None, max_iterations=1000, lim=1):
     """
         finds all modes in the data
     :param X: [ (x,y,z,score), ... ]
     :param r:
     :param sigma:
     :param max_iterations:
+    :param lim: how many views must see a point to be valid
     :return:
     """
     if X is None or X.shape[0] == 0:  # no detections at all!
@@ -47,7 +48,7 @@ def find_all_modes(X, r, sigma=None, max_iterations=1000):
             N = lookup.query_ball_point(c[0:3], 50)
             for n in N:
                 allready_handled.add(n)
-            if len(N) > 1:
+            if len(N) > lim:
                 Peaks.append(N)
 
     Modes = []

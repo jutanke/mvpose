@@ -4,6 +4,24 @@ from numba import vectorize, float64
 from math import sqrt
 
 
+@vectorize([float64(float64,float64,float64,float64,float64, float64)])
+def point_to_point_distance(x1,y1,z1, x2, y2, z2):
+    """
+        calculates the point-to-point distance
+    :param x1:
+    :param y1:
+    :param z1:
+    :param x2:
+    :param y2:
+    :param z2:
+    :return:
+    """
+    a = (x2 - x1)**2
+    b = (y2 - y1)**2
+    c = (z2 - z1)**2
+    return sqrt(a + b + c)
+
+
 @vectorize([float64(float64,float64,float64,float64,float64)])
 def line_to_point_distance(a,b,c,x,y):
     return abs(a*x + b*y + c) / sqrt(a**2 + b**2)
