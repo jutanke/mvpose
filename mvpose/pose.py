@@ -3,7 +3,7 @@ import mvpose.pose_estimation.heatmaps as mvhm
 from mvpose.candidates import peaks as mvpeaks
 import mvpose.pose_estimation.part_affinity_fields as mvpafs
 from mvpose.data.default_limbs import  DEFAULT_LIMB_SEQ, DEFAULT_MAP_IDX
-from mvpose.candidates.candidates import Candidates3d
+from mvpose.candidates.candidates import Candidates
 from mvpose.pose_estimation import extract_human_pose
 import cv2
 
@@ -55,9 +55,11 @@ def estimate(Calib, heatmaps, pafs, limbSeq=DEFAULT_LIMB_SEQ, mapIdx=DEFAULT_MAP
             'tvec': tvec
         })
 
-    candidates = Candidates3d()
-    candidates.triangulate(Peaks_undist, Limb_Weights, Calib_undist)
-    modes, W = candidates.calculate_modes(200)
+    candidates = Candidates(Peaks_undist, Limb_Weights, Calib_undist, r=200, mode_between_distance=50)
+    humans = candidates.humans
 
-    humans = extract_human_pose.extract(modes, W, limbSeq)
+    # candidates = Candidates3d()
+    # candidates.triangulate(Peaks_undist, Limb_Weights, Calib_undist)
+    # modes, W = candidates.calculate_modes(200)
+    # humans = extract_human_pose.extract(modes, W, limbSeq)
     return humans
