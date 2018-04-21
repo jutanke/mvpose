@@ -8,7 +8,9 @@ from mvpose.pose_estimation import extract_human_pose
 import cv2
 
 
-def estimate(Calib, heatmaps, pafs, limbSeq=DEFAULT_LIMB_SEQ, mapIdx=DEFAULT_MAP_IDX):
+def estimate(Calib, heatmaps, pafs, limbSeq=DEFAULT_LIMB_SEQ, mapIdx=DEFAULT_MAP_IDX,
+             r=200, mode_between_distance=50, debug_info=False,
+             threshold_drop_person=5, threshold_nbr_multiview_modes=2):
     """
         assuming number of joints = {n} and number of limbs = {m}
         generate 3d candidates for a single frame from {p} views
@@ -18,6 +20,7 @@ def estimate(Calib, heatmaps, pafs, limbSeq=DEFAULT_LIMB_SEQ, mapIdx=DEFAULT_MAP
     :param pafs: {np.array[p x h x w x m]}
     :param limbSeq: {np.array[m x 2]} ids represent the joint (relative to the heatmaps)
     :param mapIdx: {np.array[m x 2]} ids represent the positions in the paf
+    :param debug_info: {boolean} if True: return candidates object
     :return:
     """
     n_cameras = heatmaps.shape[0]
@@ -55,11 +58,13 @@ def estimate(Calib, heatmaps, pafs, limbSeq=DEFAULT_LIMB_SEQ, mapIdx=DEFAULT_MAP
             'tvec': tvec
         })
 
-    candidates = Candidates(Peaks_undist, Limb_Weights, Calib_undist, r=200, mode_between_distance=50)
+    candidates = Candidates(Peaks_undist, Limb_Weights, Calib_undist,
+                            r=r, mode_between_distance=mode_between_distance,
+                            threshold_drop_person=threshold_drop_person,
+                            threshold_nbr_multiview_modes=threshold_nbr_multiview_modes)
     humans = candidates.humans
 
-    # candidates = Candidates3d()
-    # candidates.triangulate(Peaks_undist, Limb_Weights, Calib_undist)
-    # modes, W = candidates.calculate_modes(200)
-    # humans = extract_human_pose.extract(modes, W, limbSeq)
-    return humans
+    if debug_info:
+        return humans, candidates
+    else:
+        return humans

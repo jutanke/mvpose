@@ -15,7 +15,8 @@ class Candidates:
                  limbSeq=DEFAULT_LIMB_SEQ,
                  sensible_limb_length=DEFAULT_SENSIBLE_LIMB_LENGTH,
                  mode_between_distance=50,
-                 threshold_drop_person=8):
+                 threshold_drop_person=8,
+                 threshold_nbr_multiview_modes=3):
         """
             triangulate all points in the cameras
         :param peaks: [{Peaks}]
@@ -29,6 +30,8 @@ class Candidates:
                         This is being used for clustering the detected mode of all points
         :param threshold_drop_person: {integer} if less then this threshold
                         items are found: drop the whole detection
+        :param threshold_nbr_multiview_modes: {integer} define how many modes per human must be seen
+                        from more than one camera pair
         :return: {Peaks3}, {LimbWeights3d}
         """
         n_cameras = len(Calib)
@@ -42,6 +45,9 @@ class Candidates:
         POINTS_3d = [np.zeros((0, 4))] * n_joints  # per joint
         META = [np.zeros((0, 4), 'int32')] * n_joints  # per joint: [(cam1, cam2, idx1, idx2) ... ]
         # the meta data maps the points to their respective 2d camera pair
+
+        self.peaks2d = peaks
+        self.limbs2d = limbs
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # step 1: triangulate points
@@ -238,7 +244,15 @@ class Candidates:
         rm = []
         for pid, human in humans.items():
             cnt = human['view_count']
-            if np.max(cnt) <= 1:
+            total = 0
+            for c in cnt:
+                if c > 1:
+                    total += 1
+
+            #threshold_nbr_multiview_modes
+
+            #if np.max(cnt) <= 1:
+            if total <= threshold_nbr_multiview_modes:
                 rm.append(pid)
 
         for pid in rm:
