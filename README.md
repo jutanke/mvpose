@@ -5,6 +5,11 @@ multiple view pose estimation
 The software is developed using Python 3.6 and we recommend to use Anaconda Python.
 The following additional (non-standard) libraries are needed:
 
+**google or-tools**: for solving optimization problems
+```bash
+pip install --user --upgrade ortools
+```
+
 **c3d**: for reading 3d data
 ```bash
 pip install c3d
