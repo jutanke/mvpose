@@ -59,6 +59,23 @@ def remove_distortion(I, cam):
     return cv2.remap(I, mapx, mapy, cv2.INTER_LINEAR), K_new
 
 
+def distort_points(points, mapx, mapy):
+    """
+        applies the distortion to the points
+    :param points:
+    :param mapx:
+    :param mapy:
+    :return:
+    """
+    new_points = points.copy()
+    for idx, (x,y,_) in enumerate(points):
+        x = int(x)
+        y = int(y)
+        new_points[idx, 0] = mapx[y,x]
+        new_points[idx, 1] = mapy[y,x]
+    return new_points
+
+
 def undistort_points(points, mapx, mapy):
     """
 
@@ -68,6 +85,7 @@ def undistort_points(points, mapx, mapy):
     :return:
     """
     # TODO maybe use numba
+    # TODO: This function is wrong!
     new_points = points.copy()
     for idx,(x,y,_) in enumerate(points):
         x = int(x)

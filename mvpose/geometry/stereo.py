@@ -209,6 +209,75 @@ def triangulate_argmax(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2):
     return joints_3d, idx_pairs_all
 
 
+def triangulate_with_weights(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2):
+    """
+        Points must be undistorted
+    :param peaks1: {Peaks}
+    :param K1:
+    :param rvec1:
+    :param tvec1:
+    :param peaks2: {Peaks}
+    :param K2:
+    :param rvec2:
+    :param tvec2:
+    :return:
+    """
+    assert peaks1.n_joints == peaks2.n_joints
+    n_joints = peaks1.n_joints
+    P1 = gm.get_projection_matrix_flat(K1, rvec1, tvec1)
+    P2 = gm.get_projection_matrix_flat(K2, rvec2, tvec2)
+
+    F = get_fundamental_matrix_flat(K1, rvec1, tvec1, 0,
+                                           K2, rvec2, tvec2, 0)
+
+    joints_3d = [None] * n_joints
+
+    for j in range(n_joints):
+        pts1 = peaks1[j]; n = len(pts1)
+        pts2 = peaks2[j]; m = len(pts2)
+
+        # (x, y, z, score1, score2, line dist1, line dist2)
+        W = []
+        Pt1 = []
+        Pt2 = []
+
+        if len(pts1) > 0 and len(pts2) > 0:
+            epilines_1to2 = np.squeeze(
+                cv2.computeCorrespondEpilines(pts1, 1, F))
+            if len(epilines_1to2.shape) <= 1:
+                epilines_1to2 = np.expand_dims(epilines_1to2, axis=0)
+
+            epilines_2to1 = np.squeeze(
+                cv2.computeCorrespondEpilines(pts2, 2, F))
+            if len(epilines_2to1.shape) <= 1:
+                epilines_2to1 = np.expand_dims(epilines_2to1, axis=0)
+
+            idx = 0
+            for p1, (a1, b1, c1) in zip(pts1, epilines_1to2):
+                for p2, (a2, b2, c2), in zip(pts2, epilines_2to1):
+                    w3 = gm.line_to_point_distance(a1, b1, c1, p2[0], p2[1])
+                    w4 = gm.line_to_point_distance(a2, b2, c2, p1[0], p1[1])
+                    w1 = p1[3]
+                    w2 = p2[3]
+
+                    W.append((w1, w2, w3, w4))
+                    Pt1.append(p1[0:2])
+                    Pt2.append(p2[0:2])
+
+            Pt1 = np.transpose(np.array(Pt1))
+            Pt2 = np.transpose(np.array(Pt2))
+            W = np.array(W)
+
+            pts3d = gm.from_homogeneous(
+                np.transpose(cv2.triangulatePoints(P1, P2, Pt1, Pt2)))
+
+            joints_3d[j] = np.concatenate([pts3d, W], axis=1)
+        else:
+            joints_3d[j] = np.zeros((0, 7))
+
+    return joints_3d
+
+
 def triangulate(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2):
     """
         triangulate
