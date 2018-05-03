@@ -10,6 +10,7 @@ from scipy.optimize import linear_sum_assignment
 import mvpose.pose_estimation.heatmaps as mvhm
 from mvpose.candidates import peaks as mvpeaks
 import cv2
+from ortools.linear_solver import pywraplp
 
 
 class GraphCutSolver:
@@ -166,7 +167,6 @@ class GraphCutSolver:
 
         assert len(limbSeq) == len(sensible_limb_length)
         for idx,((a,b), (length_min, length_max)) in enumerate(zip(limbSeq, sensible_limb_length)):
-
             # 3d peaks are setup as follows:
             #       (x,y,z,score1,score2,p2l-dist1,p2l-dist2)
             candA3d = Peaks3d[a]
@@ -180,7 +180,10 @@ class GraphCutSolver:
 
             for cid, cam in enumerate(self.Calib_undistorted):
                 K, rvec, tvec, distCoef = gm.get_camera_parameters(cam)
-                mapx, mapy = self.undistort_maps[cid]
+                #mapx, mapy = self.undistort_maps[cid]
+
+                U = Pafs[cid][:,:,a]
+                V = Pafs[cid][:,:,b]
 
                 ptsA2d, maskA = gm.reproject_points_to_2d(
                     candA3d[:,0:3], rvec, tvec, K, w, h, binary_mask=True)
@@ -188,22 +191,20 @@ class GraphCutSolver:
                     candB3d[:,0:3], rvec, tvec, K, w, h, binary_mask=True)
                 maskA = maskA == 1
                 maskB = maskB == 1
-
                 for i, (ptA, ptA3d, is_A_on_screen) in enumerate(zip(ptsA2d, candA3d, maskA)):
+                    if not is_A_on_screen:
+                        continue
+                    ptA = np.expand_dims(ptA, axis=0)
                     for j, (ptB, ptB3d, is_B_on_screen) in enumerate(zip(ptsB2d, candB3d, maskB)):
-                        if is_A_on_screen and is_B_on_screen:
+                        if is_B_on_screen:
                             distance = la.norm(ptA3d[0:3] - ptB3d[0:3])
                             if length_min < distance < length_max:
-                                ptA = np.expand_dims(ptA, axis=0)
                                 ptB = np.expand_dims(ptB, axis=0)
-                                line_int = mvpafs.calculate_line_integral(ptA, ptB, mapx, mapy)
+                                line_int = mvpafs.calculate_line_integral(ptA, ptB, U, V)
                                 w = np.squeeze(line_int)
                                 W[i,j] += w
 
-                                # build graph
-
-
-
-
-
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Step 5: create optimization problem
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
