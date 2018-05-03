@@ -3,6 +3,7 @@ import mvpose.geometry.geometry as gm
 from mvpose.geometry import stereo
 from mvpose.data.default_limbs import  DEFAULT_LIMB_SEQ, DEFAULT_SENSIBLE_LIMB_LENGTH
 from mvpose.algorithm.meanshift import find_all_modes
+from mvpose.pose_estimation import part_affinity_fields as mvpafs
 import numpy as np
 import numpy.linalg as la
 from scipy.optimize import linear_sum_assignment
@@ -128,7 +129,6 @@ class GraphCutSolver:
         for cid, cam in enumerate(self.Calib_undistorted):
             K, rvec, tvec, distCoef = gm.get_camera_parameters(cam)
             assert distCoef == 0
-            distCoef = np.zeros((5,1))  # to match OpenCV API
 
             Cand2d = self.candidates2d_undistorted[cid].copy()
             Cand2d_dist = self.candidates2d[cid].copy()
@@ -139,20 +139,7 @@ class GraphCutSolver:
 
             for k in range(n_joints):
                 Pts3d = Peaks3d[k][:, 0:3]
-                Pts3d = Pts3d.astype('float64')
-
-                pts2d, _ = cv2.projectPoints(Pts3d, rvec, tvec, K, distCoef)
-                pts2d = np.squeeze(pts2d)
-
-                # remove all points that are not visible in the view
-                x = pts2d[:, 0]
-                y = pts2d[:, 1]
-
-                mask = (x > 0) * 1
-                mask *= (x < w) * 1
-                mask *= (y > 0) * 1
-                mask *= (y < h) * 1
-                mask = np.nonzero(mask)
+                pts2d, mask = gm.reproject_points_to_2d(Pts3d, rvec, tvec, K, w, h)
 
                 W = np.squeeze(Peaks3d[k][mask,3:].copy())
                 pts2d = pts2d[mask]
@@ -170,6 +157,52 @@ class GraphCutSolver:
 
             self.candidates2d_undistorted[cid] = Cand2d
             self.candidates2d[cid] = Cand2d_dist
+
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Step 4: calculate the weights for the limbs
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        self.limbs3d = [None] * n_limbs
+
+        assert len(limbSeq) == len(sensible_limb_length)
+        for idx,((a,b), (length_min, length_max)) in enumerate(zip(limbSeq, sensible_limb_length)):
+
+            # 3d peaks are setup as follows:
+            #       (x,y,z,score1,score2,p2l-dist1,p2l-dist2)
+            candA3d = Peaks3d[a]
+            candB3d = Peaks3d[b]
+
+            nA = len(candA3d)
+            nB = len(candB3d)
+
+            W = np.zeros((nA, nB))
+            self.limbs3d[idx] = W
+
+            for cid, cam in enumerate(self.Calib_undistorted):
+                K, rvec, tvec, distCoef = gm.get_camera_parameters(cam)
+                mapx, mapy = self.undistort_maps[cid]
+
+                ptsA2d, maskA = gm.reproject_points_to_2d(
+                    candA3d[:,0:3], rvec, tvec, K, w, h, binary_mask=True)
+                ptsB2d, maskB = gm.reproject_points_to_2d(
+                    candB3d[:,0:3], rvec, tvec, K, w, h, binary_mask=True)
+                maskA = maskA == 1
+                maskB = maskB == 1
+
+                for i, (ptA, ptA3d, is_A_on_screen) in enumerate(zip(ptsA2d, candA3d, maskA)):
+                    for j, (ptB, ptB3d, is_B_on_screen) in enumerate(zip(ptsB2d, candB3d, maskB)):
+                        if is_A_on_screen and is_B_on_screen:
+                            distance = la.norm(ptA3d[0:3] - ptB3d[0:3])
+                            if length_min < distance < length_max:
+                                ptA = np.expand_dims(ptA, axis=0)
+                                ptB = np.expand_dims(ptB, axis=0)
+                                line_int = mvpafs.calculate_line_integral(ptA, ptB, mapx, mapy)
+                                w = np.squeeze(line_int)
+                                W[i,j] += w
+
+                                # build graph
+
+
 
 
 

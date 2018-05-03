@@ -19,7 +19,7 @@ def calculate_line_integral(candA, candB, mapx, mapy):
     assert len(candA.shape) == 2
     assert len(candB.shape) == 2
     assert candA.shape[1] == 2
-    assert candB.shape[2] == 2
+    assert candB.shape[1] == 2
     assert len(mapx.shape) == 2
     mid_num = 10
     nA = len(candA)

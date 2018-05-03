@@ -27,6 +27,36 @@ def line_to_point_distance(a,b,c,x,y):
     return abs(a*x + b*y + c) / sqrt(a**2 + b**2)
 
 
+def reproject_points_to_2d(pts3d, rvec, tvec, K, w, h, binary_mask=False):
+    """
+
+    :param pts3d:
+    :param rvec:
+    :param tvec:
+    :param K:
+    :param w:
+    :param h:
+    :return:
+    """
+    distCoef = np.zeros((5, 1))  # to match OpenCV API
+    Pts3d = pts3d.astype('float64')
+    pts2d, _ = cv2.projectPoints(Pts3d, rvec, tvec, K, distCoef)
+    pts2d = np.squeeze(pts2d)
+
+    x = pts2d[:, 0]
+    y = pts2d[:, 1]
+
+    mask = (x > 0) * 1
+    mask *= (x < w) * 1
+    mask *= (y > 0) * 1
+    mask *= (y < h) * 1
+
+    if not binary_mask:
+        mask = np.nonzero(mask)
+
+    return pts2d, mask
+
+
 def get_camera_parameters(cam):
     """
     helper function
