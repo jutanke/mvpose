@@ -27,12 +27,14 @@ class GraphCutSolver:
         :param limbSeq:
         :param sensible_limb_length:
         """
-        n_cameras, _, _, n_limbs = Pafs.shape
+        n_cameras, h, w, n_limbs = Pafs.shape
         n_limbs = int(n_limbs/2)
         assert r > 0
         assert n_limbs == len(DEFAULT_LIMB_SEQ)
         assert n_cameras == len(Calib)
         assert n_cameras == len(Heatmaps)
+        assert h == Heatmaps.shape[1]
+        assert w == Heatmaps.shape[2]
         assert n_cameras >= 3, 'The algorithm expects at least 3 views'
         if sigma == -1:
             r = sigma
@@ -108,3 +110,67 @@ class GraphCutSolver:
                     )
 
         self.peaks3d_weighted = Peaks3d
+
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Step 3: reproject all 3d points onto all 2d views
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # IMPORTANT: the points have to be distorted so that
+        #            we can safely work with the pafs (which
+        #            are only defined in the distorted world)
+
+        # defined as follows:
+        #       (x, y, score1, score2, point-line-dist1, point-line-dist1)
+
+        # TODO: this is bug-heavy memorywise...
+        self.candidates2d_undistorted = [[np.zeros((0, 6))] * n_joints] * n_cameras
+        self.candidates2d = [[np.zeros((0, 6))] * n_joints] * n_cameras
+
+        for cid, cam in enumerate(self.Calib_undistorted):
+            K, rvec, tvec, distCoef = gm.get_camera_parameters(cam)
+            assert distCoef == 0
+            distCoef = np.zeros((5,1))  # to match OpenCV API
+
+            Cand2d = self.candidates2d_undistorted[cid].copy()
+            Cand2d_dist = self.candidates2d[cid].copy()
+            assert len(Cand2d) == n_joints
+            assert len(Cand2d_dist) == n_joints
+
+            mapx, mapy = self.undistort_maps[cid]
+
+            for k in range(n_joints):
+                Pts3d = Peaks3d[k][:, 0:3]
+                Pts3d = Pts3d.astype('float64')
+
+                pts2d, _ = cv2.projectPoints(Pts3d, rvec, tvec, K, distCoef)
+                pts2d = np.squeeze(pts2d)
+
+                # remove all points that are not visible in the view
+                x = pts2d[:, 0]
+                y = pts2d[:, 1]
+
+                mask = (x > 0) * 1
+                mask *= (x < w) * 1
+                mask *= (y > 0) * 1
+                mask *= (y < h) * 1
+                mask = np.nonzero(mask)
+
+                W = np.squeeze(Peaks3d[k][mask,3:].copy())
+                pts2d = pts2d[mask]
+                qq = np.concatenate([pts2d, W], axis=1)
+                Cand2d[k] = qq
+                assert Cand2d[k].shape[1] == 6
+
+                pts2d_distorted = Cand2d[k].copy()
+                dist_xy = gm.distort_points(pts2d[:,0:2], mapx, mapy)
+
+                pts2d_distorted[:,0] = dist_xy[:,0]
+                pts2d_distorted[:,1] = dist_xy[:,1]
+
+                Cand2d_dist[k] = pts2d_distorted
+
+            self.candidates2d_undistorted[cid] = Cand2d
+            self.candidates2d[cid] = Cand2d_dist
+
+
+
+

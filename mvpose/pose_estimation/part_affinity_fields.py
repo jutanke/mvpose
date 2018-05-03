@@ -6,6 +6,55 @@ from mvpose.data.default_limbs import  DEFAULT_LIMB_SEQ, DEFAULT_MAP_IDX
 from mvpose.pose_estimation.limb_weights import LimbWeights
 
 
+def calculate_line_integral(candA, candB, mapx, mapy):
+    """
+        calculates the line integral for points
+    :param candA: [ (x,y), (x,y), ...]
+    :param candB: [ (x,y), (x,y), ...]
+    :param mapx: w x h
+    :param mapy: w x h
+    :return:
+    """
+    assert mapx.shape == mapy.shape
+    assert len(candA.shape) == 2
+    assert len(candB.shape) == 2
+    assert candA.shape[1] == 2
+    assert candB.shape[2] == 2
+    assert len(mapx.shape) == 2
+    mid_num = 10
+    nA = len(candA)
+    nB = len(candB)
+
+    mapx = np.expand_dims(mapx, axis=2)
+    mapy = np.expand_dims(mapy, axis=2)
+    score_mid = np.concatenate([mapx, mapy], axis=2)
+
+    W = np.zeros((nA * nB, 1))
+
+    cur_item = 0
+    for i in range(nA):
+        for j in range(nB):
+            d = np.subtract(candB[j], candA[i])
+            norm = la.norm(d)
+            if norm == 0:
+                cur_item += 1
+                continue
+            d = np.divide(d, norm)
+
+            iterX = np.linspace(candA[i][0], candB[j][0], mid_num)
+            iterY = np.linspace(candA[i][1], candB[j][1], mid_num)
+
+            for x, y in zip(iterX, iterY):
+                x_ = int(round(x))
+                y_ = int(round(y))
+                Lc = score_mid[y_, x_]
+                W[cur_item] += Lc @ d
+
+            cur_item += 1
+
+    return W
+
+
 def calculate_limb_weights(peaks, pafs, limbSeq=DEFAULT_LIMB_SEQ, mapIdx=DEFAULT_MAP_IDX):
     """
         Calculates the weights of the limbs given the peaks
