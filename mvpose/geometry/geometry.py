@@ -68,11 +68,18 @@ def distort_points(points, mapx, mapy):
     :return:
     """
     new_points = points.copy()
-    for idx, (x,y,_) in enumerate(points):
-        x = int(x)
-        y = int(y)
-        new_points[idx, 0] = mapx[y,x]
-        new_points[idx, 1] = mapy[y,x]
+    try:
+        for idx, (x,y,_) in enumerate(points):
+            x = int(x)
+            y = int(y)
+            new_points[idx, 0] = mapx[y,x]
+            new_points[idx, 1] = mapy[y,x]
+    except ValueError:
+        for idx, (x,y) in enumerate(points):
+            x = int(x)
+            y = int(y)
+            new_points[idx, 0] = mapx[y,x]
+            new_points[idx, 1] = mapy[y,x]
     return new_points
 
 
