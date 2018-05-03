@@ -257,8 +257,8 @@ def triangulate_with_weights(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2)
                 for p2, (a2, b2, c2), in zip(pts2, epilines_2to1):
                     w3 = gm.line_to_point_distance(a1, b1, c1, p2[0], p2[1])
                     w4 = gm.line_to_point_distance(a2, b2, c2, p1[0], p1[1])
-                    w1 = p1[3]
-                    w2 = p2[3]
+                    w1 = p1[2]
+                    w2 = p2[2]
 
                     W.append((w1, w2, w3, w4))
                     Pt1.append(p1[0:2])

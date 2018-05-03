@@ -27,13 +27,13 @@ class GraphCutSolver:
         :param limbSeq:
         :param sensible_limb_length:
         """
-        n_cams, _, _, n_limbs = Pafs.shape
-        n_limbs = n_limbs/2
+        n_cameras, _, _, n_limbs = Pafs.shape
+        n_limbs = int(n_limbs/2)
         assert r > 0
         assert n_limbs == len(DEFAULT_LIMB_SEQ)
-        assert n_cams == len(Calib)
-        assert n_cams == len(Heatmaps)
-        assert n_cams >= 3, 'The algorithm expects at least 3 views'
+        assert n_cameras == len(Calib)
+        assert n_cameras == len(Heatmaps)
+        assert n_cameras >= 3, 'The algorithm expects at least 3 views'
         if sigma == -1:
             r = sigma
 
@@ -46,10 +46,16 @@ class GraphCutSolver:
         self.undistort_maps = []
         self.Calib_undistorted = []
 
+        n_joints = -1
+
         for cid, cam in enumerate(Calib):
             hm = Heatmaps[cid]
             paf = Pafs[cid]
             peaks = mvhm.get_all_peaks(hm)
+            if n_joints < 0:
+                n_joints = peaks.n_joints
+            else:
+                assert n_joints == peaks.n_joints
             self.peaks2d.append(peaks)
 
             # -- undistort peaks --
@@ -65,7 +71,40 @@ class GraphCutSolver:
             peaks_undist = mvpeaks.Peaks.undistort(peaks, mapx, mapy)
             self.peaks2d_undistorted.append(peaks_undist)
 
+            self.Calib_undistorted.append({
+                'K': K_new,
+                'distCoeff': 0,
+                'rvec': rvec,
+                'tvec': tvec
+            })
+
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Step 2: triangulate all points
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+        Peaks3d = [np.zeros((0, 7))] * n_joints
+
+        for cam1 in range(n_cameras - 1):
+            K1, rvec1, tvec1, distCoef1 = \
+                gm.get_camera_parameters(self.Calib_undistorted[cam1])
+            assert distCoef1 == 0
+            peaks1 = self.peaks2d_undistorted[cam1]
+
+            for cam2 in range(cam1 + 1, n_cameras):
+                K2, rvec2, tvec2, distCoef2 = \
+                    gm.get_camera_parameters(self.Calib_undistorted[cam2])
+                assert distCoef2 == 0
+                peaks2 = self.peaks2d_undistorted[cam2]
+
+                peaks3d = stereo.triangulate_with_weights(
+                    peaks1, K1, rvec1, tvec2,
+                    peaks2, K2, rvec2, tvec2
+                )
+                assert len(peaks3d) == n_joints
+
+                for k in range(n_joints):
+                    Peaks3d[k] = np.concatenate(
+                        [Peaks3d[k], peaks3d[k]], axis=0
+                    )
+
+        self.peaks3d_weighted = Peaks3d

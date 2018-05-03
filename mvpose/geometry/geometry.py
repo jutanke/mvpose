@@ -94,6 +94,7 @@ def undistort_points(points, mapx, mapy):
         dy = y - mapy[y, x]
         new_points[idx, 0] = x + dx
         new_points[idx, 1] = y + dy
+
     return new_points
 
 
