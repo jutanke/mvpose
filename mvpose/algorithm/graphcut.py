@@ -177,9 +177,7 @@ class GraphCutSolver:
             nB = len(candB3d)
 
             W = np.zeros((nA, nB))
-            self.limbs3d[idx] = W
 
-            #for cid, cam in enumerate(self.Calib_undistorted):
             for cid, cam in enumerate(Calib):
                 K, rvec, tvec, distCoef = gm.get_camera_parameters(cam)
 
@@ -192,18 +190,22 @@ class GraphCutSolver:
                     candB3d[:,0:3], rvec, tvec, K, w, h, distCoef=distCoef, binary_mask=True)
                 maskA = maskA == 1
                 maskB = maskB == 1
+
                 for i, (ptA, ptA3d, is_A_on_screen) in enumerate(zip(ptsA2d, candA3d, maskA)):
                     if not is_A_on_screen:
                         continue
                     ptA = np.expand_dims(ptA, axis=0)
                     for j, (ptB, ptB3d, is_B_on_screen) in enumerate(zip(ptsB2d, candB3d, maskB)):
-                        if is_B_on_screen:
-                            distance = la.norm(ptA3d[0:3] - ptB3d[0:3])
-                            if length_min < distance < length_max:
-                                ptB = np.expand_dims(ptB, axis=0)
-                                line_int = mvpafs.calculate_line_integral(ptA, ptB, U, V)
-                                w = np.squeeze(line_int)
-                                W[i,j] += w
+                        if not is_B_on_screen:
+                            continue
+                        distance = la.norm(ptA3d[0:3] - ptB3d[0:3])
+                        if length_min < distance < length_max:
+                            ptB = np.expand_dims(ptB, axis=0)
+                            line_int = mvpafs.calculate_line_integral(ptA, ptB, U, V)
+                            score = np.squeeze(line_int)
+                            W[i,j] += score
+
+            self.limbs3d[idx] = W
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Step 5: create optimization problem
