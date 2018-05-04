@@ -210,4 +210,8 @@ class GraphCutSolver:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Step 5: create optimization problem
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # creating poses is done in stages: first we optimize the
+        # right limb candidates
+
+
 
