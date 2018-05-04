@@ -1,7 +1,7 @@
 from mvpose.pose_estimation import limb_weights
 import mvpose.geometry.geometry as gm
 from mvpose.geometry import stereo
-from mvpose.data.default_limbs import  DEFAULT_LIMB_SEQ, DEFAULT_SENSIBLE_LIMB_LENGTH
+from mvpose.data.default_limbs import  DEFAULT_LIMB_SEQ, DEFAULT_SENSIBLE_LIMB_LENGTH, DEFAULT_MAP_IDX
 from mvpose.algorithm.meanshift import find_all_modes
 from mvpose.pose_estimation import part_affinity_fields as mvpafs
 import numpy as np
@@ -18,6 +18,7 @@ class GraphCutSolver:
     def __init__(self, Heatmaps, Pafs, Calib, r, sigma=-1,
                  limbSeq=DEFAULT_LIMB_SEQ,
                  sensible_limb_length=DEFAULT_SENSIBLE_LIMB_LENGTH,
+                 limbMapIdx=DEFAULT_MAP_IDX
                  ):
         """
             Extract 3d pose from images and cameras
@@ -54,7 +55,6 @@ class GraphCutSolver:
 
         for cid, cam in enumerate(Calib):
             hm = Heatmaps[cid]
-            paf = Pafs[cid]
             peaks = mvhm.get_all_peaks(hm)
             if n_joints < 0:
                 n_joints = peaks.n_joints
@@ -166,7 +166,8 @@ class GraphCutSolver:
         self.limbs3d = [None] * n_limbs
 
         assert len(limbSeq) == len(sensible_limb_length)
-        for idx,((a,b), (length_min, length_max)) in enumerate(zip(limbSeq, sensible_limb_length)):
+        for idx,((a,b), (length_min, length_max), (pafA, pafB)) in \
+                enumerate(zip(limbSeq, sensible_limb_length, limbMapIdx)):
             # 3d peaks are setup as follows:
             #       (x,y,z,score1,score2,p2l-dist1,p2l-dist2)
             candA3d = Peaks3d[a]
@@ -178,17 +179,17 @@ class GraphCutSolver:
             W = np.zeros((nA, nB))
             self.limbs3d[idx] = W
 
-            for cid, cam in enumerate(self.Calib_undistorted):
+            #for cid, cam in enumerate(self.Calib_undistorted):
+            for cid, cam in enumerate(Calib):
                 K, rvec, tvec, distCoef = gm.get_camera_parameters(cam)
-                #mapx, mapy = self.undistort_maps[cid]
 
-                U = Pafs[cid][:,:,a]
-                V = Pafs[cid][:,:,b]
+                U = Pafs[cid,:,:,pafA]
+                V = Pafs[cid,:,:,pafB]
 
                 ptsA2d, maskA = gm.reproject_points_to_2d(
-                    candA3d[:,0:3], rvec, tvec, K, w, h, binary_mask=True)
+                    candA3d[:,0:3], rvec, tvec, K, w, h, distCoef=distCoef, binary_mask=True)
                 ptsB2d, maskB = gm.reproject_points_to_2d(
-                    candB3d[:,0:3], rvec, tvec, K, w, h, binary_mask=True)
+                    candB3d[:,0:3], rvec, tvec, K, w, h, distCoef=distCoef, binary_mask=True)
                 maskA = maskA == 1
                 maskB = maskB == 1
                 for i, (ptA, ptA3d, is_A_on_screen) in enumerate(zip(ptsA2d, candA3d, maskA)):
