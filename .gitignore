@@ -1,3 +1,7 @@
+~/
+*.gv
+*.gv.pdf
+*.dot
 *.mp4
 *.png
 *.zip
