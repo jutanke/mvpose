@@ -9,7 +9,9 @@ import numpy.linalg as la
 from scipy.optimize import linear_sum_assignment
 import mvpose.pose_estimation.heatmaps as mvhm
 from mvpose.candidates import peaks as mvpeaks
+from scipy.special import comb
 import cv2
+from time import time
 from ortools.linear_solver import pywraplp
 
 
@@ -18,7 +20,7 @@ class GraphCutSolver:
     def __init__(self, Heatmaps, Pafs, Calib, r, sigma=-1,
                  limbSeq=DEFAULT_LIMB_SEQ,
                  sensible_limb_length=DEFAULT_SENSIBLE_LIMB_LENGTH,
-                 limbMapIdx=DEFAULT_MAP_IDX
+                 limbMapIdx=DEFAULT_MAP_IDX, debug=False
                  ):
         """
             Extract 3d pose from images and cameras
@@ -32,6 +34,7 @@ class GraphCutSolver:
         """
         n_cameras, h, w, n_limbs = Pafs.shape
         n_limbs = int(n_limbs/2)
+        CAMERA_NORM = comb(n_cameras, 2)  # this is needed to make the 3d pafs be between -1 .. 1
         assert r > 0
         assert n_limbs == len(DEFAULT_LIMB_SEQ)
         assert n_cameras == len(Calib)
@@ -45,6 +48,7 @@ class GraphCutSolver:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Step 1: get all peaks
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        _start = time()
         self.peaks2d = []
         self.peaks2d_undistorted = []
 
@@ -81,11 +85,15 @@ class GraphCutSolver:
                 'rvec': rvec,
                 'tvec': tvec
             })
+        _end = time()
+        if debug:
+            print("[GRAPHCUT] step1 elapsed:", _end - _start)
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Step 2: triangulate all points
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+        _start = time()
         Peaks3d = [np.zeros((0, 7))] * n_joints
 
         for cam1 in range(n_cameras - 1):
@@ -112,6 +120,9 @@ class GraphCutSolver:
                     )
 
         self.peaks3d_weighted = Peaks3d
+        _end = time()
+        if debug:
+            print("[GRAPHCUT] step2 elapsed:", _end - _start)
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Step 3: reproject all 3d points onto all 2d views
@@ -123,6 +134,7 @@ class GraphCutSolver:
         # defined as follows:
         #       (x, y, score1, score2, point-line-dist1, point-line-dist1)
 
+        _start = time()
         # TODO: this is bug-heavy memorywise...
         self.candidates2d_undistorted = [[np.zeros((0, 6))] * n_joints] * n_cameras
         self.candidates2d = [[np.zeros((0, 6))] * n_joints] * n_cameras
@@ -158,11 +170,16 @@ class GraphCutSolver:
 
             self.candidates2d_undistorted[cid] = Cand2d
             self.candidates2d[cid] = Cand2d_dist
+        _end = time()
+        if debug:
+            print("[GRAPHCUT] step3 elapsed:", _end - _start)
+
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Step 4: calculate the weights for the limbs
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+        _start = time()
         self.limbs3d = [None] * n_limbs
 
         assert len(limbSeq) == len(sensible_limb_length)
@@ -202,10 +219,13 @@ class GraphCutSolver:
                         if length_min < distance < length_max:
                             ptB = np.expand_dims(ptB, axis=0)
                             line_int = mvpafs.calculate_line_integral(ptA, ptB, U, V)
-                            score = np.squeeze(line_int)
+                            score = np.squeeze(line_int) / CAMERA_NORM
                             W[i,j] += score
 
             self.limbs3d[idx] = W
+        _end = time()
+        if debug:
+            print("[GRAPHCUT] step4 elapsed:", _end - _start)
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Step 5: create optimization problem

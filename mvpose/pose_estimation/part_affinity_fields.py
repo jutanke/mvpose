@@ -4,9 +4,10 @@ from numba import jit, float64
 from mvpose.compiler.numba_types import  int32_2d_const, float64_2d_const
 from mvpose.data.default_limbs import  DEFAULT_LIMB_SEQ, DEFAULT_MAP_IDX
 from mvpose.pose_estimation.limb_weights import LimbWeights
+from mvpose.plot.limbs import draw_vector_field
 
 
-def calculate_line_integral(candA, candB, mapx, mapy):
+def calculate_line_integral(candA, candB, mapx, mapy, normalize=True):
     """
         calculates the line integral for points
     :param candA: [ (x,y), (x,y), ...]
@@ -24,6 +25,12 @@ def calculate_line_integral(candA, candB, mapx, mapy):
     mid_num = 10
     nA = len(candA)
     nB = len(candB)
+
+    # if normalize:
+    #     Vec = draw_vector_field(mapx, mapy)
+    #     norm_constant = np.max(Vec)
+    # else:
+    #     norm_constant = 1
 
     mapx = np.expand_dims(mapx, axis=2)
     mapy = np.expand_dims(mapy, axis=2)
@@ -52,7 +59,13 @@ def calculate_line_integral(candA, candB, mapx, mapy):
 
             cur_item += 1
 
-    return W
+    if normalize:
+        # the vector field should not have larger values then 1
+        #Vec = draw_vector_field(mapx, mapy)
+        pass
+
+    #return (W/mid_num)/norm_constant
+    return W/mid_num
 
 
 def calculate_limb_weights(peaks, pafs, limbSeq=DEFAULT_LIMB_SEQ, mapIdx=DEFAULT_MAP_IDX):
