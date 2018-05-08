@@ -209,7 +209,7 @@ def triangulate_argmax(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2):
     return joints_3d, idx_pairs_all
 
 
-def triangulate_with_weights(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2):
+def triangulate_with_weights(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2, max_epi_distance=-1):
     """
         Points must be undistorted
     :param peaks1: {Peaks}
@@ -220,6 +220,7 @@ def triangulate_with_weights(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2)
     :param K2:
     :param rvec2:
     :param tvec2:
+    :param max_epi_distance: {float} defines the maximal allowed distance in pixels from point to epipolar line
     :return:
     """
     assert peaks1.n_joints == peaks2.n_joints
@@ -260,18 +261,25 @@ def triangulate_with_weights(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2)
                     w1 = p1[2]
                     w2 = p2[2]
 
+                    if max_epi_distance > 0 and (w3 > max_epi_distance or w4 > max_epi_distance):
+                        # skip if the distance is too far from the point to epi-line
+                        continue
+
                     W.append((w1, w2, w3, w4))
                     Pt1.append(p1[0:2])
                     Pt2.append(p2[0:2])
 
-            Pt1 = np.transpose(np.array(Pt1))
-            Pt2 = np.transpose(np.array(Pt2))
-            W = np.array(W)
+            if len(Pt1) > 0:
+                Pt1 = np.transpose(np.array(Pt1))
+                Pt2 = np.transpose(np.array(Pt2))
+                W = np.array(W)
 
-            pts3d = gm.from_homogeneous(
-                np.transpose(cv2.triangulatePoints(P1, P2, Pt1, Pt2)))
+                pts3d = gm.from_homogeneous(
+                    np.transpose(cv2.triangulatePoints(P1, P2, Pt1, Pt2)))
 
-            joints_3d[j] = np.concatenate([pts3d, W], axis=1)
+                joints_3d[j] = np.concatenate([pts3d, W], axis=1)
+            else:
+                joints_3d[j] = np.zeros((0, 7))
         else:
             joints_3d[j] = np.zeros((0, 7))
 

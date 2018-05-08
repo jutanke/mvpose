@@ -43,6 +43,8 @@ def reproject_points_to_2d(pts3d, rvec, tvec, K, w, h,
     Pts3d = pts3d.astype('float64')
     pts2d, _ = cv2.projectPoints(Pts3d, rvec, tvec, K, distCoef)
     pts2d = np.squeeze(pts2d)
+    if len(pts2d.shape) == 1:
+        pts2d = np.expand_dims(pts2d, axis=0)
 
     x = pts2d[:, 0]
     y = pts2d[:, 1]

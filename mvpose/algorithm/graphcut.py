@@ -34,7 +34,6 @@ class GraphCutSolver:
         """
         n_cameras, h, w, n_limbs = Pafs.shape
         n_limbs = int(n_limbs/2)
-        CAMERA_NORM = comb(n_cameras, 2)  # this is needed to make the 3d pafs be between -1 .. 1
         assert r > 0
         assert n_limbs == len(DEFAULT_LIMB_SEQ)
         assert n_cameras == len(Calib)
@@ -110,7 +109,7 @@ class GraphCutSolver:
 
                 peaks3d = stereo.triangulate_with_weights(
                     peaks1, K1, rvec1, tvec2,
-                    peaks2, K2, rvec2, tvec2
+                    peaks2, K2, rvec2, tvec2, max_epi_distance=50
                 )
                 assert len(peaks3d) == n_joints
 
@@ -152,21 +151,27 @@ class GraphCutSolver:
 
             for k in range(n_joints):
                 Pts3d = Peaks3d[k][:, 0:3]
-                pts2d, mask = gm.reproject_points_to_2d(Pts3d, rvec, tvec, K, w, h)
+                n_points = Pts3d.shape[0]
+                if n_points > 0:
 
-                W = np.squeeze(Peaks3d[k][mask,3:].copy())
-                pts2d = pts2d[mask]
-                qq = np.concatenate([pts2d, W], axis=1)
-                Cand2d[k] = qq
-                assert Cand2d[k].shape[1] == 6
+                    pts2d, mask = gm.reproject_points_to_2d(Pts3d, rvec, tvec, K, w, h)
 
-                pts2d_distorted = Cand2d[k].copy()
-                dist_xy = gm.distort_points(pts2d[:,0:2], mapx, mapy)
+                    W = np.squeeze(Peaks3d[k][mask, 3:].copy())
+                    if len(W.shape) == 1:
+                        W = np.expand_dims(W, axis=0)
 
-                pts2d_distorted[:,0] = dist_xy[:,0]
-                pts2d_distorted[:,1] = dist_xy[:,1]
+                    pts2d = pts2d[mask]
+                    qq = np.concatenate([pts2d, W], axis=1)
+                    Cand2d[k] = qq
+                    assert Cand2d[k].shape[1] == 6
 
-                Cand2d_dist[k] = pts2d_distorted
+                    pts2d_distorted = Cand2d[k].copy()
+                    dist_xy = gm.distort_points(pts2d[:, 0:2], mapx, mapy)
+
+                    pts2d_distorted[:, 0] = dist_xy[:, 0]
+                    pts2d_distorted[:, 1] = dist_xy[:, 1]
+
+                    Cand2d_dist[k] = pts2d_distorted
 
             self.candidates2d_undistorted[cid] = Cand2d
             self.candidates2d[cid] = Cand2d_dist
@@ -174,12 +179,11 @@ class GraphCutSolver:
         if debug:
             print("[GRAPHCUT] step3 elapsed:", _end - _start)
 
-
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Step 4: calculate the weights for the limbs
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
         _start = time()
+        CAMERA_NORM = comb(n_cameras, 2)  # this is needed to make the 3d pafs be between -1 .. 1
         self.limbs3d = [None] * n_limbs
 
         assert len(limbSeq) == len(sensible_limb_length)
@@ -195,32 +199,33 @@ class GraphCutSolver:
 
             W = np.zeros((nA, nB))
 
-            for cid, cam in enumerate(Calib):
-                K, rvec, tvec, distCoef = gm.get_camera_parameters(cam)
+            if nA > 0 and nB > 0:
+                for cid, cam in enumerate(Calib):
+                    K, rvec, tvec, distCoef = gm.get_camera_parameters(cam)
 
-                U = Pafs[cid,:,:,pafA]
-                V = Pafs[cid,:,:,pafB]
+                    U = Pafs[cid,:,:,pafA]
+                    V = Pafs[cid,:,:,pafB]
 
-                ptsA2d, maskA = gm.reproject_points_to_2d(
-                    candA3d[:,0:3], rvec, tvec, K, w, h, distCoef=distCoef, binary_mask=True)
-                ptsB2d, maskB = gm.reproject_points_to_2d(
-                    candB3d[:,0:3], rvec, tvec, K, w, h, distCoef=distCoef, binary_mask=True)
-                maskA = maskA == 1
-                maskB = maskB == 1
+                    ptsA2d, maskA = gm.reproject_points_to_2d(
+                        candA3d[:,0:3], rvec, tvec, K, w, h, distCoef=distCoef, binary_mask=True)
+                    ptsB2d, maskB = gm.reproject_points_to_2d(
+                        candB3d[:,0:3], rvec, tvec, K, w, h, distCoef=distCoef, binary_mask=True)
+                    maskA = maskA == 1
+                    maskB = maskB == 1
 
-                for i, (ptA, ptA3d, is_A_on_screen) in enumerate(zip(ptsA2d, candA3d, maskA)):
-                    if not is_A_on_screen:
-                        continue
-                    ptA = np.expand_dims(ptA, axis=0)
-                    for j, (ptB, ptB3d, is_B_on_screen) in enumerate(zip(ptsB2d, candB3d, maskB)):
-                        if not is_B_on_screen:
+                    for i, (ptA, ptA3d, is_A_on_screen) in enumerate(zip(ptsA2d, candA3d, maskA)):
+                        if not is_A_on_screen:
                             continue
-                        distance = la.norm(ptA3d[0:3] - ptB3d[0:3])
-                        if length_min < distance < length_max:
-                            ptB = np.expand_dims(ptB, axis=0)
-                            line_int = mvpafs.calculate_line_integral(ptA, ptB, U, V)
-                            score = np.squeeze(line_int) / CAMERA_NORM
-                            W[i,j] += score
+                        ptA = np.expand_dims(ptA, axis=0)
+                        for j, (ptB, ptB3d, is_B_on_screen) in enumerate(zip(ptsB2d, candB3d, maskB)):
+                            if not is_B_on_screen:
+                                continue
+                            distance = la.norm(ptA3d[0:3] - ptB3d[0:3])
+                            if length_min < distance < length_max:
+                                ptB = np.expand_dims(ptB, axis=0)
+                                line_int = mvpafs.calculate_line_integral(ptA, ptB, U, V)
+                                score = np.squeeze(line_int) / CAMERA_NORM
+                                W[i, j] += score
 
             self.limbs3d[idx] = W
         _end = time()

@@ -5,6 +5,7 @@ from mvpose.compiler.numba_types import  int32_2d_const, float64_2d_const
 from mvpose.data.default_limbs import  DEFAULT_LIMB_SEQ, DEFAULT_MAP_IDX
 from mvpose.pose_estimation.limb_weights import LimbWeights
 from mvpose.plot.limbs import draw_vector_field
+from mvpose.geometry import vector_fields as vec
 
 
 def calculate_line_integral(candA, candB, mapx, mapy, normalize=True):
@@ -26,11 +27,8 @@ def calculate_line_integral(candA, candB, mapx, mapy, normalize=True):
     nA = len(candA)
     nB = len(candB)
 
-    # if normalize:
-    #     Vec = draw_vector_field(mapx, mapy)
-    #     norm_constant = np.max(Vec)
-    # else:
-    #     norm_constant = 1
+    if normalize:
+        mapx, mapy = vec.clamp_to_1(mapx, mapy)
 
     mapx = np.expand_dims(mapx, axis=2)
     mapy = np.expand_dims(mapy, axis=2)
@@ -59,12 +57,6 @@ def calculate_line_integral(candA, candB, mapx, mapy, normalize=True):
 
             cur_item += 1
 
-    if normalize:
-        # the vector field should not have larger values then 1
-        #Vec = draw_vector_field(mapx, mapy)
-        pass
-
-    #return (W/mid_num)/norm_constant
     return W/mid_num
 
 
