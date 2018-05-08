@@ -209,7 +209,7 @@ def triangulate_argmax(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2):
     return joints_3d, idx_pairs_all
 
 
-def triangulate_with_weights(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2, max_epi_distance=-1):
+def triangulate_with_weights(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2, max_epi_distance=-1, no_weight=False):
     """
         Points must be undistorted
     :param peaks1: {Peaks}
@@ -223,8 +223,13 @@ def triangulate_with_weights(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2,
     :param max_epi_distance: {float} defines the maximal allowed distance in pixels from point to epipolar line
     :return:
     """
-    assert peaks1.n_joints == peaks2.n_joints
-    n_joints = peaks1.n_joints
+    try:
+        assert peaks1.n_joints == peaks2.n_joints
+        n_joints = peaks1.n_joints
+    except AttributeError:
+        assert len(peaks1) == len(peaks2)
+        n_joints = len(peaks1)
+
     P1 = gm.get_projection_matrix_flat(K1, rvec1, tvec1)
     P2 = gm.get_projection_matrix_flat(K2, rvec2, tvec2)
 
@@ -234,8 +239,8 @@ def triangulate_with_weights(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2,
     joints_3d = [None] * n_joints
 
     for j in range(n_joints):
-        pts1 = peaks1[j]; n = len(pts1)
-        pts2 = peaks2[j]; m = len(pts2)
+        pts1 = peaks1[j]
+        pts2 = peaks2[j]
 
         # (x, y, z, score1, score2, line dist1, line dist2)
         W = []
@@ -253,7 +258,6 @@ def triangulate_with_weights(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2,
             if len(epilines_2to1.shape) <= 1:
                 epilines_2to1 = np.expand_dims(epilines_2to1, axis=0)
 
-            idx = 0
             for p1, (a1, b1, c1) in zip(pts1, epilines_1to2):
                 for p2, (a2, b2, c2), in zip(pts2, epilines_2to1):
                     w3 = gm.line_to_point_distance(a1, b1, c1, p2[0], p2[1])

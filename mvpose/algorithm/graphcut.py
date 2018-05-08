@@ -109,7 +109,7 @@ class GraphCutSolver:
                 peaks2 = self.peaks2d_undistorted[cam2]
 
                 peaks3d = stereo.triangulate_with_weights(
-                    peaks1, K1, rvec1, tvec2,
+                    peaks1, K1, rvec1, tvec1,
                     peaks2, K2, rvec2, tvec2, max_epi_distance=max_epi_distance
                 )
                 assert len(peaks3d) == n_joints
