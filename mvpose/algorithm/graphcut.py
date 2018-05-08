@@ -20,7 +20,8 @@ class GraphCutSolver:
     def __init__(self, Heatmaps, Pafs, Calib, r, sigma=-1,
                  limbSeq=DEFAULT_LIMB_SEQ,
                  sensible_limb_length=DEFAULT_SENSIBLE_LIMB_LENGTH,
-                 limbMapIdx=DEFAULT_MAP_IDX, debug=False
+                 limbMapIdx=DEFAULT_MAP_IDX, debug=False,
+                 max_epi_distance=100
                  ):
         """
             Extract 3d pose from images and cameras
@@ -109,7 +110,7 @@ class GraphCutSolver:
 
                 peaks3d = stereo.triangulate_with_weights(
                     peaks1, K1, rvec1, tvec2,
-                    peaks2, K2, rvec2, tvec2, max_epi_distance=50
+                    peaks2, K2, rvec2, tvec2, max_epi_distance=max_epi_distance
                 )
                 assert len(peaks3d) == n_joints
 
@@ -203,29 +204,39 @@ class GraphCutSolver:
                 for cid, cam in enumerate(Calib):
                     K, rvec, tvec, distCoef = gm.get_camera_parameters(cam)
 
-                    U = Pafs[cid,:,:,pafA]
-                    V = Pafs[cid,:,:,pafB]
+                    U = Pafs[cid, :, :, pafA]
+                    V = Pafs[cid, :, :, pafB]
 
                     ptsA2d, maskA = gm.reproject_points_to_2d(
-                        candA3d[:,0:3], rvec, tvec, K, w, h, distCoef=distCoef, binary_mask=True)
+                        candA3d[:, 0:3], rvec, tvec, K, w, h, distCoef=distCoef, binary_mask=True)
                     ptsB2d, maskB = gm.reproject_points_to_2d(
-                        candB3d[:,0:3], rvec, tvec, K, w, h, distCoef=distCoef, binary_mask=True)
+                        candB3d[:, 0:3], rvec, tvec, K, w, h, distCoef=distCoef, binary_mask=True)
                     maskA = maskA == 1
                     maskB = maskB == 1
+
+                    ptA_candidates = []
+                    ptB_candidates = []
+                    pair_candidates = []
 
                     for i, (ptA, ptA3d, is_A_on_screen) in enumerate(zip(ptsA2d, candA3d, maskA)):
                         if not is_A_on_screen:
                             continue
-                        ptA = np.expand_dims(ptA, axis=0)
                         for j, (ptB, ptB3d, is_B_on_screen) in enumerate(zip(ptsB2d, candB3d, maskB)):
                             if not is_B_on_screen:
                                 continue
                             distance = la.norm(ptA3d[0:3] - ptB3d[0:3])
                             if length_min < distance < length_max:
-                                ptB = np.expand_dims(ptB, axis=0)
-                                line_int = mvpafs.calculate_line_integral(ptA, ptB, U, V)
-                                score = np.squeeze(line_int) / CAMERA_NORM
-                                W[i, j] += score
+                                ptA_candidates.append(ptA)
+                                ptB_candidates.append(ptB)
+                                pair_candidates.append((i, j))
+
+                    if len(ptA_candidates) > 0:
+                        line_int = mvpafs.calculate_line_integral_elementwise(
+                            np.array(ptA_candidates), np.array(ptB_candidates), U, V)
+                        assert len(line_int) == len(pair_candidates)
+                        line_int = np.squeeze(line_int / CAMERA_NORM)
+                        for score, (i, j) in zip(line_int, pair_candidates):
+                            W[i, j] += score
 
             self.limbs3d[idx] = W
         _end = time()
