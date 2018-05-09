@@ -1,5 +1,6 @@
 import networkx as nx
 from cselect import color as cs
+import numpy as np
 
 
 class TransitivityLookup:
@@ -15,7 +16,8 @@ class TransitivityLookup:
         :param E_j: set of all joint edges: [ (jid, a, b), ... ]
         """
 
-        ncolors = cs.lincolor(25)/255
+        n_joints = np.max(np.array(D)[:,0])
+        ncolors = cs.lincolor(n_joints +2)/255
 
         G = nx.Graph()
         self.lookup = {}
@@ -59,35 +61,51 @@ class TransitivityLookup:
         """
         G = self.G
 
-        node = self.lookup[jid1, a]
+        n_a = self.lookup[jid1, a]
 
-        N = frozenset(G.neighbors(node))
+        N = frozenset(G.neighbors(n_a))
 
         intra = []
         inter = []
 
-        for n in N:
-            jid2, b = self.reverse_lookup[n]
+        inter_already_handled = set()
 
-            n_neighbor = frozenset(G.neighbors(n))
+        for n_b in N:
+            jid2, b = self.reverse_lookup[n_b]
+            n_neighbor = frozenset(G.neighbors(n_b))
             intersection = N.intersection(n_neighbor)
-            for n2 in intersection:
-                jid3, c = self.reverse_lookup[n2]
+
+            for n_c in intersection:
+                jid3, c = self.reverse_lookup[n_c]
 
                 c1 = jid1 == jid2
                 c2 = jid1 == jid3
                 c3 = jid2 == jid3
 
                 if c1 and c3:
-                    intra.append(
-                        (jid1, a, b, c)
-                    )
+                    # a < c must be true so that we ignore symmetric cases:
+                    #
+                    #  * * * * * *
+                    #  *         *
+                    # [a]--[b]--[c]  ==> (a, b) -> (c)
+                    #                    (c, b) -> (a)
+                    if a < b < c:
+                        intra.append(
+                            (jid1, a, b, c)
+                        )
                 elif c1:
-                    inter.append((jid1, a, b, jid3, c))
+                    if a < b and jid1 < jid3 and not (n_a, n_b, n_c) in inter_already_handled:
+                        inter.append((jid1, a, b, jid3, c))
+                        inter_already_handled.add((n_a, n_b, n_c))
                 elif c2:
-                    inter.append((jid1, a, c, jid2, b))
+                    if a < c and jid1 < jid2 and not (n_a, n_c, n_b) in inter_already_handled:
+                        inter.append((jid1, a, c, jid2, b))
+                        inter_already_handled.add((n_a, n_c, n_b))
                 elif c3:
-                    inter.append((jid2, b, c, jid1, a))
+                    pass
+                    # if b < c and not (n_b, n_c, n_a) in inter_already_handled:
+                    #     inter.append((jid2, b, c, jid1, a))
+                    #     inter_already_handled.add((n_b, n_c, n_a))
                 else:
                     raise ValueError("qq")
 
