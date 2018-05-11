@@ -57,7 +57,7 @@ class TransitivityLookup:
         :param a:
         :return: intra and inter transitivity lists:
             intra: [ (jid, a, b, c), ...]
-            inter: [ (jid1, a, b, jid2, c), ...]
+            inter: [ (jid1, a, jid2 b, jid3, c), ...]
         """
         G = self.G
 
@@ -102,11 +102,15 @@ class TransitivityLookup:
                         inter.append((jid1, a, c, jid2, b))
                         inter_already_handled.add((n_a, n_c, n_b))
                 elif c3:
-                    pass
+                    pass  # this is being handled in another setup
                     # if b < c and not (n_b, n_c, n_a) in inter_already_handled:
                     #     inter.append((jid2, b, c, jid1, a))
                     #     inter_already_handled.add((n_b, n_c, n_a))
-                else:
-                    raise ValueError("qq")
+                else:  # circle
+                    pass
+                    # if jid1 < jid2 < jid3 and not (n_a, n_c, n_b) in inter_already_handled:
+                    #     inter.append((jid1, a, jid2, b, jid3, c))
+                    #     inter_already_handled.add((n_a, n_c, n_b))
+                    #raise ValueError("jids:", (jid1, jid2, jid3))
 
         return intra, inter
