@@ -29,26 +29,44 @@ def calculate_distance_all4all_opti(A, B, max_distance, min_distance, AB_are_the
     result_ids = np.zeros((n * m, 3))
     FCTR = 1 if AB_are_the_same else 0  # makes j start counting from 0 every time
 
-    cur_pointer = 0
-    for i in range(n):
-        for j in range(FCTR*(i+1), m):
-            x1 = A[i, 0]
-            y1 = A[i, 1]
-            z1 = A[i, 2]
-            x2 = B[j, 0]
-            y2 = B[j, 1]
-            z2 = B[j, 2]
-            d = point_to_point_distance(x1, y1, z1, x2, y2, z2)
-            if min_distance < d < max_distance:
+    if max_distance == 0 and min_distance == 0:  # no distance min/max range considered!
+        cur_pointer = 0
+        for i in range(n):
+            for j in range(FCTR * (i + 1), m):
+                x1 = A[i, 0]
+                y1 = A[i, 1]
+                z1 = A[i, 2]
+                x2 = B[j, 0]
+                y2 = B[j, 1]
+                z2 = B[j, 2]
+                d = point_to_point_distance(x1, y1, z1, x2, y2, z2)
                 result_ids[cur_pointer, 0] = i
                 result_ids[cur_pointer, 1] = j
                 result_ids[cur_pointer, 2] = d
                 cur_pointer += 1
 
-    return result_ids[0:cur_pointer]
+        return result_ids[0:cur_pointer]
+    else:
+        cur_pointer = 0
+        for i in range(n):
+            for j in range(FCTR*(i+1), m):
+                x1 = A[i, 0]
+                y1 = A[i, 1]
+                z1 = A[i, 2]
+                x2 = B[j, 0]
+                y2 = B[j, 1]
+                z2 = B[j, 2]
+                d = point_to_point_distance(x1, y1, z1, x2, y2, z2)
+                if min_distance < d < max_distance:
+                    result_ids[cur_pointer, 0] = i
+                    result_ids[cur_pointer, 1] = j
+                    result_ids[cur_pointer, 2] = d
+                    cur_pointer += 1
+
+        return result_ids[0:cur_pointer]
 
 
-def calculate_distance_all4all(A, B, max_distance, min_distance=0, AB_are_the_same=False):
+def calculate_distance_all4all(A, B, max_distance=0, min_distance=0, AB_are_the_same=False):
     return calculate_distance_all4all_opti(A, B, max_distance, min_distance, AB_are_the_same)
 
 

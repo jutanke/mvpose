@@ -15,9 +15,23 @@ class TransitivityLookup:
         :param E_l: set of all limb edges: [ (jid1, jid2, a, b), ... ]
         :param E_j: set of all joint edges: [ (jid, a, b), ... ]
         """
+        if not type(D) == np.ndarray:
+            D = np.array(D)
 
-        n_joints = np.max(np.array(D)[:,0])
+        n_joints = np.max(np.array(D)[:,0]) + 1
         ncolors = cs.lincolor(n_joints +2)/255
+
+        # set the maximal value that an index per joint can yield
+        count_nodes_per_joint = [0] * n_joints
+        for jid in range(n_joints):
+            M = D[:, 0] == jid
+            if np.sum(M) > 0:
+                max_id = np.max(D[M][:,1])
+                count_nodes_per_joint[jid] = max_id + 1
+                assert np.sum(M) == count_nodes_per_joint[jid]
+        self.count_nodes_per_joint = count_nodes_per_joint
+
+        self.nodes_per_joint = [set() for i in range(n_joints)]  # all nodes in a joint group
 
         G = nx.Graph()
         self.lookup = {}
@@ -26,6 +40,8 @@ class TransitivityLookup:
             self.lookup[jid, nid] = idx + 1
             self.reverse_lookup[idx + 1] = (jid, nid)
             G.add_node(idx + 1, jid=jid, nid=nid, color=ncolors[jid])
+
+            self.nodes_per_joint[jid].add(idx+1)
 
         # ~ joints
         for jid1, jid2, a, b in E_l:
@@ -49,6 +65,17 @@ class TransitivityLookup:
         nodes = G.nodes()
         ncolors = [nodes[u]['color'] for u in nodes]
         nx.draw(G, edge_color=ecolors, node_color=ncolors, with_labels=True)
+
+    def find_invalid(self, jid, a):
+        """
+            As the limbs are fully connected in theory and only sparse to
+            save memory we need to query all invalid connections so that
+            we can make sure that this ones are excluded in the optimization
+        :param jid:
+        :param a:
+        :return:
+        """
+        pass
 
     def query(self, jid1, a):
         """
