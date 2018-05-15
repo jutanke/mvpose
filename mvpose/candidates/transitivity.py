@@ -164,9 +164,9 @@ class TransitivityLookup:
 
                         if ab:
                             if ac and bc:  # ab + ac -1 <= bc
-                                inter.append((jid1, a, jid2, b, jid3, c))  # ensure transitivity
-                                inter.append((jid2, b, jid1, a, jid3, c))
-                                inter.append((jid3, c, jid1, a, jid2, b))
+                                inter.append((jid1, a, b, jid3, c))  # ensure transitivity
+                                # inter.append((jid2, b, jid1, a, jid3, c))
+                                # inter.append((jid3, c, jid1, a, jid2, b))
                             elif ac:
                                 inter_choice.append((jid1, a, jid2, b, jid3, c))  # ab or ac
                             elif bc:
@@ -196,19 +196,18 @@ class TransitivityLookup:
                     for node_c in self.nodes_per_joint[jid2]:
                         jid3, c = self.reverse_lookup[node_c]
                         assert jid3 == jid2
-                        if b <= c:
+                        if b >= c:
                             continue
-
-                        N_c = frozenset(G.neighbors(node_c))
 
                         ac = node_c in N_a
                         bc = node_c in N_b
 
                         if ab:
                             if ac and bc:  # ab + ac -1 <= bc
-                                inter.append((jid1, a, jid2, b, jid3, c))  # ensure transitivity
-                                inter.append((jid2, b, jid1, a, jid3, c))
-                                inter.append((jid3, c, jid1, a, jid2, b))
+                                # inter.append((jid1, a, jid2, b, jid3, c))  # ensure transitivity
+                                # inter.append((jid2, b, jid1, a, jid3, c))
+                                # inter.append((jid3, c, jid1, a, jid2, b))
+                                inter.append((jid2, b, c, jid1, a))
                             elif ac:
                                 inter_choice.append((jid1, a, jid2, b, jid3, c))  # ab or ac
                             elif bc:
