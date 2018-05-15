@@ -191,7 +191,7 @@ class TransitivityLookup:
                     N_b = frozenset(G.neighbors(node_b))
 
                     ab = node_b in N_a
-                    assert node_a in N_b
+                    assert ab == (node_a in N_b)
 
                     for node_c in self.nodes_per_joint[jid2]:
                         jid3, c = self.reverse_lookup[node_c]
