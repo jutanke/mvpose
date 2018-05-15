@@ -21,16 +21,6 @@ class TransitivityLookup:
         n_joints = np.max(np.array(D)[:,0]) + 1
         ncolors = cs.lincolor(n_joints +2)/255
 
-        # set the maximal value that an index per joint can yield
-        count_nodes_per_joint = [0] * n_joints
-        for jid in range(n_joints):
-            M = D[:, 0] == jid
-            if np.sum(M) > 0:
-                max_id = np.max(D[M][:,1])
-                count_nodes_per_joint[jid] = max_id + 1
-                assert np.sum(M) == count_nodes_per_joint[jid]
-        self.count_nodes_per_joint = count_nodes_per_joint
-
         self.nodes_per_joint = [set() for i in range(n_joints)]  # all nodes in a joint group
 
         G = nx.Graph()
@@ -43,9 +33,22 @@ class TransitivityLookup:
 
             self.nodes_per_joint[jid].add(idx+1)
 
+        lambda_down = {}    # lookup for follow-up joints on limbs => a -> b
+        lambda_up = {}      # lookup for bubble-up joints on limbs => b -> a
+        self.lambda_down = lambda_down
+        self.lambda_up = lambda_up
+
         # ~ joints
         for jid1, jid2, a, b in E_l:
             assert jid1 != jid2
+
+            if jid1 not in lambda_down:
+                lambda_down[jid1] = set()
+            lambda_down[jid1].add(jid2)
+            if jid2 not in lambda_up:
+                lambda_up[jid2] = set()
+            lambda_up[jid2].add(jid1)
+
             n1 = self.lookup[jid1, a]
             n2 = self.lookup[jid2, b]
             G.add_edge(n1, n2, color='teal')
@@ -66,16 +69,162 @@ class TransitivityLookup:
         ncolors = [nodes[u]['color'] for u in nodes]
         nx.draw(G, edge_color=ecolors, node_color=ncolors, with_labels=True)
 
-    def find_invalid(self, jid, a):
+    def query_with_choice(self, jid1, a):
         """
-            As the limbs are fully connected in theory and only sparse to
-            save memory we need to query all invalid connections so that
-            we can make sure that this ones are excluded in the optimization
-        :param jid:
+            queries all transitivity objectives
+
+            Attention: so far direct cicular references over several
+            limbs is not implemented!
+        :param jid1:
         :param a:
-        :return:
+        :return: intra and inter transitivity lists:
+            intra: [ (jid, a, b, c), ...]               ab + ac -1 <= bc
+            intra_choice: [ (jid, a, b, c), ... ]       ab or ac
+            inter: [ (jid1, a, jid2, b, jid3, c), ...]  ab + ac -1 <= bc
+            inter_choice: [(jid1, a, jid2, b, jid3, c), ...]
         """
-        pass
+        G = self.G
+        node_a = self.lookup[jid1, a]
+        N_a = frozenset(G.neighbors(node_a))
+
+        print("a=", node_a)
+        print('\tN_a:', N_a)
+
+        # transitivity constraints:
+        # a--b--c   => if a--b AND a--c ALSO b--c
+        #           => if a--b AND b--c ALSO a--c
+        #           => if a--c AND b--c ALSO a--b
+        intra = []
+        inter = []
+
+        # choice constraints:
+        # a--b--c   => if a--b AND a--c BUT NOT b--c CHOOSE a--b XOR a--c
+        #           => if a--b AND b--c BUT NOT a--c CHOOSE a--b XOR b--c
+        #           => if a--c AND b--c BUT NOT a--b CHOOSE a--c XOR b--c
+        intra_choice = []
+        inter_choice = []
+
+        for node_b in self.nodes_per_joint[jid1]:
+
+            # ====================
+            # intra-joint handling
+            # ====================
+            if node_b == node_a:
+                continue
+            jid2, b = self.reverse_lookup[node_b]
+            assert jid2 == jid1
+            if b < a:
+                continue
+
+            N_b = frozenset(G.neighbors(node_b))
+            print("\tb=", node_b)
+            print('\t\tN_b:', N_b)
+
+            ab = node_b in N_a
+            assert ab == (node_a in N_b)
+
+            for node_c in self.nodes_per_joint[jid1]:
+                if node_c == node_b:
+                    continue
+                jid3, c = self.reverse_lookup[node_c]
+                assert jid3 == jid1
+                if c < b:
+                    continue
+
+                ac = node_c in N_a
+                bc = node_c in N_b
+
+                if ab:
+                    if ac and bc:                      # ab + ac -1 <= bc
+                        intra.append((jid1, a, b, c))  # ensure transitivity
+                        intra.append((jid1, b, a, c))  # add all 3 combinations
+                        intra.append((jid1, c, a, b))
+                    elif ac:
+                        intra_choice.append((jid1, a, b, c))  # ab or ac
+                    elif bc:
+                        intra_choice.append((jid1, b, a, c))  # ab or bc
+                elif ac and bc:
+                    assert node_a not in N_b
+                    intra_choice.append((jid1, c, a, b))  # ac or bc
+
+            # ========================
+            # inter-joint handling (1)
+            # ========================
+            # handle [a]--[b]
+            #         |  /
+            #        (c)
+            if jid1 in self.lambda_down:
+                for jid3 in self.lambda_down[jid1]:
+                    assert jid3 != jid1
+                    for node_c in self.nodes_per_joint[jid3]:
+                        jid3_, c = self.reverse_lookup[node_c]
+                        assert jid3_ == jid3
+
+                        ac = node_c in N_a
+                        bc = node_c in N_b
+
+                        # print('handle:', (node_a, node_b, node_c))
+                        # print('\tab,ac,bc', (ab, ac, bc))
+                        # print('\tNb:', N_b)
+
+                        if ab:
+                            if ac and bc:  # ab + ac -1 <= bc
+                                inter.append((jid1, a, jid2, b, jid3, c))  # ensure transitivity
+                                inter.append((jid2, b, jid1, a, jid3, c))
+                                inter.append((jid3, c, jid1, a, jid2, b))
+                            elif ac:
+                                inter_choice.append((jid1, a, jid2, b, jid3, c))  # ab or ac
+                            elif bc:
+                                inter_choice.append((jid2, b, jid1, a, jid3, c))  # ab or bc
+                        elif ac and bc:
+                            assert node_a not in N_b
+                            inter_choice.append((jid3, c, jid1, a, jid2, b))  # ac or bc
+
+        # ========================
+        # inter-joint handling (2)
+        # ========================
+        # handle [a]
+        #         |  \
+        #        (b)--(c)
+        if jid1 in self.lambda_down:
+            for jid2 in self.lambda_down[jid1]:
+                assert jid1 != jid2
+                for node_b in self.nodes_per_joint[jid2]:
+                    jid2_, b = self.reverse_lookup[node_b]
+                    assert jid2_ == jid2
+
+                    N_b = frozenset(G.neighbors(node_b))
+                    print("\tb=", node_b)
+                    print('\t\tN_b:', N_b)
+
+                    ab = node_b in N_a
+                    assert node_a in N_b
+
+                    for node_c in self.nodes_per_joint[jid2]:
+                        jid3, c = self.reverse_lookup[node_c]
+                        assert jid3 == jid2
+                        if b < c:
+                            continue
+
+                        N_c = frozenset(G.neighbors(node_c))
+
+                        ac = node_c in N_a
+                        bc = node_c in N_b
+
+                        if ab:
+                            if ac and bc:  # ab + ac -1 <= bc
+                                inter.append((jid1, a, jid2, b, jid3, c))  # ensure transitivity
+                                inter.append((jid2, b, jid1, a, jid3, c))
+                                inter.append((jid3, c, jid1, a, jid2, b))
+                            elif ac:
+                                inter_choice.append((jid1, a, jid2, b, jid3, c))  # ab or ac
+                            elif bc:
+                                inter_choice.append((jid2, b, jid1, a, jid3, c))  # ab or bc
+                        elif ac and bc:
+                            assert node_a not in N_b
+                            inter_choice.append((jid3, c, jid1, a, jid2, b))  # ac or bc
+
+        return intra, intra_choice, inter, inter_choice
 
     def query(self, jid1, a):
         """
