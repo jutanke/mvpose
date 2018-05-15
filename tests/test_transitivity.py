@@ -35,7 +35,6 @@ class TestTransitivity(unittest.TestCase):
         Inter_choice = [str(tr.lookup[jid1, a]) + '-' + str(tr.lookup[jid2, b]) + '-' + str(tr.lookup[jid3, c]) \
                         for jid1, a, jid2, b, jid3, c in inter_choice]
 
-        print(Inter_choice)
 
         self.assertEqual(0, len(Intra))
         self.assertEqual(9, len(Inter))

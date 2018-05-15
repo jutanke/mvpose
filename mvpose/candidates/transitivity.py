@@ -87,9 +87,6 @@ class TransitivityLookup:
         node_a = self.lookup[jid1, a]
         N_a = frozenset(G.neighbors(node_a))
 
-        print("a=", node_a)
-        print('\tN_a:', N_a)
-
         # transitivity constraints:
         # a--b--c   => if a--b AND a--c ALSO b--c
         #           => if a--b AND b--c ALSO a--c
@@ -117,8 +114,6 @@ class TransitivityLookup:
                 continue
 
             N_b = frozenset(G.neighbors(node_b))
-            print("\tb=", node_b)
-            print('\t\tN_b:', N_b)
 
             ab = node_b in N_a
             assert ab == (node_a in N_b)
@@ -194,8 +189,6 @@ class TransitivityLookup:
                     assert jid2_ == jid2
 
                     N_b = frozenset(G.neighbors(node_b))
-                    print("\tb=", node_b)
-                    print('\t\tN_b:', N_b)
 
                     ab = node_b in N_a
                     assert node_a in N_b
@@ -203,7 +196,7 @@ class TransitivityLookup:
                     for node_c in self.nodes_per_joint[jid2]:
                         jid3, c = self.reverse_lookup[node_c]
                         assert jid3 == jid2
-                        if b < c:
+                        if b <= c:
                             continue
 
                         N_c = frozenset(G.neighbors(node_c))
