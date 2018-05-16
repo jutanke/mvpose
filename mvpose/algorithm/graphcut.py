@@ -21,7 +21,7 @@ class GraphCutSolver:
                  limbSeq=DEFAULT_LIMB_SEQ,
                  sensible_limb_length=DEFAULT_SENSIBLE_LIMB_LENGTH,
                  limbMapIdx=DEFAULT_MAP_IDX, debug=False,
-                 max_epi_distance=20
+                 max_epi_distance=10
                  ):
         """
             Extract 3d pose from images and cameras
@@ -235,6 +235,8 @@ class GraphCutSolver:
                             np.array(ptA_candidates), np.array(ptB_candidates), U, V)
                         assert len(line_int) == len(pair_candidates)
                         line_int = np.squeeze(line_int / CAMERA_NORM)
+                        if len(line_int.shape) == 0:  # this happens when line_int.shape = (1, 1)
+                            line_int = np.expand_dims(line_int, axis=0)
                         for score, (i, j) in zip(line_int, pair_candidates):
                             W[i, j] += score
 
