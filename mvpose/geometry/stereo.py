@@ -50,11 +50,11 @@ def get_fundamental_matrix_flat(K1, rvec1, tvec1, distCoef1,
     # return ex @ H
 
     # --- the 'stupid' way: brute force using opencv
-    pos1 = gm.get_camera_pos_in_world_coords_flat(rvec1, tvec1)
-    pos2 = gm.get_camera_pos_in_world_coords_flat(rvec2, tvec2)
-
-    top_z = max(pos1[2], pos2[2])
-    points3d = rnd.randint(-top_z, top_z, (8, 3)).astype('float32')
+    # pos1 = gm.get_camera_pos_in_world_coords_flat(rvec1, tvec1)
+    # pos2 = gm.get_camera_pos_in_world_coords_flat(rvec2, tvec2)
+    #
+    # top_z = max(pos1[2], pos2[2])
+    points3d = rnd.randint(0, 1500, (24, 3)).astype('float32')
 
     points1 = np.squeeze(
         cv2.projectPoints(points3d, rvec1, tvec1, K1, distCoef1)[0])
@@ -62,8 +62,7 @@ def get_fundamental_matrix_flat(K1, rvec1, tvec1, distCoef1,
         cv2.projectPoints(points3d, rvec2, tvec2, K2, distCoef2)[0])
 
     F, mask = cv2.findFundamentalMat(
-        points1, points2, cv2.FM_8POINT,
-        param1=1
+        points1, points2, cv2.FM_8POINT
     )
 
     return F
