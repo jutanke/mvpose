@@ -54,7 +54,7 @@ def get_fundamental_matrix_flat(K1, rvec1, tvec1, distCoef1,
     # pos2 = gm.get_camera_pos_in_world_coords_flat(rvec2, tvec2)
     #
     # top_z = max(pos1[2], pos2[2])
-    points3d = rnd.randint(0, 1500, (24, 3)).astype('float32')
+    points3d = rnd.randint(0, 1500, (12, 3)).astype('float32')
 
     points1 = np.squeeze(
         cv2.projectPoints(points3d, rvec1, tvec1, K1, distCoef1)[0])
@@ -211,11 +211,11 @@ def triangulate_argmax(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2):
 def triangulate_with_weights(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2, max_epi_distance=-1, no_weight=False):
     """
         Points must be undistorted
-    :param peaks1: {Peaks}
+    :param peaks1: {Peaks}  .. each 2d point looks like: (x, y, weight)
     :param K1:
     :param rvec1:
     :param tvec1:
-    :param peaks2: {Peaks}
+    :param peaks2: {Peaks}  .. each 2d point looks like: (x, y, weight)
     :param K2:
     :param rvec2:
     :param tvec2:
@@ -248,12 +248,12 @@ def triangulate_with_weights(peaks1, K1, rvec1, tvec1, peaks2, K2, rvec2, tvec2,
 
         if len(pts1) > 0 and len(pts2) > 0:
             epilines_1to2 = np.squeeze(
-                cv2.computeCorrespondEpilines(pts1, 1, F))
+                cv2.computeCorrespondEpilines(pts1[:, 0:2], 1, F))
             if len(epilines_1to2.shape) <= 1:
                 epilines_1to2 = np.expand_dims(epilines_1to2, axis=0)
 
             epilines_2to1 = np.squeeze(
-                cv2.computeCorrespondEpilines(pts2, 2, F))
+                cv2.computeCorrespondEpilines(pts2[:, 0:2], 2, F))
             if len(epilines_2to1.shape) <= 1:
                 epilines_2to1 = np.expand_dims(epilines_2to1, axis=0)
 

@@ -21,7 +21,7 @@ class GraphCutSolver:
                  limbSeq=DEFAULT_LIMB_SEQ,
                  sensible_limb_length=DEFAULT_SENSIBLE_LIMB_LENGTH,
                  limbMapIdx=DEFAULT_MAP_IDX, debug=False,
-                 max_epi_distance=100
+                 max_epi_distance=20
                  ):
         """
             Extract 3d pose from images and cameras
