@@ -132,8 +132,8 @@ class TransitivityLookup:
                 if ab:
                     if ac and bc:                      # ab + ac -1 <= bc
                         intra.append((jid1, a, b, c))  # ensure transitivity
-                        intra.append((jid1, b, a, c))  # add all 3 combinations
-                        intra.append((jid1, c, a, b))
+                        #intra.append((jid1, b, a, c))  # add all 3 combinations
+                        #intra.append((jid1, c, a, b))
                     elif ac:
                         intra_choice.append((jid1, a, b, c))  # ab or ac
                     elif bc:
