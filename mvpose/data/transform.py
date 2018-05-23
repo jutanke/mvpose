@@ -63,7 +63,7 @@ def transform_from_openpose(Y):
 
 # ========= CMU =========
 
-def get_from_cmu_panoptic(cmu_root, seq_name):
+def get_from_cmu_panoptic(cmu_root, seq_name, panels, nodes, frame=0):
     """ Gets the data from the cmu panoptic dataset.
         Due to how the authors of the dataset want it to
         be handled we do not download it on our own..
@@ -73,9 +73,10 @@ def get_from_cmu_panoptic(cmu_root, seq_name):
     :param seq_name:
     :return:
     """
+    assert len(panels) > 0 and len(panels) == len(nodes)
     seq_dir = join(cmu_root, seq_name); assert isdir(seq_dir)
-    X_fmmap = join(seq_dir, 'X.hdf5')
-    is_X_memmapped = isfile(X_fmmap)
+    #X_fmmap = join(seq_dir, 'X.hdf5')
+    #is_X_memmapped = isfile(X_fmmap)
 
     vga_skel_json_path = join(seq_dir, 'vgaPose3d_stage1')
     vga_img_path = join(seq_dir, 'vgaImgs')
@@ -92,55 +93,59 @@ def get_from_cmu_panoptic(cmu_root, seq_name):
         cam['K'] = np.matrix(cam['K'])
         cam['distCoef'] = np.array(cam['distCoef'])
         cam['R'] = np.matrix(cam['R'])
-        cam['t'] = np.array(cam['t']).reshape((3, 1))
+        cam['t'] = np.squeeze(np.array(cam['t']).reshape((3, 1)))
 
     Calib = []
     # get all the videos
-    all_videos = sorted([d for d in listdir(vga_img_path) if isdir(join(vga_img_path,d))])
+    # all_videos = sorted([d for d in listdir(vga_img_path) if isdir(join(vga_img_path,d))])
+    # if len(all_videos) > len(panels):
+    #
+    all_videos = []
+    for p, n in zip(panels, nodes):
+        all_videos.append('{0:02d}_{1:02d}'.format(p, n))
+    for v in all_videos:
+        assert isdir(join(vga_img_path, v))
+
     nbr_videos = len(all_videos)
     w = 640; h = 480  # vga resolution!
     # get shortest video
     nbr_frames = min([len(listdir(join(vga_img_path, v))) for v in all_videos])
-    shape = (nbr_videos, nbr_frames, h, w, 3)
+    assert frame < nbr_frames
 
-    if not is_X_memmapped:  # then we generate it!
-        #X = np.memmap(X_fmmap, dtype='uint8', mode='w+', shape=shape)
-        f = h5py.File(X_fmmap, 'w')
-        X = f.create_dataset('X', shape, dtype='uint8')
+    X = np.zeros((nbr_videos, h, w, 3), 'uint8')
 
-    for i, video in enumerate(all_videos):
-        # -- calibration --
-        cam_key = tuple([int(v) for v in video.split('_')])
-        assert cam_key in cameras, 'Cannot find tuple ' + str(cam_key) + ' in cameras'
+    cams = zip(panels, nodes)
+    sel_cameras = [cameras[cam].copy() for cam in cams]
+
+    for icam, cam in enumerate(sel_cameras):
+        image_path = vga_img_path + '/{0:02d}_{1:02d}/{0:02d}_{1:02d}_{2:08d}.jpg'.format(cam['panel'], cam['node'],
+                                                                                                                frame)
+        im = imread(image_path)
+        X[icam] = im
+
         cam = {
-            'K': cameras[cam_key]['K'],
-            'tvec': cameras[cam_key]['t'],
-            'rvec': cv2.Rodrigues(cameras[cam_key]['R'])[0],
-            'distCoeff': cameras[cam_key]['distCoef']
+            'K': cam['K'],
+            'tvec': cam['t'],
+            'rvec': cv2.Rodrigues(cam['R'])[0],
+            'distCoeff': cam['distCoef']
         }
         Calib.append(cam)
 
-        print('handling video', video)
+    Y = []
+    try:
+        skel_json_fname = vga_skel_json_path + '/body3DScene_{0:08d}.json'.format(frame)
+        with open(skel_json_fname) as dfile:
+            bframe = json.load(dfile)
 
-        # -- load all frames --
-        if not is_X_memmapped:  # load the data
-            video_loc = join(vga_img_path, video)
-            all_videos = listdir(video_loc); assert len(all_videos) >= nbr_frames
-            for j, frame in enumerate(sorted(all_videos)[0:nbr_frames]):
-                I = imread(join(video_loc, frame))
-                X[i,j] = I
+            for body in bframe['bodies']:
+                pid = body['id']
+                skel = np.array(body['joints15']).reshape((-1, 4))
 
-    if not is_X_memmapped:  # flush it to file
-        f.flush()
-        f.close()
-        #del X
+                Y.append((pid, skel))
+    except IOError as e:
+        print('Error reading {0}\n'.format(skel_json_fname) + e.strerror)
 
-    f = h5py.File(X_fmmap, 'r')
-    X = f['X']
-
-    #X = np.memmap(X_fmmap, dtype='uint8', mode='r', shape=shape)
-
-    return X, Calib
+    return X, Y, Calib
 
 
 # ========= UMPM =========

@@ -35,6 +35,7 @@ def calculate_line_integral_elementwise(candA, candB, mapx, mapy, normalize=True
     mapx = np.expand_dims(mapx, axis=2)
     mapy = np.expand_dims(mapy, axis=2)
     score_mid = np.concatenate([mapx, mapy], axis=2)
+    h,w,_ = score_mid.shape
 
     W = np.zeros((nA, 1))
 
@@ -50,7 +51,11 @@ def calculate_line_integral_elementwise(candA, candB, mapx, mapy, normalize=True
 
         for x, y in zip(iterX, iterY):
             x_ = int(round(x))
+            if x_ == w:
+                x_ = x_ -1
             y_ = int(round(y))
+            if y_ == h:
+                y_ = y_ -1
             Lc = score_mid[y_, x_]
             W[i] += Lc @ d
 
