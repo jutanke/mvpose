@@ -21,6 +21,33 @@ DEFAULT_JOINT_NAMES = [
     'Ear left'
 ]
 
+# GT joints:
+# * head (1)                # 0
+# * neck (2)
+# * left-shoulder (3)
+# * left-elbow (4)
+# * left-hand (5)
+# * right-shoulder (6)      # 5
+# * right-elbow (7)
+# * right-hand (8)
+# * left-hip (9)
+# * left-knee (10)
+# * left-foot (11)          # 10
+# * right-hip (12)
+# * right-knee (13)
+# * right-foot (14)
+DEFAULT_JOINT_TO_GT_JOINT = np.array([
+    0,
+    1,
+    5,   6,  7,  # right arm
+    2,   3,  4,  # left arm
+    11, 12, 13,  # right leg
+    8,   9, 10,  # left leg
+    0, 0, 0, 0   # eye - ear
+])
+DEFAULT_JOINT_TO_GT_JOINT.setflags(write=False)  # read-only
+
+
 # [ ... ( low, high) ... ]
 DEFAULT_SENSIBLE_LIMB_LENGTH = np.array([
     (30, 300),  # neck - shoulder right             # 0

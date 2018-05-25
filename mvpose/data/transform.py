@@ -20,11 +20,31 @@ import numpy as np
 import json
 from os import listdir
 from scipy.ndimage import imread
-from os.path import join, isdir, isfile
+from os.path import join, isdir
 from pak.datasets.UMPM import UMPM
-import h5py
+from mvpose.data.default_limbs import DEFAULT_JOINT_TO_GT_JOINT
 
 # ========= OpenPose ========
+
+
+def transform_3D_detections(person, joint_to_gt_joint=DEFAULT_JOINT_TO_GT_JOINT):
+    """
+
+    :param person: [ (x,y,z,...), ... ] every limb of the person
+    :param joint_to_gt_joint: maps the detection point to the ground truth point
+    :return: detected person using the same structure as our ground truth
+    """
+    assert len(person) == len(joint_to_gt_joint)
+    transformed_human = [None] * (np.max(joint_to_gt_joint) + 1)
+
+    for joint, gt_loc in zip(person, joint_to_gt_joint):
+        if not joint is None:
+            ojoint = transformed_human[gt_loc]
+            if ojoint is not None:
+                transformed_human[gt_loc] = (ojoint + joint) / 2
+            else:
+                transformed_human[gt_loc] = joint
+    return transformed_human
 
 
 def transform_from_openpose(Y):

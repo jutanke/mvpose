@@ -1,4 +1,5 @@
 ~/
+*.eps
 *.gv
 *.gv.pdf
 *.dot
