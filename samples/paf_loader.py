@@ -45,4 +45,4 @@ def load_confidence_map_and_paf(name, Im, frame, with_gpu=False):
             np.save(hm_file, heatmaps)
             np.save(paf_file, pafs)
 
-    return heatmaps, pafs
+    return heatmaps[:,:,:,0:-1], pafs
