@@ -2,6 +2,7 @@
     Extract human poses from pafs and heatmaps
 """
 from mvpose.algorithm.peaks2d import Candidates2D
+from mvpose.algorithm.triangulation import Triangulation
 from mvpose.data.default_limbs import DEFAULT_LIMB_SEQ, \
     DEFAULT_MAP_IDX, DEFAULT_SENSIBLE_LIMB_LENGTH
 from collections import namedtuple
@@ -40,8 +41,17 @@ def estimate(Calib, heatmaps, pafs,
     if debug:
         print('step 1: elapsed', _end - _start)
 
+    _start = time()
+    triangulation = Triangulation(cand2d, max_epi_distance)
+    _end = time()
     if debug:
-        Debug = namedtuple('Debug', ['candidates2d'])
+        print('step 2: elapsed', _end - _start)
+
+    if debug:
+        Debug = namedtuple('Debug', [
+            'candidates2d',
+            'triangulation'])
         Debug.candidates2d = cand2d
+        Debug.triangulation = triangulation
 
         return Debug

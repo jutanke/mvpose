@@ -14,6 +14,7 @@ def get_all_peaks(heatmap, threshold):
             ...
     ]
     """
+    # TODO: this function is slow ~0.3 seconds per call
     _, _, n_joints = heatmap.shape
 
     peaks = []
@@ -44,6 +45,8 @@ class Candidates2D:
         n, h, w, m = heatmaps.shape
         assert n == len(Calib)
 
+        self.n_cameras = n
+        self.n_joints = m
         self.peaks2d = []
         self.peaks2d_undistorted = []
 
@@ -69,7 +72,6 @@ class Candidates2D:
             peaks_undist = []
             for joint in peaks:
                 if len(joint) > 0:
-                    print('joint:', joint.shape)
                     peaks_undist.append(
                         gm.undistort_points(joint, mapx, mapy)
                     )
