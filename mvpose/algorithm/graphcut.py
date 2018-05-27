@@ -36,10 +36,6 @@ def get_parameters(min_nbr_joints=8, iota_scale=1,
     :param radius: drop-off value after which internal weights
         between 3d joint candidates are negative. Measure of the
         cameras is used (e.g. mm)
-    :param hm_detection_threshold: threshold after which a
-        detection in the confidence map is considered or not
-    :param threshold_close_pair: {int} distance in pixels
-        after which two points are considered to be close
     :return:
     """
     params = namedtuple('GraphcutParams', [

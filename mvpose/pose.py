@@ -5,6 +5,7 @@ from mvpose.algorithm.peaks2d import Candidates2D
 from mvpose.algorithm.triangulation import Triangulation
 from mvpose.algorithm.limbs3d import Limbs3d
 from mvpose.algorithm.graphcut import Graphcut, get_parameters
+from mvpose.algorithm.candidate_selection import CandidateSelector
 from mvpose.data.default_limbs import DEFAULT_LIMB_SEQ, \
     DEFAULT_MAP_IDX, DEFAULT_SENSIBLE_LIMB_LENGTH
 from collections import namedtuple
@@ -85,6 +86,21 @@ def estimate(Calib, heatmaps, pafs,
     if debug:
         print('step 4: elapsed', _end - _start)
 
+    # -------- step 5 --------
+    # candidate selection
+    # ------------------------
+    _start = time()
+    candSelector = CandidateSelector(
+        graphcut.person_candidates, heatmaps,
+        cand2d.Calib_undistorted,
+        graphcut_params.min_nbr_joints
+    )
+    _end = time()
+    if debug:
+        print('step 5: elapsed', _end - _start)
+
+
+
     if debug:
         Debug = namedtuple('Debug', [
             'candidates2d',
@@ -97,4 +113,6 @@ def estimate(Calib, heatmaps, pafs,
         Debug.limbs3d = limbs3d
         Debug.graphcut = graphcut
 
-        return Debug
+        return Debug, candSelector.persons
+    else:
+        return candSelector.persons
