@@ -15,11 +15,6 @@ pip install --user --upgrade ortools
 pip install c3d
 ```
 
-**h5py**: for storing large datasets
-```bash
-conda install h5py
-```
-
 **pak**: for loading some of the datasets
 ```bash
 pip install git+https://github.com/justayak/pppr.git
