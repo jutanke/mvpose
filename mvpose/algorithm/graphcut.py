@@ -4,8 +4,6 @@ from ortools.linear_solver import pywraplp as mip
 from mvpose.algorithm.transitivity import TransitivityLookup
 import mvpose.geometry.geometry as gm
 import networkx as nx
-import numpy.linalg as la
-import cv2
 
 
 def merge(person):
