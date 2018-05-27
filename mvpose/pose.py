@@ -3,6 +3,7 @@
 """
 from mvpose.algorithm.peaks2d import Candidates2D
 from mvpose.algorithm.triangulation import Triangulation
+from mvpose.algorithm.limbs3d import Limbs3d
 from mvpose.data.default_limbs import DEFAULT_LIMB_SEQ, \
     DEFAULT_MAP_IDX, DEFAULT_SENSIBLE_LIMB_LENGTH
 from collections import namedtuple
@@ -35,23 +36,44 @@ def estimate(Calib, heatmaps, pafs,
     assert w == heatmaps.shape[2]
     assert n_cameras > 2, 'The algorithm expects at least 3 views'
 
+    # -------- step 1 --------
+    # calculate 2d candidates
+    # ------------------------
     _start = time()
     cand2d = Candidates2D(heatmaps, Calib)
     _end = time()
     if debug:
         print('step 1: elapsed', _end - _start)
 
+    # -------- step 2 --------
+    # triangulate 2d candidates
+    # ------------------------
     _start = time()
     triangulation = Triangulation(cand2d, max_epi_distance)
     _end = time()
     if debug:
         print('step 2: elapsed', _end - _start)
 
+    # -------- step 3 --------
+    # calculate 3d limb weights
+    # ------------------------
+    _start = time()
+    limbs3d = Limbs3d(triangulation.peaks3d_weighted,
+                      Calib, pafs,
+                      limbSeq, sensible_limb_length,
+                      limbMapIdx)
+    _end = time()
+    if debug:
+        print('step 3: elapsed', _end - _start)
+
     if debug:
         Debug = namedtuple('Debug', [
             'candidates2d',
-            'triangulation'])
+            'triangulation',
+            'limbs3d'
+        ])
         Debug.candidates2d = cand2d
         Debug.triangulation = triangulation
+        Debug.limbs3d = limbs3d
 
         return Debug

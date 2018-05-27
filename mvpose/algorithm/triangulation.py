@@ -1,4 +1,3 @@
-import cv2
 import numpy as np
 import mvpose.geometry.geometry as gm
 from mvpose.geometry import stereo
@@ -21,6 +20,8 @@ class Triangulation:
         assert max_epi_distance > 0
         n_cameras = candidates2d.n_cameras
         n_joints = candidates2d.n_joints
+        self.n_cameras = n_cameras
+        self.n_joints = n_joints
 
         Calib = candidates2d.Calib_undistorted
 
