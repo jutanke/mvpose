@@ -4,6 +4,7 @@
 from mvpose.algorithm.peaks2d import Candidates2D
 from mvpose.algorithm.triangulation import Triangulation
 from mvpose.algorithm.limbs3d import Limbs3d
+from mvpose.algorithm.graphcut import Graphcut, get_parameters
 from mvpose.data.default_limbs import DEFAULT_LIMB_SEQ, \
     DEFAULT_MAP_IDX, DEFAULT_SENSIBLE_LIMB_LENGTH
 from collections import namedtuple
@@ -13,6 +14,7 @@ from time import time
 def estimate(Calib, heatmaps, pafs,
              limbSeq=DEFAULT_LIMB_SEQ,
              limbMapIdx=DEFAULT_MAP_IDX,
+             graphcut_params=None,
              sensible_limb_length=DEFAULT_SENSIBLE_LIMB_LENGTH,
              debug=False, max_epi_distance=10):
     """
@@ -22,6 +24,7 @@ def estimate(Calib, heatmaps, pafs,
     :param pafs:
     :param limbSeq:
     :param limbMapIdx:
+    :param graphcut_params: parameters for the graphcut
     :param sensible_limb_length:
     :param debug:
     :param max_epi_distance:
@@ -66,14 +69,32 @@ def estimate(Calib, heatmaps, pafs,
     if debug:
         print('step 3: elapsed', _end - _start)
 
+    # -------- step 4 --------
+    # solve optimization problem
+    # ------------------------
+    _start = time()
+    if graphcut_params is None:
+        graphcut_params = get_parameters()  # gets default params
+    graphcut = Graphcut(graphcut_params,
+                        triangulation.peaks3d_weighted,
+                        limbs3d,
+                        limbSeq, sensible_limb_length,
+                        debug=debug
+                        )
+    _end = time()
+    if debug:
+        print('step 4: elapsed', _end - _start)
+
     if debug:
         Debug = namedtuple('Debug', [
             'candidates2d',
             'triangulation',
-            'limbs3d'
+            'limbs3d',
+            'graphcut'
         ])
         Debug.candidates2d = cand2d
         Debug.triangulation = triangulation
         Debug.limbs3d = limbs3d
+        Debug.graphcut = graphcut
 
         return Debug
