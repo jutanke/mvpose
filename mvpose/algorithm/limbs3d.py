@@ -2,32 +2,11 @@ import numpy as np
 import mvpose.geometry.geometry as gm
 from scipy.special import comb
 import numpy.linalg as la
-from mvpose.plot.limbs import draw_vector_field
+from numba import jit, float64
 
 
-def clamp_to_1(U, V):
-    """
-        clamps the vector field to have only vectors of max length 1
-        The neural network sometimes outputs vectors which are larger
-        than 1.. clamp them
-    :param U: vectors for x
-    :param V: vectors for y
-    :return:
-    """
-    assert U.shape == V.shape
-
-    L = draw_vector_field(U, V)
-    Mask = (L > 1) * 1
-
-    XY = Mask.nonzero()
-
-    Div = np.ones_like(U)
-    Div[XY] = L[XY]
-
-    return U/Div, V/Div
-
-
-def calculate_line_integral_elementwise(candA, candB, mapx, mapy, normalize=True):
+@jit([float64[:,:](float64[:,:,], float64[:,:,], float64[:,:,], float64[:,:,])], nopython=True)
+def calculate_line_integral_elementwise(candA, candB, mapx, mapy):
     """
         calculates the line integral for points element-wise
     :param candA: [ (x,y), (x,y), ...]
@@ -48,13 +27,10 @@ def calculate_line_integral_elementwise(candA, candB, mapx, mapy, normalize=True
     nB = len(candB)
     assert nA == nB
 
-    if normalize:
-        mapx, mapy = clamp_to_1(mapx, mapy)
-
-    mapx = np.expand_dims(mapx, axis=2)
-    mapy = np.expand_dims(mapy, axis=2)
-    score_mid = np.concatenate([mapx, mapy], axis=2)
-    h,w,_ = score_mid.shape
+    h, w = mapx.shape
+    score_mid = np.zeros((h,w,2))
+    score_mid[:,:,0] = mapx
+    score_mid[:,:,1] = mapy
 
     W = np.zeros((nA, 1))
 
@@ -69,12 +45,8 @@ def calculate_line_integral_elementwise(candA, candB, mapx, mapy, normalize=True
         iterY = np.linspace(candA[i][1], candB[i][1], mid_num)
 
         for x, y in zip(iterX, iterY):
-            x_ = int(round(x))
-            if x_ == w:
-                x_ = x_ -1
-            y_ = int(round(y))
-            if y_ == h:
-                y_ = y_ -1
+            x_ = min(int(round(x)), w-1)
+            y_ = min(int(round(y)), h-1)
             Lc = score_mid[y_, x_]
             W[i] += Lc @ d
 
@@ -149,6 +121,7 @@ class Limbs3d:
                     if len(ptA_candidates) > 0:
                         line_int = calculate_line_integral_elementwise(
                             np.array(ptA_candidates), np.array(ptB_candidates), U, V)
+                        line_int = np.clip(line_int, a_min=-1, a_max=1)
                         assert len(line_int) == len(pair_candidates)
                         line_int = np.squeeze(line_int / CAMERA_NORM)
                         if len(line_int.shape) == 0:  # this happens when line_int.shape = (1, 1)
