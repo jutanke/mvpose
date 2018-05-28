@@ -10,6 +10,11 @@ The following additional (non-standard) libraries are needed:
 pip install --user --upgrade ortools
 ```
 
+**numba**: enables high performance functions in Python using NumPy
+```bash
+conda install -c numba numba
+```
+
 **c3d**: for reading 3d data
 ```bash
 pip install c3d
