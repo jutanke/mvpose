@@ -63,7 +63,7 @@ class Limbs3d:
         """
 
         :param peaks3d: [ [ (x,y,z,w1,w2) ... ], ... ] * n_joints
-        :param Calib: [ (K, rvec, tvec, distCoef), ..] distorted cameras
+        :param Calib: [ camera, ..]
         :param Pafs: Part affinity fields
         :param limbSeq:
         :param sensible_limb_length:
@@ -90,15 +90,10 @@ class Limbs3d:
 
             if nA > 0 and nB > 0:
                 for cid, cam in enumerate(Calib):
-                    K, rvec, tvec, distCoef = gm.get_camera_parameters(cam)
-
                     U = Pafs[cid, :, :, pafA]
                     V = Pafs[cid, :, :, pafB]
-
-                    ptsA2d, maskA = gm.reproject_points_to_2d(
-                        candA3d[:, 0:3], rvec, tvec, K, w, h, distCoef=distCoef, binary_mask=True)
-                    ptsB2d, maskB = gm.reproject_points_to_2d(
-                        candB3d[:, 0:3], rvec, tvec, K, w, h, distCoef=distCoef, binary_mask=True)
+                    ptsA2d, maskA = cam.projectPoints(candA3d[:, 0:3], withmask=True)
+                    ptsB2d, maskB = cam.projectPoints(candB3d[:, 0:3], withmask=True)
                     maskA = maskA == 1
                     maskB = maskB == 1
 

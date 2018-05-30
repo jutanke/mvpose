@@ -50,9 +50,6 @@ class Candidates2D:
         self.peaks2d = []
         self.peaks2d_undistorted = []
 
-        self.undistort_maps = []
-        self.Calib_undistorted = []
-
         for cid, cam in enumerate(Calib):
             hm = heatmaps[cid]
 
@@ -60,30 +57,12 @@ class Candidates2D:
             self.peaks2d.append(peaks)
 
             # -- undistort peaks --
-            K, rvec, tvec, distCoef = gm.get_camera_parameters(cam)
-            hm_ud, K_new = gm.remove_distortion(hm, cam)
-            h, w, _ = hm.shape
-
-            mapx, mapy = \
-                cv2.initUndistortRectifyMap(
-                    K, distCoef, None, K_new, (w, h), 5)
-            self.undistort_maps.append((mapx, mapy))
-
             peaks_undist = []
             for joint in peaks:
                 if len(joint) > 0:
-                    peaks_undist.append(
-                        gm.undistort_points(joint, mapx, mapy)
-                    )
+                    peaks_undist.append(cam.undistort_points(joint))
                 else:
                     peaks_undist.append([])
 
             assert len(peaks) == len(peaks_undist)
             self.peaks2d_undistorted.append(peaks_undist)
-
-            self.Calib_undistorted.append({
-                'K': K_new,
-                'distCoeff': 0,
-                'rvec': rvec,
-                'tvec': tvec
-            })

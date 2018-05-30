@@ -53,7 +53,7 @@ def estimate(Calib, heatmaps, pafs,
     # triangulate 2d candidates
     # ------------------------
     _start = time()
-    triangulation = Triangulation(cand2d, max_epi_distance)
+    triangulation = Triangulation(cand2d, Calib, max_epi_distance)
     _end = time()
     if debug:
         print('step 2: elapsed', _end - _start)
@@ -92,9 +92,7 @@ def estimate(Calib, heatmaps, pafs,
     _start = time()
     candSelector = CandidateSelector(
         graphcut.person_candidates, heatmaps,
-        cand2d.Calib_undistorted,
-        graphcut_params.min_nbr_joints
-    )
+        Calib, graphcut_params.min_nbr_joints)
     _end = time()
     if debug:
         print('step 5: elapsed', _end - _start)

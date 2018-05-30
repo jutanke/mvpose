@@ -1,4 +1,6 @@
 import numpy as np
+import mvpose.geometry.geometry as gm
+from mvpose.geometry.camera import ProjectiveCamera
 from pak.datasets.UMPM import UMPM
 
 
@@ -17,7 +19,9 @@ def get(root, video_name, user, pwd):
     Calib = []
     for cam in ['l', 'r', 's', 'f']:
         X.append(X_[cam])
-        Calib.append(Calib_[cam])
+        _, h, w, _ = X_[cam].shape
+        K, rvec, tvec, distCoef = gm.get_camera_parameters(Calib_[cam])
+        Calib.append(ProjectiveCamera(K, rvec, tvec, distCoef, w, h))
 
     return X, transform_umpm(Y), Calib
 

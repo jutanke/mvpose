@@ -9,8 +9,7 @@ def project_human_to_2d(human3d, cam):
     for jid, pt3d in enumerate(human3d):
         if pt3d is not None:
             Pt = np.array([pt3d])
-            K, rvec, tvec, _ = gm.get_camera_parameters(cam)
-            points2d = np.squeeze(cv2.projectPoints(Pt, rvec, tvec, K, 0)[0])
+            points2d = cam.projectPoints_undist(Pt)
             human2d[jid] = points2d
     return human2d
 
@@ -29,7 +28,7 @@ def calculate2d_proximity(person1, person2):
 
 class CandidateSelector:
 
-    def __init__(self, Humans, Heatmaps, Calib_undistorted,
+    def __init__(self, Humans, Heatmaps, Calib,
                  min_nbr_joints,
                  hm_detection_threshold=0.1,
                  threshold_close_pair=10):
@@ -42,7 +41,7 @@ class CandidateSelector:
             after which two points are considered to be close
         """
         n = len(Humans)
-        n_cams = len(Calib_undistorted)
+        n_cams = len(Calib)
 
         # -1 -> not visible
         #  1 -> visible
@@ -55,7 +54,7 @@ class CandidateSelector:
         for a in range(n):
             human3d_a = Humans[a]
             n_joints = len(human3d_a)
-            for cid, cam in enumerate(Calib_undistorted):
+            for cid, cam in enumerate(Calib):
                 human2d_a = project_human_to_2d(human3d_a, cam)
                 # ==============================================
                 # check in how many views two persons co-incide
