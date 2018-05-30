@@ -63,7 +63,7 @@ class Camera:
                     mask.append(0)
                 else:
                     mask.append(1)
-            return pts2d, mask
+            return pts2d, np.array(mask)
         else:
             return pts2d
 
@@ -118,7 +118,7 @@ class ProjectiveCamera(Camera):
             pts2d = np.expand_dims(pts2d, axis=0)
         return pts2d
 
-    def projectPoints(self, points3d, withmask=False):
+    def projectPoints(self, points3d, withmask=False, binary_mask=True):
         """
             projects 3d points into 2d with
             distortion being considered
@@ -129,7 +129,7 @@ class ProjectiveCamera(Camera):
         if withmask:
             return gm.reproject_points_to_2d(
                 points3d, self.rvec, self.tvec, self.K, self.w, self.h,
-                distCoef=self.distCoef, binary_mask=True)
+                distCoef=self.distCoef, binary_mask=binary_mask)
         else:
             pts2d, _ = cv2.projectPoints(points3d,
                                          self.rvec,

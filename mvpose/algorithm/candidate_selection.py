@@ -9,8 +9,8 @@ def project_human_to_2d(human3d, cam):
     for jid, pt3d in enumerate(human3d):
         if pt3d is not None:
             Pt = np.array([pt3d])
-            points2d = cam.projectPoints_undist(Pt)
-            human2d[jid] = points2d
+            points2d = cam.projectPoints_undist(Pt)  # TODO shouldn't this be WITH distortion?
+            human2d[jid] = np.squeeze(points2d)
     return human2d
 
 
@@ -84,8 +84,10 @@ class CandidateSelector:
                 believe = [-1] * n_joints
                 for jid, pt2d in enumerate(human2d_a):
                     if pt2d is not None:
+                        if len(pt2d.shape) > 1:
+                            pt2d = np.squeeze(pt2d)
                         x, y = np.around(pt2d).astype('int32')
-                        if x > 0 and y > 0 and x < w and y < h:
+                        if x > 0 and w > 0 < y < h:
                             score = hm[y, x, jid]
                             believe[jid] = score
 
