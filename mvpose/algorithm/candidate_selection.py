@@ -87,7 +87,7 @@ class CandidateSelector:
                         if len(pt2d.shape) > 1:
                             pt2d = np.squeeze(pt2d)
                         x, y = np.around(pt2d).astype('int32')
-                        if x > 0 and w > 0 < y < h:
+                        if x > 0 and x < w and y > 0 and y < h:
                             score = hm[y, x, jid]
                             believe[jid] = score
 

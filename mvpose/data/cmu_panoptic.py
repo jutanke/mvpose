@@ -4,6 +4,7 @@ from os import listdir
 from os.path import join, isdir
 import json
 from scipy.ndimage import imread
+from mvpose.geometry.camera import ProjectiveCamera
 
 
 def get(cmu_root, seq_name, panels, nodes, frame=0):
@@ -63,13 +64,16 @@ def get(cmu_root, seq_name, panels, nodes, frame=0):
                                                                                                                 frame)
         im = imread(image_path)
         X[icam] = im
-
-        cam = {
-            'K': cam['K'],
-            'tvec': cam['t'],
-            'rvec': cv2.Rodrigues(cam['R'])[0],
-            'distCoeff': cam['distCoef']
-        }
+        #
+        # cam = {
+        #     'K': cam['K'],
+        #     'tvec': cam['t'],
+        #     'rvec': cv2.Rodrigues(cam['R'])[0],
+        #     'distCoeff': cam['distCoef']
+        # }
+        cam = ProjectiveCamera(
+            cam['K'], cv2.Rodrigues(cam['R'])[0], cam['t'],
+            cam['distCoef'], w, h)
         Calib.append(cam)
 
     Y = []
