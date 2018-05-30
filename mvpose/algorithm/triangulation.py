@@ -39,11 +39,10 @@ class Triangulation:
                 assert distCoef2 == 0
                 peaks2 = candidates2d.peaks2d_undistorted[cid2]
 
-                peaks3d = stereo.triangulate(
-                    peaks1, K1, rvec1, tvec1,
-                    peaks2, K2, rvec2, tvec2,
-                    max_epi_distance=max_epi_distance
-                )
+                P1 = gm.get_projection_matrix(K1, rvec1, tvec1)
+                P2 = gm.get_projection_matrix(K2, rvec2, tvec2)
+
+                peaks3d = stereo.triangulate(peaks1, peaks2, P1, P2, max_epi_distance=max_epi_distance)
                 assert len(peaks3d) == n_joints
 
                 for k in range(n_joints):

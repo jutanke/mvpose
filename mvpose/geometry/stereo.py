@@ -4,57 +4,47 @@ import numpy.random as rnd
 import mvpose.geometry.geometry as gm
 
 
-def get_fundamental_matrix(K1, rvec1, tvec1, distCoef1,
-                           K2, rvec2, tvec2, distCoef2):
+def get_fundamental_matrix(P1, P2):
     """
         finds the fundamental matrix between two views
-    :param K1:
-    :param rvec1:
-    :param tvec1:
-    :param distCoef1:
-    :param K2:
-    :param rvec2:
-    :param tvec2:
-    :param distCoef2:
+    :param P1: {3x4} projection matrix
+    :param P2: {3x4} projection matrix
     :return:
     """
     points3d = rnd.randint(0, 1500, (12, 3)).astype('float32')
-    points1 = np.squeeze(
-        cv2.projectPoints(points3d, rvec1, tvec1, K1, distCoef1)[0])
-    points2 = np.squeeze(
-        cv2.projectPoints(points3d, rvec2, tvec2, K2, distCoef2)[0])
+    points1 = np.zeros((12, 2))
+    points2 = np.zeros((12, 2))
+    for i, (x,y,z) in enumerate(points3d):
+        p3d = np.array([x,y,z,1])
+        a1, b1, c1 = P1 @ p3d
+        a2, b2, c2 = P2 @ p3d
+        points1[i, 0] = a1/c1
+        points1[i, 1] = b1/c1
+        points2[i, 0] = a2 / c2
+        points2[i, 1] = b2 / c2
     F, mask = cv2.findFundamentalMat(
         points1, points2, cv2.FM_8POINT
     )
     return F
 
 
-def triangulate(peaks1, K1, rvec1, tvec1,
-                peaks2, K2, rvec2, tvec2, max_epi_distance):
+def triangulate(peaks1, peaks2, P1, P2, max_epi_distance):
     """
        triangulates all points in peaks1 with all points
        in peaks2 BUT drops them if the distance in pixels
        to the epipolar line in either of the two views is
        larger then a threshold
     :param peaks1: [ [(x,y,w), ..], [..] ] * n_joints
-    :param K1: Camera matrix
-    :param rvec1: rodrigues vector
-    :param tvec1: loc vector
     :param peaks2: [ [(x,y,w), ..], [..] ] * n_joints
-    :param K2: -*-
-    :param rvec2: -*-
-    :param tvec2: -*-
+    :param P1: 3x4 projection matrix
+    :param P2: 3x4 projection matrix
     :param max_epi_distance: drop triangulation threshold
     :return:
     """
     n_joints = len(peaks1)
     assert n_joints == len(peaks2)
 
-    P1 = gm.get_projection_matrix(K1, rvec1, tvec1)
-    P2 = gm.get_projection_matrix(K2, rvec2, tvec2)
-
-    F = get_fundamental_matrix(K1, rvec1, tvec1, 0,
-                                    K2, rvec2, tvec2, 0)
+    F = get_fundamental_matrix(P1, P2)
     joints_3d = [None] * n_joints
 
     for j in range(n_joints):
