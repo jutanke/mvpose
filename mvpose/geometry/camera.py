@@ -35,12 +35,16 @@ class Camera:
         :param points3d: {n x 3}
         :return:
         """
-        points2d = np.zeros((len(points3d, 2)))
+        points2d = np.zeros((len(points3d), 2))
         for i, (x,y,z) in enumerate(points3d):
             p3d = np.array([x, y, z, 1])
             a, b, c = self.P @ p3d
-            points2d[i, 0] = a/c
-            points2d[i, 1] = b/c
+            if c != 0:
+                points2d[i, 0] = a/c
+                points2d[i, 1] = b/c
+            else:  # used for affine camera
+                points2d[i, 0] = a
+                points2d[i, 1] = b
         return points2d
 
     def projectPoints(self, points3d, withmask=False):
@@ -66,7 +70,6 @@ class Camera:
             return pts2d, np.array(mask)
         else:
             return pts2d
-
 
 
 class ProjectiveCamera(Camera):
