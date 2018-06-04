@@ -18,8 +18,17 @@ def get_fundamental_matrix(P1, P2):
         p3d = np.array([x,y,z,1])
         a1, b1, c1 = P1 @ p3d
         a2, b2, c2 = P2 @ p3d
-        points1[i, 0] = a1/c1
-        points1[i, 1] = b1/c1
+        # if c2 == 0 and c1 == 0:  # affine camera
+        #     assert np.count_nonzero(P1[2, :]) == 0
+        #     assert np.count_nonzero(P2[2, :]) == 0
+        #     points1[i, 0] = a1
+        #     points1[i, 1] = b1
+        #     points2[i, 0] = a2
+        #     points2[i, 1] = b2
+        # else:
+        assert c1 != 0 and c2 != 0
+        points1[i, 0] = a1 / c1
+        points1[i, 1] = b1 / c1
         points2[i, 0] = a2 / c2
         points2[i, 1] = b2 / c2
     F, mask = cv2.findFundamentalMat(

@@ -103,6 +103,7 @@ def get(data_root, seq_zipname, seq_dir, frame=0):
     for cid in [0, 1, 2]:
         cam = np.zeros((3, 4))
         cam[0:2, :] = cameras[:, :, cid, frame]
+        cam[2,3] = 1
         Calib.append(AffineCamera(cam, w, h))
 
     # h x w x cam

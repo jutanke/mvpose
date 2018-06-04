@@ -39,15 +39,18 @@ class Camera:
         for i, (x,y,z) in enumerate(points3d):
             p3d = np.array([x, y, z, 1])
             a, b, c = self.P @ p3d
-            if c != 0:
-                points2d[i, 0] = a/c
-                points2d[i, 1] = b/c
-            else:  # used for affine camera
-                points2d[i, 0] = a
-                points2d[i, 1] = b
+            assert c != 0
+            points2d[i, 0] = a/c
+            points2d[i, 1] = b/c
+            # if c != 0:
+            #     points2d[i, 0] = a/c
+            #     points2d[i, 1] = b/c
+            # else:  # used for affine camera
+            #     points2d[i, 0] = a
+            #     points2d[i, 1] = b
         return points2d
 
-    def projectPoints(self, points3d, withmask=False):
+    def projectPoints(self, points3d, withmask=False, binary_mask=True):
         """
             projects 3d points into 2d with
             distortion being considered
@@ -67,7 +70,12 @@ class Camera:
                     mask.append(0)
                 else:
                     mask.append(1)
-            return pts2d, np.array(mask)
+
+            mask = np.array(mask)
+            if not binary_mask:
+                mask = mask.nonzero()
+
+            return pts2d, mask
         else:
             return pts2d
 
