@@ -87,7 +87,7 @@ def estimate(Calib, heatmaps, pafs,
         print('step 4: elapsed', _end - _start)
 
     # -------- step 5 --------
-    # candidate selection
+    # candidate selection  "filter out bad detections"
     # ------------------------
     _start = time()
     candSelector = CandidateSelector(
