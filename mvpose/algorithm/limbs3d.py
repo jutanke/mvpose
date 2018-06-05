@@ -59,7 +59,7 @@ class Limbs3d:
     """
 
     def __init__(self, peaks3d, Calib, Pafs,
-                 limbSeq, sensible_limb_length, limbMapIdx):
+                 limbSeq, sensible_limb_length, limbMapIdx, oor_marker=0):
         """
 
         :param peaks3d: [ [ (x,y,z,w1,w2) ... ], ... ] * n_joints
@@ -68,6 +68,7 @@ class Limbs3d:
         :param limbSeq:
         :param sensible_limb_length:
         :param limbMapIdx:
+        :param oor_marker: out-of-range marker
         """
         n_cameras, h, w, _ = Pafs.shape
         n_limbs = len(limbSeq)
@@ -112,6 +113,8 @@ class Limbs3d:
                                 ptA_candidates.append(ptA)
                                 ptB_candidates.append(ptB)
                                 pair_candidates.append((i, j))
+                            else:
+                                W[i, j] = oor_marker
 
                     if len(ptA_candidates) > 0:
                         line_int = calculate_line_integral_elementwise(

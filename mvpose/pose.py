@@ -31,18 +31,30 @@ def validate_input(Calib, heatmaps, pafs, settings):
     return settings
 
 
-def estimate_heuristic(Calib, heatmaps, pafs, settings=None, debug=False):
+def estimate_heuristic(Calib, heatmaps, pafs, settings=None,
+                       radius=30, sigma=None, max_iterations=1000,
+                       between_distance=100, debug=False):
     """
         Brute-Force graph partitioning algorithm (np-hard)
     :param Calib: [ mvpose.geometry.camera, mvpose.geometry.camera, ...] list of n cameras
     :param heatmaps: [n x h x w x j]   // j = #joints
     :param pafs:     [n x h x w x 2*l]  // l = #limbs
     :param settings: parameters for system
+    :param radius: range for the meanshift density estimation (in mm)
+    :param sigma: width of the gaussian in the meanshift
+    :param max_iterations: cut-of threshold for meanshift
+    :param between_distance: maximal distance between two points of a cluster in mm
     :param debug:
     :return:
     """
     settings = validate_input(Calib, heatmaps, pafs, settings)
-    return meanshift.estimate(Calib, heatmaps, pafs, settings, debug)
+    # we might need to scale the radius according to the world coordinate scale
+    radius = radius/settings.scale_to_mm
+    if sigma is None:
+        sigma = radius
+    return meanshift.estimate(Calib, heatmaps, pafs, settings,
+                              radius, sigma, max_iterations,
+                              between_distance/settings.scale_to_mm, debug)
 
 
 def estimate(Calib, heatmaps, pafs, settings=None, debug=False):
