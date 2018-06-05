@@ -7,7 +7,7 @@ from collections import namedtuple
 from time import time
 
 
-def estimate(Calib, heatmaps, pafs, settings, debug=False):
+def estimate(Calib, heatmaps, pafs, settings, debug):
     """
         Brute-Force graph partitioning algorithm (np-hard)
     :param Calib: [ mvpose.geometry.camera, mvpose.geometry.camera, ...] list of n cameras

@@ -3,6 +3,7 @@
 """
 from mvpose.algorithm.settings import get_settings
 from mvpose.algorithm import brute_force
+from mvpose.algorithm import meanshift
 
 
 def validate_input(Calib, heatmaps, pafs, settings):
@@ -28,6 +29,20 @@ def validate_input(Calib, heatmaps, pafs, settings):
     assert w == heatmaps.shape[2]
     assert n_cameras > 2, 'The algorithm expects at least 3 views'
     return settings
+
+
+def estimate_heuristic(Calib, heatmaps, pafs, settings=None, debug=False):
+    """
+        Brute-Force graph partitioning algorithm (np-hard)
+    :param Calib: [ mvpose.geometry.camera, mvpose.geometry.camera, ...] list of n cameras
+    :param heatmaps: [n x h x w x j]   // j = #joints
+    :param pafs:     [n x h x w x 2*l]  // l = #limbs
+    :param settings: parameters for system
+    :param debug:
+    :return:
+    """
+    settings = validate_input(Calib, heatmaps, pafs, settings)
+    return meanshift.estimate(Calib, heatmaps, pafs, settings, debug)
 
 
 def estimate(Calib, heatmaps, pafs, settings=None, debug=False):
