@@ -8,6 +8,7 @@
 *.zip
 .idea/
 settings.txt
+settings_old.txt
 .pytest_cache/
 
 # Byte-compiled / optimized / DLL files

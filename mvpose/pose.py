@@ -7,8 +7,6 @@ from mvpose.algorithm.limbs3d import Limbs3d
 from mvpose.algorithm.graphcut import Graphcut
 from mvpose.algorithm.settings import get_settings
 from mvpose.algorithm.candidate_selection import CandidateSelector
-from mvpose.data.default_limbs import DEFAULT_LIMB_SEQ, \
-    DEFAULT_MAP_IDX, DEFAULT_SENSIBLE_LIMB_LENGTH
 from collections import namedtuple
 from time import time
 

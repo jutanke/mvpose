@@ -29,7 +29,7 @@ def get_settings(min_nbr_joints=8, gc_iota_scale=1,
         when a peak is a detection and when it is an outlier [0 .. 1]
     :param threshold_close_pair: number of joints that need to be
         "close" for two detections to be considered a collision in
-        the back-projection
+        the back-projection (in pixel)
     :param scale_to_mm: multiplier that scales the world coordinates
         into mm. E.g. if the world coordinates are in m, than
         scale_to_mm = 1000
