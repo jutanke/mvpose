@@ -4,7 +4,8 @@
 from mvpose.algorithm.peaks2d import Candidates2D
 from mvpose.algorithm.triangulation import Triangulation
 from mvpose.algorithm.limbs3d import Limbs3d
-from mvpose.algorithm.graphcut import Graphcut, get_parameters
+from mvpose.algorithm.graphcut import Graphcut
+from mvpose.algorithm.settings import get_settings
 from mvpose.algorithm.candidate_selection import CandidateSelector
 from mvpose.data.default_limbs import DEFAULT_LIMB_SEQ, \
     DEFAULT_MAP_IDX, DEFAULT_SENSIBLE_LIMB_LENGTH
@@ -12,12 +13,7 @@ from collections import namedtuple
 from time import time
 
 
-def estimate(Calib, heatmaps, pafs,
-             limbSeq=DEFAULT_LIMB_SEQ,
-             limbMapIdx=DEFAULT_MAP_IDX,
-             graphcut_params=None,
-             sensible_limb_length=DEFAULT_SENSIBLE_LIMB_LENGTH,
-             debug=False, max_epi_distance=10):
+def estimate(Calib, heatmaps, pafs, settings=None, debug=False):
     """
 
     :param Calib:
@@ -25,14 +21,18 @@ def estimate(Calib, heatmaps, pafs,
     :param pafs:
     :param limbSeq:
     :param limbMapIdx:
-    :param graphcut_params: parameters for the graphcut
+    :param settings: parameters for system
     :param sensible_limb_length:
     :param debug:
     :param max_epi_distance:
     :return:
     """
+    if settings is None:
+        settings = get_settings()  # gets default params
+    max_epi_distance = settings.max_epi_distance
     n_cameras, h, w, n_limbs = pafs.shape
     n_limbs = int(n_limbs / 2)
+    limbSeq = settings.limb_seq
     assert n_limbs == len(limbSeq)
     assert n_cameras == len(Calib)
     assert n_cameras == len(heatmaps)
@@ -44,7 +44,8 @@ def estimate(Calib, heatmaps, pafs,
     # calculate 2d candidates
     # ------------------------
     _start = time()
-    cand2d = Candidates2D(heatmaps, Calib)
+    cand2d = Candidates2D(heatmaps, Calib,
+                          threshold=settings.hm_detection_threshold)
     _end = time()
     if debug:
         print('step 1: elapsed', _end - _start)
@@ -64,8 +65,9 @@ def estimate(Calib, heatmaps, pafs,
     _start = time()
     limbs3d = Limbs3d(triangulation.peaks3d_weighted,
                       Calib, pafs,
-                      limbSeq, sensible_limb_length,
-                      limbMapIdx)
+                      settings.limb_seq,
+                      settings.sensible_limb_length,
+                      settings.limb_map_idx)
     _end = time()
     if debug:
         print('step 3: elapsed', _end - _start)
@@ -74,14 +76,10 @@ def estimate(Calib, heatmaps, pafs,
     # solve optimization problem
     # ------------------------
     _start = time()
-    if graphcut_params is None:
-        graphcut_params = get_parameters()  # gets default params
-    graphcut = Graphcut(graphcut_params,
+    graphcut = Graphcut(settings,
                         triangulation.peaks3d_weighted,
                         limbs3d,
-                        limbSeq, sensible_limb_length,
-                        debug=debug
-                        )
+                        debug=debug)
     _end = time()
     if debug:
         print('step 4: elapsed', _end - _start)
@@ -92,7 +90,7 @@ def estimate(Calib, heatmaps, pafs,
     _start = time()
     candSelector = CandidateSelector(
         graphcut.person_candidates, heatmaps,
-        Calib, graphcut_params.min_nbr_joints)
+        Calib, settings.min_nbr_joints)
     _end = time()
     if debug:
         print('step 5: elapsed', _end - _start)

@@ -1,4 +1,3 @@
-from collections import namedtuple
 import numpy as np
 from ortools.linear_solver import pywraplp as mip
 from mvpose.algorithm.transitivity import TransitivityLookup
@@ -19,51 +18,51 @@ def merge(person):
     return result
 
 
-def get_parameters(min_nbr_joints=8, iota_scale=1,
-                   max_radius=300, radius=50,
-                   hm_detection_threshold=0.1,
-                   threshold_close_pair=10):
-    """
-        gets the parameters that are needed for the
-        graphcut
-    :param min_nbr_joints: number of joints that are needed
-        to be a 'valid' human pose detection
-    :param iota_scale: how to scale the cost function for iota
-    :param max_radius: maximal radius for internal distances
-        of 3d joint candidates in the measure of the cameras (e.g. mm)
-    :param radius: drop-off value after which internal weights
-        between 3d joint candidates are negative. Measure of the
-        cameras is used (e.g. mm)
-    :return:
-    """
-    params = namedtuple('GraphcutParams', [
-        'max_radius',
-        'radius',
-        'min_nbr_joints',
-        'iota_scale',
-        'hm_detection_threshold',
-        'threshold_close_pair'
-    ])
-    params.max_radius = max_radius
-    params.radius = radius
-    params.min_nbr_joints = min_nbr_joints
-    params.iota_scale = iota_scale
-    params.hm_detection_threshold = hm_detection_threshold
-    params.threshold_close_pair = threshold_close_pair
-    return params
+# def get_parameters(min_nbr_joints=8, iota_scale=1,
+#                    max_radius=300, radius=50,
+#                    hm_detection_threshold=0.1,
+#                    threshold_close_pair=10):
+#     """
+#         gets the parameters that are needed for the
+#         graphcut
+#     :param min_nbr_joints: number of joints that are needed
+#         to be a 'valid' human pose detection
+#     :param iota_scale: how to scale the cost function for iota
+#     :param max_radius: maximal radius for internal distances
+#         of 3d joint candidates in the measure of the cameras (e.g. mm)
+#     :param radius: drop-off value after which internal weights
+#         between 3d joint candidates are negative. Measure of the
+#         cameras is used (e.g. mm)
+#     :return:
+#     """
+#     params = namedtuple('GraphcutParams', [
+#         'max_radius',
+#         'radius',
+#         'min_nbr_joints',
+#         'iota_scale',
+#         'hm_detection_threshold',
+#         'threshold_close_pair'
+#     ])
+#     params.max_radius = max_radius
+#     params.radius = radius
+#     params.min_nbr_joints = min_nbr_joints
+#     params.iota_scale = iota_scale
+#     params.hm_detection_threshold = hm_detection_threshold
+#     params.threshold_close_pair = threshold_close_pair
+#     return params
 
 
 class Graphcut:
 
-    def __init__(self, params, points3d, limbs3d,
-                 limbSeq, sensible_limb_length, debug=False):
-
-        max_radius = params.max_radius
-        radius = params.radius
+    def __init__(self, params, points3d, limbs3d, debug=False):
+        limbSeq = params.limb_seq
+        sensible_limb_length = params.sensible_limb_length
+        scale_to_mm = params.scale_to_mm
+        max_radius = params.gc_max_radius
+        radius = params.gc_radius
         min_nbr_joints = params.min_nbr_joints
-        iota_scale = params.iota_scale
-        hm_detection_threshold = params.hm_detection_threshold
-        threshold_close_pair = params.threshold_close_pair
+        iota_scale = params.gc_iota_scale
+        sensible_limb_length = sensible_limb_length
         n_joints = len(points3d)
 
         # ===========================================
@@ -72,7 +71,7 @@ class Graphcut:
         pboost_big = lambda x: np.log((x + 1) / (2 * (0.5 * (-x - 1) + 1))) * 2
         pboost_small = lambda x: np.log(x / (1 - x))
         func1 = lambda u: np.tanh(pboost_small(u))
-        func2 = lambda d: (-np.tanh((d - radius) / radius) * iota_scale)
+        func2 = lambda d: (-np.tanh(((d * scale_to_mm) - radius) / radius) * iota_scale)
         func3 = lambda x: pboost_big(x)
 
         # ===========================================
@@ -133,7 +132,8 @@ class Graphcut:
                 enumerate(zip(limbSeq, sensible_limb_length)):
             assert jid1 != jid2
             ABdistance = gm.calculate_distance_all4all(
-                points3d[jid1], points3d[jid2], max_distance=maxdist,
+                points3d[jid1], points3d[jid2],
+                max_distance=maxdist,
                 min_distance=mindist,
                 AB_are_the_same=False)
             As = ABdistance[:, 0].astype('int32')
@@ -316,8 +316,6 @@ class Graphcut:
 
             if count_valid_joints >= min_nbr_joints:
                 valid_persons.append(person)
-
-        #self.person_candidates = valid_persons
 
         assert len(Nu) == len(D)
         assert len(E_j) == len(Iota)
