@@ -1,5 +1,4 @@
 import numpy as np
-import mvpose.geometry.geometry as gm
 from mvpose.geometry import stereo
 
 
@@ -38,3 +37,14 @@ class Triangulation:
                     Peaks3d[k] = np.concatenate([Peaks3d[k], peaks3d[k]], axis=0)
 
         self.peaks3d_weighted = Peaks3d
+
+
+class SmartTriangulation:
+    """
+        triangulates all 2d candidates if the
+        epipolar line is close enough to the
+        point and also defines if there can be
+        a connection between two points or not
+    """
+
+    pass
