@@ -116,3 +116,60 @@ def get(data_root, seq_zipname, seq_dir, frame=0):
 
     return Im, Calib, \
            np.transpose(np.array(Pts2d)), np.transpose(d3d)
+
+
+def transform3d_from_mscoco(humans):
+    """
+        transforms the humans in the list from the mscoco
+        data structure to the kth football2 structure
+    :param humans: [ [ (x,y,z), ... ] * n_limbs ] * n_humans
+    :return:
+    """
+    # R_ANKLE       0
+    # R_KNEE
+    # R_HIP
+    # L_HIP
+    # L_KNEE
+    # L_ANKLE       5
+    # R_WRIST
+    # R_ELBOW
+    # R_SHOULDER
+    # L_SHOULDER
+    # L_ELBOW       10
+    # L_WRIST
+    # BOTTOM_HEAD
+    # TOP_HEAD      13
+    human_t = []
+
+    for human in humans:
+        new_human = [None] * 14
+        new_human[0] = human[10]
+        new_human[1] = human[9]
+        new_human[2] = human[8]
+        new_human[3] = human[11]
+        new_human[4] = human[12]
+        new_human[5] = human[13]
+        new_human[6] = human[4]
+        new_human[7] = human[3]
+        new_human[8] = human[2]
+        new_human[9] = human[5]
+        new_human[10] = human[6]
+        new_human[11] = human[7]
+        new_human[12] = human[1]
+
+        top_head = None
+        nose = human[0]
+        eyer = human[14]
+        eyel = human[15]
+        earr = human[16]
+        earl = human[17]
+        top_head_items = [elem for elem in [nose, eyel, eyer, earr, earl]
+                          if elem is not None]
+        if len(top_head_items) > 0:
+            top_head_items = np.array(top_head_items)
+            assert len(top_head_items.shape) == 2
+            top_head = np.mean(top_head_items, axis=0)
+        new_human[13] = top_head
+        human_t.append(new_human)
+
+    return human_t

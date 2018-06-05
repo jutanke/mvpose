@@ -1,7 +1,5 @@
 import numpy as np
 import numpy.linalg as la
-import cv2
-import mvpose.geometry.geometry as gm
 
 
 def project_human_to_2d(human3d, cam):
