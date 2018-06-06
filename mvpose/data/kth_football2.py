@@ -8,16 +8,18 @@ from math import ceil, floor
 from mvpose.geometry.camera import AffineCamera
 
 
-def get(data_root, seq_zipname, seq_dir, frame=0):
+def get(data_root, seq_zipname, seq_dir, frame=0, player=1):
     """
 
     :param data_root:
     :param seq_zipname:
     :param seq_dir:
     :param frame: starting at frame 0
+    :param player which player
     :return:
     """
     root = join(data_root, 'football2')
+    root = join(root, 'player' + str(player))
     if not isdir(root):
         makedirs(root)
 
