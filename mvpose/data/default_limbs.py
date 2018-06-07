@@ -3,22 +3,22 @@ import numpy as np
 DEFAULT_JOINT_NAMES = [
     'Nose',             # 0
     'Neck',
-    'Shoulder right',
+    'Shoulder right',   # 2
     'Elbow right',
     'Hand right',
     'Shoulder left',    # 5
     'Elbow left',
-    'Hand left',
+    'Hand left',        # 7
     'Hip right',
     'Knee right',
     'Foot right',       # 10
     'Hip left',
-    'Knee left',
+    'Knee left',        # 12
     'Foot left',
     'Eye right',
     'Eye left',         # 15
     'Ear right',
-    'Ear left'
+    'Ear left'          # 17
 ]
 
 # GT joints:

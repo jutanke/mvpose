@@ -15,6 +15,40 @@
     # * right-foot      (12)
 """
 import numpy as np
+from keras.models import load_model
+
+
+def merge_with_mscoco(humans_coco, humans_pred):
+    """
+        merges the two datasets
+    :param humans_coco: output from the end-to-end algorithm
+    :param humans_pred: output from the prediction network for
+        the limbs
+    :return:
+    """
+    assert len(humans_coco) == len(humans_pred)
+    if len(humans_coco) == 0:
+        return []
+
+    assert len(humans_coco[0]) == 18
+    assert len(humans_pred[0]) == 13
+
+    # left: mscoco position,  right: prediction position
+    # if the right side is -1 then we always take coco
+    mapping = [(0, -1), (1, 0), (14, -1), (15, -1), (16, -1), (17, -1),
+               (2, 4), (3, 5), (4, 6), (5, 1), (6, 2), (7, 3),
+               (8, 10), (9, 11), (10, 12), (11, 7), (12, 8), (13, 9)]
+
+    result = []
+    for coco, pred in zip(humans_coco, humans_pred):
+        current_human = [None] * 18
+        for a, b in mapping:
+            if b > -1 and coco[a] is None:
+                current_human[a] = pred[b]
+            else:
+                current_human[a] = coco[a]
+        result.append(current_human)
+    return result
 
 
 def transform_from_mscoco(humans):
@@ -44,11 +78,11 @@ def transform_from_mscoco(humans):
     return np.array(humans_transformed)
 
 
-def normalize(indv, settings):
+def normalize(indv, scale_to_mm):
     """
         normalize the data to be between -1 and 1
     :param indv:
-    :param settings:
+    :param scale_to_mm:
     :return:
     """
     result = indv.copy()
@@ -57,7 +91,7 @@ def normalize(indv, settings):
     assert n_dims == 4
     pts = indv[:, 0:3]
     visible = indv[:, 3]
-    div = 1000 / settings.scale_to_mm
+    div = 1000 / scale_to_mm
     mu = np.mean(pts, axis=0)
     result[:, 0:3] = (pts - mu)/div  # because we use mm!
     for i, v in enumerate(visible):
@@ -68,14 +102,14 @@ def normalize(indv, settings):
     return result
 
 
-def denormalize(indv, settings):
+def denormalize(indv, scale_to_mm):
     """
         de-normalizes the data again
     :param indv:
-    :param settings:
+    :param scale_to_mm:
     :return:
     """
-    div = 1000 / settings.scale_to_mm
+    div = 1000 / scale_to_mm
     mu = np.mean(indv, axis=0)
     return (indv + mu) * div
 
@@ -105,3 +139,47 @@ def plot_indv(ax, indv, visible=np.ones((13,)), color='red'):
             p_b = indv[b]
             ax.plot([p_a[0], p_b[0]], [p_a[1], p_b[1]], [p_a[2], p_b[2]],
                     color=color, alpha=0.8)
+
+
+class LimbGenerator:
+    """
+        adds missing limbs for a set of human pose candidates
+    """
+
+    def __init__(self, model_path, scale_to_mm,
+                 transform_func=transform_from_mscoco,
+                 merge_func=merge_with_mscoco):
+        """
+
+        :param model_path: path to the model that will predict the data
+        :param scale_to_mm: how the used format can be scaled to [mm]
+        :param transform_func: takes the input data and transforms it into the skeleton
+                format
+        :param merge_func: merges the input data and the model data to
+                yield the result of this function
+        """
+        self.model = load_model(model_path)
+        self.scale_to_mm = scale_to_mm
+        self.transform_func = transform_func
+        self.merge_func = merge_func
+
+    def apply(self, humans):
+        """
+            generates limbs for candidates with missing limbs
+        :param humans: [ [ (x,y,z), ... ] * n_limbs ... ] * n_candidates
+        :return:
+        """
+        n = len(humans)
+        if n == 0:
+            return []
+        humans_trans = self.transform_func(humans)
+        for pid, human in enumerate(humans_trans):
+            humans_trans[pid] = normalize(human, self.scale_to_mm)
+
+        y_pred = self.model.predict(humans_trans.reshape(n, 13*4)).reshape(n, 13, 3)
+
+        result = np.zeros((n, 13, 3))
+        for pid, human in enumerate(y_pred):
+            result[pid] = denormalize(human, self.scale_to_mm)
+
+        return self.merge_func(humans, result)
