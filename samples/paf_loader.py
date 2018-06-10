@@ -8,24 +8,25 @@ sys.path.insert(0,'../../easy_multi_person_pose_estimation')
 from poseestimation import model
 from time import time
 import numpy as np
-from os.path import isfile
+from os.path import isfile, join
 
 
-def load_confidence_map_and_paf(name, Im, frame, with_gpu=False):
+def load_confidence_map_and_paf(name, Im, frame, with_gpu=False, dir='/tmp'):
     """
         loads the confidence map and paf
     :param name: to store the data
     :param Im: np.array: n x h x w x 3
     :param frame: {int}
     :param with_gpu:
+    :param dir
     :return:
     """
     pe = model.PoseEstimator()
     if with_gpu:
         heatmaps, pafs = pe.predict_pafs_and_heatmaps(Im)
     else:
-        hm_file = '/tmp/'+name+'heatmaps' + str(frame) + '.npy'
-        paf_file = '/tmp/'+name+'pafs' + str(frame) + '.npy'
+        hm_file = join(dir, name + 'heatmaps' + str(frame) + '.npy')
+        paf_file = join(dir, name + 'pafs' + str(frame) + '.npy')
 
         if isfile(hm_file) and isfile(paf_file):
             heatmaps = np.load(hm_file)

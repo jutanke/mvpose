@@ -1,11 +1,13 @@
 import numpy as np
+import numpy.linalg as la
 import cv2
-from os import makedirs, listdir
+from os import makedirs
 from os.path import join, isdir, isfile
 from pak.util.download import download
 from pak.util.unzip import unzip
 from math import ceil, floor
 from mvpose.geometry.camera import AffineCamera
+from mvpose.algorithm.candidate_selection import project_human_to_2d
 
 
 def get(data_root, seq_zipname, seq_dir, frame=0, player=1):
@@ -120,6 +122,54 @@ def get(data_root, seq_zipname, seq_dir, frame=0, player=1):
            np.transpose(np.array(Pts2d)), np.transpose(d3d)
 
 
+def draw_limbs2d(ax, person3d, cam, color, print_length=False):
+    """
+        draws the person onto the screen
+    :param ax:
+    :param person3d:
+    :param cam:
+    :param color:
+    :param print_length: {boolean} if true: print limb length
+    :return:
+    """
+    assert len(person3d) == 14
+    person2d = project_human_to_2d(person3d, cam)
+    for p in person2d:
+        if p is not None:
+            ax.scatter(p[0], p[1], color=color)
+    limbs = [
+        (0, 1), (1, 2), (2, 3), (3, 4), (4, 5),
+        (6, 7), (7, 8), (8, 9), (9, 10), (10, 11),
+        (9, 3), (2, 8), (8, 12), (9, 12), (12, 13)
+    ]
+    limb_names = [
+        'lower leg (right)',
+        'upper leg (right)',
+        'pelvis',
+        'upper leg (left)',
+        'lower leg (left)',
+        'lower arm (right)',
+        'upper arm (right)',
+        'shoulders',
+        'upper arm (left)',
+        'lower arm (left)',
+        'side (left)',
+        'side (right)',
+        'shoulder-to-chin (right)',
+        'shoulder-to-chin (left)',
+        'head'
+    ]
+    assert len(limbs) == len(limb_names)
+    for lid, (a, b) in enumerate(limbs):
+        if person2d[a] is not None and person2d[b] is not None:
+            Ax, Ay = person2d[a]
+            Bx, By = person2d[b]
+            ax.plot([Ax, Bx], [Ay, By], color=color)
+            if print_length:
+                print(limb_names[lid] + '= ',
+                      la.norm(person3d[a] - person3d[b]))
+
+
 def transform3d_from_mscoco(humans):
     """
         transforms the humans in the list from the mscoco
@@ -129,17 +179,17 @@ def transform3d_from_mscoco(humans):
     """
     # R_ANKLE       0
     # R_KNEE
-    # R_HIP
-    # L_HIP
+    # R_HIP         2
+    # L_HIP         3
     # L_KNEE
     # L_ANKLE       5
     # R_WRIST
-    # R_ELBOW
-    # R_SHOULDER
+    # R_ELBOW       7
+    # R_SHOULDER    8
     # L_SHOULDER
     # L_ELBOW       10
     # L_WRIST
-    # BOTTOM_HEAD
+    # BOTTOM_HEAD   12
     # TOP_HEAD      13
     human_t = []
 
