@@ -61,13 +61,13 @@ DEFAULT_SENSIBLE_LIMB_LENGTH = np.array([
     (200, 700),  # neck - hip left
     (200, 600),  # hip left - knee left             # 10
     (200, 600),  # knee left - foot left,
-    (50, 250),  # neck - nose
-    (5, 150),  # nose - eye right
-    (5, 150),  # eye right - ear right
-    (5, 150),  # nose - eye left                    # 15
-    (5, 150),  # eye left - ear left
-    (0, 400),  # shoulder right - ear right
-    (0, 400)  # shoulder left - ear left
+    (50, 350),  # neck - nose
+    (5, 200),  # nose - eye right
+    (5, 200),  # eye right - ear right
+    (5, 200),  # nose - eye left                    # 15
+    (5, 200),  # eye left - ear left
+    (0, 450),  # shoulder right - ear right
+    (0, 450)  # shoulder left - ear left
 ])
 DEFAULT_SENSIBLE_LIMB_LENGTH.setflags(write=False)  # read-only
 

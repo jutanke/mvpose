@@ -108,7 +108,7 @@ def estimate(Calib, heatmaps, pafs, settings,
     _start = time()
     modes3d = meanshift.centers3d
     pid = 0
-    # represents all modes and their respetive pid (-1 => no person)
+    # represents all modes and their respective pid (-1 => no person)
     modes_to_person = [[-1] * len(x) for x in modes3d]
 
     for lid, (k1, k2) in enumerate(settings.limb_seq):
