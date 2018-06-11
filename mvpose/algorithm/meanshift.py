@@ -11,6 +11,7 @@ import numpy as np
 import numpy.linalg as la
 import sklearn.metrics as mt
 from scipy.optimize import linear_sum_assignment
+from mvpose.data.default_limbs import DEFAULT_JOINT_NAMES
 
 
 @vectorize([float64(float64, float64, float64, float64)])
@@ -97,7 +98,7 @@ def estimate(Calib, heatmaps, pafs, settings,
                       settings.limb_seq,
                       settings.sensible_limb_length,
                       settings.limb_map_idx,
-                      oor_marker=-999999999)
+                      oor_marker=-999999)
     _end = time()
     if debug:
         print('step 4: elapsed', _end - _start)
@@ -116,9 +117,15 @@ def estimate(Calib, heatmaps, pafs, settings,
         rows, cols = linear_sum_assignment(W)
         for a, b in zip(rows, cols):
 
+            ptA = modes3d[k1][a]
+            ptB = modes3d[k2][b]
+            distance = la.norm(ptA - ptB)
+            min_length, max_length = settings.sensible_limb_length[lid]
+            if min_length > distance or distance > max_length:
+                print("limb " + DEFAULT_JOINT_NAMES[k1] + '->' + DEFAULT_JOINT_NAMES[k2], distance)
+                continue
             if W[a, b] > 0:
                 continue
-
             pid1 = modes_to_person[k1][a]
             pid2 = modes_to_person[k2][b]
 
@@ -136,6 +143,8 @@ def estimate(Calib, heatmaps, pafs, settings,
     humans = {}
     for jid, pids in enumerate(modes_to_person):
         for idx, pid in enumerate(pids):
+            if pid == -1:
+                continue
             if pid not in humans:
                 humans[pid] = [None] * cand2d.n_joints
             humans[pid][jid] = modes3d[jid][idx]

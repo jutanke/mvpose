@@ -1,5 +1,4 @@
 import numpy as np
-import mvpose.geometry.geometry as gm
 from scipy.special import comb
 import numpy.linalg as la
 from numba import jit, float64
@@ -88,7 +87,14 @@ class Limbs3d:
             nB = len(candB3d)
 
             W = np.zeros((nA, nB))
-            #W = np.ones((nA, nB)) * oor_marker
+
+            if oor_marker != 0:
+                # -- disable all connections that are too far away from each other
+                for i, ptA3d in enumerate(candA3d):
+                    for j, ptB3d in enumerate(candB3d):
+                        distance = la.norm(ptA3d[0:3] - ptB3d[0:3])
+                        if length_min > distance or distance > length_max:
+                            W[i, j] = oor_marker
 
             if nA > 0 and nB > 0:
                 for cid, cam in enumerate(Calib):
@@ -114,8 +120,6 @@ class Limbs3d:
                                 ptA_candidates.append(ptA)
                                 ptB_candidates.append(ptB)
                                 pair_candidates.append((i, j))
-                            else:
-                                W[i, j] = oor_marker
 
                     if len(ptA_candidates) > 0:
                         line_int = calculate_line_integral_elementwise(
