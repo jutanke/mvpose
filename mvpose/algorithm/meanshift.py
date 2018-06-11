@@ -122,7 +122,6 @@ def estimate(Calib, heatmaps, pafs, settings,
             distance = la.norm(ptA - ptB)
             min_length, max_length = settings.sensible_limb_length[lid]
             if min_length > distance or distance > max_length:
-                print("limb " + DEFAULT_JOINT_NAMES[k1] + '->' + DEFAULT_JOINT_NAMES[k2], distance)
                 continue
             if W[a, b] > 0:
                 continue
