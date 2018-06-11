@@ -88,6 +88,7 @@ class Limbs3d:
             nB = len(candB3d)
 
             W = np.zeros((nA, nB))
+            #W = np.ones((nA, nB)) * oor_marker
 
             if nA > 0 and nB > 0:
                 for cid, cam in enumerate(Calib):
