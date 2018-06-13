@@ -27,81 +27,34 @@ class CandidateMerger:
                 pair_length[b, a] = sensible_limb_length[lid]
 
             merged_candidates = []
+            merge_pairs = []  # (i, j, conflict_jid)
             for i in range(0, n-1):
                 cand_i = candidates[i]
                 for j in range(1, n):
                     cand_j = candidates[j]
 
                     conflicts = 0
+                    conflict_jid = -1
                     for jid in range(n_joints):
                         if cand_i[jid] is not None and cand_j[jid] is not None:
                             conflicts += 1
+                            conflict_jid = jid
                         if conflicts >= 2:
                             break
 
-                    if conflicts == 1: # merge the two candidates if possible
-                        cand_new = [None] * n_joints
+                    if conflicts == 1:
+                        merge_pairs.append((i, j, conflict_jid))
 
-                        had_conflict_with_distance = False
-                        for jid in range(n_joints):
-                            a = cand_i[jid]
-                            b = cand_j[jid]
-                            if a is not None and b is not None:
-                                assert len(a) == 4
-                                assert len(b) == 4
-                                a_ = a[0:3] * a[3]
-                                b_ = b[0:3] * b[3]
-                                c = (a_ + b_) / (a[3] + b[3])
+                    #
+                    # if conflicts == 1: # merge the two candidates if possible
+                    #     assert conflict_jid >= 0
+                    #     cand_new = [k for k in cand_i]
+                    #     k1 = cand_i[conflict_jid]
+                    #     k2 = cand_j[conflict_jid]
+                    #     k_mix = (k1[0:3] * k1[3] + k2[0:3] * k2[3]) / (k1[3] + k2[3])
+                    #     for other_jid in pair_lookup[conflict_jid]:
+                    #         min_length, max_length = pair_length[conflict_jid, other_jid]
+                    #
 
-                                new_point_fits = True
-                                # check if this new points fit with all other points
-                                for ojid in pair_lookup[jid]:
-                                    min_length, max_length = pair_length[jid, ojid]
-                                    d1_ok = True
-                                    d2_ok = True
-
-                                    pA_other = cand_i[ojid]
-                                    if pA_other is not None:
-                                        assert len(pA_other) == 4
-                                        distance = la.norm(pA_other[0:3] - c)
-                                        if min_length > distance or distance > max_length:
-                                            d1_ok = False
-
-                                    pB_other = cand_j[ojid]
-                                    if pB_other is not None:
-                                        distance = la.norm(pB_other[0:3] - c)
-                                        if min_length > distance or distance > max_length:
-                                            d2_ok = False
-
-                                    # must be connected to at least one
-                                    new_point_fits = new_point_fits and d1_ok and d2_ok
-
-                                if new_point_fits:
-                                    cand_new[jid] = c
-                                else:
-                                    had_conflict_with_distance = True
-                                    break
-                            elif a is not None:
-                                assert b is None
-                                cand_new[jid] = a
-                            elif b is not None:
-                                assert a is None
-                                cand_new[jid] = b
-                            # else both a, b are None
-
-                        if had_conflict_with_distance:
-                            print('merge FAILED!!')
-                            merged_candidates.append(cand_j)
-                            merged_candidates.append(cand_i)
-                        else:
-                            print('YAY, MERGE SUCCESSFUL')
-                            merged_candidates.append(cand_new)
-
-                    else:
-                        merged_candidates.append(cand_j)
-                        merged_candidates.append(cand_i)
-
-            print('# candidates: ---> ', len(merged_candidates))
-            self.merged_candidates = merged_candidates
         else:
             self.merged_candidates = candidates

@@ -323,4 +323,5 @@ class Graphcut:
 
         Humans = [merge(p) for p in valid_persons]
 
+        self.person_candidates_all = [merge(p) for p in persons]
         self.person_candidates = Humans

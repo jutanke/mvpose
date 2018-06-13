@@ -1,6 +1,7 @@
 import numpy as np
 from numba import jit, float64
 import numpy.linalg as la
+from mvpose.data.default_limbs import DEFAULT_LIMB_SEQ
 
 
 @jit([float64[:, :](float64[:, :], float64[:, :])], nopython=True, nogil=True)
@@ -44,6 +45,14 @@ def draw_mscoco_human(ax, human, cam, color, alpha=1):
         elif jid in [5, 6, 7, 11, 12, 13, 15, 17]:
             marker = '|'
         ax.scatter(pt[0], pt[1], color=color, marker=marker, alpha=alpha)
+
+        for a, b in DEFAULT_LIMB_SEQ:
+            ptA = human[a]
+            ptB = human[b]
+            if ptA is not None and ptB is not None:
+                x_a, y_a = cam.projectPoints([ptA[0:3]])[0]
+                x_b, y_b = cam.projectPoints([ptB[0:3]])[0]
+                ax.plot([x_a, x_b], [y_a, y_b], color=color, alpha=alpha)
 
 
 # @jit([float64[:, :](float64_2d_const, float64_2d_const)], nopython=True, nogil=True)
