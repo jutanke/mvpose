@@ -2,6 +2,7 @@ from mvpose.algorithm.peaks2d import Candidates2D
 from mvpose.algorithm.triangulation import Triangulation
 from mvpose.algorithm.limbs3d import Limbs3d
 from mvpose.algorithm.candidate_selection import CandidateSelector
+from mvpose.algorithm.candidate_merger import CandidateMerger
 from collections import namedtuple
 from time import time
 from scipy.spatial import KDTree
@@ -11,7 +12,6 @@ import numpy as np
 import numpy.linalg as la
 import sklearn.metrics as mt
 from scipy.optimize import linear_sum_assignment
-from mvpose.data.default_limbs import DEFAULT_JOINT_NAMES
 
 
 @vectorize([float64(float64, float64, float64, float64)])
@@ -121,7 +121,7 @@ def estimate(Calib, heatmaps, pafs, settings,
 
             ptA = modes3d[k1][a]
             ptB = modes3d[k2][b]
-            distance = la.norm(ptA - ptB)
+            distance = la.norm(ptA[0:3] - ptB[0:3])
             min_length, max_length = settings.sensible_limb_length[lid]
             if min_length > distance or distance > max_length:
                 continue
@@ -173,21 +173,42 @@ def estimate(Calib, heatmaps, pafs, settings,
                 humans[pid] = [None] * cand2d.n_joints
             humans[pid][jid] = modes3d[jid][idx]
 
-    human_candidates = []
-    for v in humans.values():
-        count_valid = 0
-        for i in range(cand2d.n_joints):
-            count_valid = count_valid if v[i] is None else count_valid + 1
-            v[i] = v[i][0:3] if v[i] is not None else None
-
-        if count_valid > settings.min_nbr_joints:
-            human_candidates.append(v)
-
     _end = time()
     if debug:
         print('step 5: elapsed', _end - _start)
 
     # -------- step 6 --------
+    # Merge candidates if possible
+    # ------------------------
+    _start = time()
+
+    cand_merger = CandidateMerger(list(humans.values()), settings)
+
+    _end = time()
+    if debug:
+        print('step 6: elapsed', _end - _start)
+
+    # -------- step 7 --------
+    # Select all candidates with enough parts
+    # ------------------------
+    _start = time()
+    human_candidates = []
+    #for v in humans.values():
+    for v in cand_merger.merged_candidates:
+        v_result = [None] * cand2d.n_joints
+        count_valid = 0
+        for i in range(cand2d.n_joints):
+            count_valid = count_valid if v[i] is None else count_valid + 1
+            v_result[i] = v[i][0:3] if v[i] is not None else None
+
+        if count_valid > settings.min_nbr_joints:
+            human_candidates.append(v_result)
+
+    _end = time()
+    if debug:
+        print('step 7: elapsed', _end - _start)
+
+    # -------- step 8 --------
     # candidate selection  "filter out bad detections"
     # ------------------------
     _start = time()
@@ -196,7 +217,7 @@ def estimate(Calib, heatmaps, pafs, settings,
         Calib, settings.min_nbr_joints)
     _end = time()
     if debug:
-        print('step 5: elapsed', _end - _start)
+        print('step 8: elapsed', _end - _start)
 
     # ------------------------
     # finalize
@@ -216,7 +237,7 @@ def estimate(Calib, heatmaps, pafs, settings,
         Debug.meanshift = meanshift
         Debug.limbs3d = limbs3d
         Debug.human_candidates = human_candidates
-        Debug.human_candidates_no_filter = humans
+        Debug.human_candidates_no_filter = list(humans.values())
         Debug.unmerged_conflicts_human_candidates = unmerged_conflicts
         return Debug, candSelector.persons
     else:

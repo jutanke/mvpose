@@ -3,12 +3,26 @@ import numpy.linalg as la
 
 
 def project_human_to_2d(human3d, cam):
+    """
+
+    :param human3d: [ (x,y,z) ... ] OR [ (x,y,z,w), ... ]
+    :param cam:
+    :return:
+    """
     human2d = [None] * len(human3d)
     for jid, pt3d in enumerate(human3d):
         if pt3d is not None:
-            Pt = np.array([pt3d])
+            if len(pt3d) == 3:
+                Pt = np.array([pt3d])
+            elif len(pt3d) == 4:
+                Pt = np.array([pt3d[0:3]])
+            else:
+                raise ValueError('pt3d invalid:', pt3d.shape)
             points2d = cam.projectPoints_undist(Pt)  # TODO shouldn't this be WITH distortion?
             human2d[jid] = np.squeeze(points2d)
+            if len(pt3d) == 4:
+                human2d[jid] = np.append(human2d[jid], pt3d[3])
+
     return human2d
 
 
