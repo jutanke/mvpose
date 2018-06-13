@@ -112,6 +112,8 @@ def estimate(Calib, heatmaps, pafs, settings,
     # represents all modes and their respective pid (-1 => no person)
     modes_to_person = [[-1] * len(x) for x in modes3d]
 
+    unmerged_conflicts = []  # for debugging-purposes only
+
     for lid, (k1, k2) in enumerate(settings.limb_seq):
         W = -limbs3d[lid]  # weight for the modes
         rows, cols = linear_sum_assignment(W)
@@ -137,7 +139,30 @@ def estimate(Calib, heatmaps, pafs, settings,
             elif pid2 == -1:
                 modes_to_person[k2][b] = pid1
             else:  # merge?
-                pass  # TODO: we need to do something here!
+                # merge if there is no conflict
+                # merge pid2 -> pid1
+                has_conflict = False
+                for joint_pp in modes_to_person:
+                    has_pid1 = False
+                    has_pid2 = False
+                    for pt in joint_pp:
+                        if pt == pid1:
+                            has_pid1 = True
+                        elif pt == pid2:
+                            has_pid2 = True
+                        if has_pid1 and has_pid2:
+                            has_conflict = True
+                            break
+                    if has_conflict:
+                        break
+
+                if not has_conflict:  # merge the two persons
+                    for joint_pp in modes_to_person:
+                        for i, pt in enumerate(joint_pp):
+                            if pt == pid2:
+                                joint_pp[i] = pid1
+                else:
+                    unmerged_conflicts.append((pid1, pid2))  # for debugging purposes
 
     humans = {}
     for jid, pids in enumerate(modes_to_person):
@@ -182,13 +207,17 @@ def estimate(Calib, heatmaps, pafs, settings,
             'triangulation',
             'meanshift',
             'limbs3d',
-            'human_candidates'
+            'human_candidates',
+            'human_candidates_no_filter',
+            'unmerged_conflicts_human_candidates'
         ])
         Debug.candidates2d = cand2d
         Debug.triangulation = triangulation
         Debug.meanshift = meanshift
         Debug.limbs3d = limbs3d
         Debug.human_candidates = human_candidates
+        Debug.human_candidates_no_filter = humans
+        Debug.unmerged_conflicts_human_candidates = unmerged_conflicts
         return Debug, candSelector.persons
     else:
         return candSelector.persons
