@@ -3,7 +3,7 @@ from mvpose.data.default_limbs import DEFAULT_LIMB_SEQ, \
     DEFAULT_MAP_IDX, DEFAULT_SENSIBLE_LIMB_LENGTH
 
 
-def get_settings(min_nbr_joints=8, gc_iota_scale=1,
+def get_settings(min_nbr_joints=8, gc_iota_scale=6,
                  gc_max_radius=300, gc_radius=50,
                  hm_detection_threshold=0.1,
                  threshold_close_pair=10, scale_to_mm=1,

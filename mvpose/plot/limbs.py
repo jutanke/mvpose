@@ -38,7 +38,7 @@ def draw_mscoco_human(ax, human, cam, color, alpha=1):
     for jid, pt3d in enumerate(human):
         if pt3d is None:
             continue
-        pt = cam.projectPoints([pt3d])[0]
+        pt = cam.projectPoints(np.array([pt3d[0:3]]))[0]
         marker = '*'
         if jid in [2, 3, 4, 8, 9, 10, 14, 16]:
             marker = '_'
@@ -50,8 +50,8 @@ def draw_mscoco_human(ax, human, cam, color, alpha=1):
             ptA = human[a]
             ptB = human[b]
             if ptA is not None and ptB is not None:
-                x_a, y_a = cam.projectPoints([ptA[0:3]])[0]
-                x_b, y_b = cam.projectPoints([ptB[0:3]])[0]
+                x_a, y_a = cam.projectPoints(np.array([ptA[0:3]]))[0]
+                x_b, y_b = cam.projectPoints(np.array([ptB[0:3]]))[0]
                 ax.plot([x_a, x_b], [y_a, y_b], color=color, alpha=alpha)
 
 
