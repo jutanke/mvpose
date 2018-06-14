@@ -3,6 +3,7 @@ from mvpose.algorithm.triangulation import Triangulation
 from mvpose.algorithm.limbs3d import Limbs3d
 from mvpose.algorithm.meanshift import Meanshift
 from mvpose.algorithm.candidate_selection import CandidateSelector
+from mvpose.algorithm.graphcut import Graphcut
 from collections import namedtuple
 from time import time
 
@@ -63,16 +64,28 @@ def estimate(Calib, heatmaps, pafs, settings,
                       settings.limb_seq,
                       settings.sensible_limb_length,
                       settings.limb_map_idx,
-                      oor_marker=-999999)
+                      oor_marker=0)
     _end = time()
     if debug:
         print('step 4: elapsed', _end - _start)
+
+    # -------- step 5 --------
+    # solve optimization problem
+    # ------------------------
+    _start = time()
+    graphcut = Graphcut(settings,
+                        meanshift.centers3d,
+                        limbs3d,
+                        debug=debug)
+    _end = time()
+    if debug:
+        print('step 5: elapsed', _end - _start)
 
     # -------- step 7 --------
     # candidate selection  "filter out bad detections"
     # ------------------------
     _start = time()
-    human_candidates = []  # TODO fix this
+    human_candidates = graphcut.person_candidates
     candSelector = CandidateSelector(
         human_candidates, heatmaps,
         Calib, settings.min_nbr_joints)
@@ -89,12 +102,14 @@ def estimate(Calib, heatmaps, pafs, settings,
             'triangulation',
             'meanshift',
             'limbs3d',
+            'graphcut',
             'human_candidates'
         ])
         Debug.candidates2d = cand2d
         Debug.triangulation = triangulation
         Debug.meanshift = meanshift
         Debug.limbs3d = limbs3d
+        Debug.graphcut = graphcut
         Debug.human_candidates = human_candidates
         return Debug, candSelector.persons
     else:

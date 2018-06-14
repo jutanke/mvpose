@@ -34,7 +34,7 @@ def validate_input(Calib, heatmaps, pafs, settings):
 
 def estimate_heuristic(Calib, heatmaps, pafs, settings=None,
                        radius=30, sigma=None, max_iterations=1000,
-                       between_distance=100, debug=False, use_greedy=True):
+                       between_distance=100, debug=False, use_greedy=False):
     """
         Brute-Force graph partitioning algorithm (np-hard)
     :param Calib: [ mvpose.geometry.camera, mvpose.geometry.camera, ...] list of n cameras
