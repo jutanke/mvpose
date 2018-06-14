@@ -4,6 +4,7 @@
 from mvpose.algorithm.settings import get_settings
 from mvpose.algorithm import brute_force
 from mvpose.algorithm import meanshift
+from mvpose.algorithm import relaxed_brute_force
 
 
 def validate_input(Calib, heatmaps, pafs, settings):
@@ -33,7 +34,7 @@ def validate_input(Calib, heatmaps, pafs, settings):
 
 def estimate_heuristic(Calib, heatmaps, pafs, settings=None,
                        radius=30, sigma=None, max_iterations=1000,
-                       between_distance=100, debug=False):
+                       between_distance=100, debug=False, use_greedy=True):
     """
         Brute-Force graph partitioning algorithm (np-hard)
     :param Calib: [ mvpose.geometry.camera, mvpose.geometry.camera, ...] list of n cameras
@@ -44,6 +45,7 @@ def estimate_heuristic(Calib, heatmaps, pafs, settings=None,
     :param sigma: width of the gaussian in the meanshift
     :param max_iterations: cut-of threshold for meanshift
     :param between_distance: maximal distance between two points of a cluster in mm
+    :param use_greedy: {boolean} if True use the greedy algorithm, o/w graphcut
     :param debug:
     :return:
     """
@@ -52,9 +54,15 @@ def estimate_heuristic(Calib, heatmaps, pafs, settings=None,
     radius = radius/settings.scale_to_mm
     if sigma is None:
         sigma = radius
-    return meanshift.estimate(Calib, heatmaps, pafs, settings,
-                              radius, sigma, max_iterations,
-                              between_distance/settings.scale_to_mm, debug)
+    if use_greedy:
+        return meanshift.estimate(Calib, heatmaps, pafs, settings,
+                                  radius, sigma, max_iterations,
+                                  between_distance/settings.scale_to_mm, debug)
+    else:
+        return relaxed_brute_force.estimate(Calib, heatmaps, pafs, settings,
+                                            radius, sigma, max_iterations,
+                                            between_distance/settings.scale_to_mm,
+                                            debug)
 
 
 def estimate(Calib, heatmaps, pafs, settings=None, debug=False):
