@@ -258,7 +258,7 @@ class Meanshift:
 
             pts3d = np.zeros((n, 4))
             pts3d[:, 0:3] = peaks3d[jid][:, 0:3]
-            pts3d[:, 3] = peaks3d[jid][:, 3] * peaks3d[jid][:, 4]  # TODO try different functions
+            pts3d[:, 3] = peaks3d[jid][:, 3] * peaks3d[jid][:, 4] * 2 # TODO try different functions
 
             all_centers = pts3d.copy()
 

@@ -28,12 +28,16 @@ def get_unary(pts3d):
     if pts3d.shape[1] == 5:
         left = pts3d[:, 3]
         right = pts3d[:, 4]
-        unary = np.multiply(left, right)
+        unary = np.multiply(left, right) * 2
     elif pts3d.shape[1] == 4:
         unary = pts3d[:, 3]
     else:
         raise ValueError("Shape of Points3d is wrong", pts3d.shape)
     return unary
+
+XI = 0.5
+PBOOST_SMALL = lambda x: np.log((x + XI) / (1 - x))
+PBOOST_BIG = lambda x: np.log((x + 1) / (2 * (0.5 * (-x - 1) + 1))) * 2
 
 
 class Graphcut:
@@ -59,14 +63,10 @@ class Graphcut:
         # ===========================================
         # COST  FUNCTIONS
         # ===========================================
-        pboost_big = lambda x: np.log((x + 1) / (2 * (0.5 * (-x - 1) + 1))) * 2
-        pboost_small = lambda x: np.log(x / (1 - x))
         #func1 = lambda u: np.tanh(pboost_small(u))
-        # func2 = lambda d: (-np.tanh(((d * scale_to_mm) - radius) / radius) * iota_scale)
-        # func3 = lambda x: pboost_big(x)
-        func1 = lambda u: pboost_small(u)
+        func1 = lambda u: PBOOST_SMALL(u)
         func2 = lambda d: (-np.tanh(((d * scale_to_mm) - radius) / radius) * iota_scale)
-        func3 = lambda x: pboost_big(x)
+        func3 = lambda x: PBOOST_BIG(x)
 
         # ===========================================
         # CREATE COST AND BOOLEAN VARIABLES
