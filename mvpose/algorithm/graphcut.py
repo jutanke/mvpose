@@ -61,7 +61,7 @@ class Graphcut:
         # ===========================================
         pboost_big = lambda x: np.log((x + 1) / (2 * (0.5 * (-x - 1) + 1))) * 2
         pboost_small = lambda x: np.log(x / (1 - x))
-        # func1 = lambda u: np.tanh(pboost_small(u))
+        #func1 = lambda u: np.tanh(pboost_small(u))
         # func2 = lambda d: (-np.tanh(((d * scale_to_mm) - radius) / radius) * iota_scale)
         # func3 = lambda x: pboost_big(x)
         func1 = lambda u: pboost_small(u)
