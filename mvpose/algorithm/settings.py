@@ -3,7 +3,7 @@ from mvpose.data.default_limbs import DEFAULT_LIMB_SEQ, \
     DEFAULT_MAP_IDX, DEFAULT_SENSIBLE_LIMB_LENGTH, DEFAULT_SYMMETRIC_JOINTS
 
 
-def get_settings(min_nbr_joints=8, gc_iota_scale=1,
+def get_settings(min_nbr_joints=7, gc_iota_scale=1,
                  gc_max_radius=300, gc_radius=50,
                  hm_detection_threshold=0.1,
                  threshold_close_pair=10, scale_to_mm=1,
@@ -11,12 +11,12 @@ def get_settings(min_nbr_joints=8, gc_iota_scale=1,
                  limb_seq=DEFAULT_LIMB_SEQ,
                  limb_map_idx=DEFAULT_MAP_IDX,
                  symmetric_joints=DEFAULT_SYMMETRIC_JOINTS,
-                 min_symmetric_distance=20,
+                 min_symmetric_distance=50,
                  sensible_limb_length=DEFAULT_SENSIBLE_LIMB_LENGTH):
     """
         gets the parameters that are needed for the the program
         !!Careful!!: to set the parameters that are defined in world coordinates
-        the unit 'mm' MUST BE used. However, inside the setting object this
+        the unit 'mm' MUST BE used. HowIT IS IN!ever, inside the setting object this
         units will be scaled according to {scale_to_mm}.
 
     :param min_nbr_joints: number of joints that are needed
@@ -74,5 +74,5 @@ def get_settings(min_nbr_joints=8, gc_iota_scale=1,
     params.limb_map_idx = limb_map_idx
     params.sensible_limb_length = sensible_limb_length/scale_to_mm
     params.symmetric_joints = symmetric_joints
-    params.min_symmetric_distance = min_symmetric_distance
+    params.min_symmetric_distance = min_symmetric_distance/scale_to_mm
     return params
