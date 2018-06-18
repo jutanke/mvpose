@@ -63,9 +63,6 @@ class Graphcut:
         symmetric_joints = params.symmetric_joints
         n_joints = len(points3d)
 
-
-        print("MIN NBR J", min_nbr_joints)
-
         # ===========================================
         # COST  FUNCTIONS
         # ===========================================
