@@ -35,7 +35,7 @@ def get_unary(pts3d):
         raise ValueError("Shape of Points3d is wrong", pts3d.shape)
     return unary
 
-XI = 0.5
+XI = 0.7
 PBOOST_SMALL = lambda x: np.log((x + XI) / (1 - x))
 PBOOST_BIG = lambda x: np.log((x + 1) / (2 * (0.5 * (-x - 1) + 1))) * 2
 
@@ -58,6 +58,8 @@ class Graphcut:
         min_nbr_joints = params.min_nbr_joints
         iota_scale = params.gc_iota_scale
         sensible_limb_length = sensible_limb_length
+        min_symmetric_distance = params.min_symmetric_distance
+        symmetric_joints = params.symmetric_joints
         n_joints = len(points3d)
 
         # ===========================================
@@ -156,6 +158,21 @@ class Graphcut:
         for jid, a, b in E_j:
             solver.Add(
                 Iota[jid, a, b] * 2 <= Nu[jid, a] + Nu[jid, b])
+
+        # ===========================================
+        # HANDLE SYMMETRY CONSTRAINTS
+        # ===========================================
+        for jid1, jid2 in symmetric_joints:
+            assert jid1 != jid2
+            ABdistance = gm.calculate_distance_all4all(
+                points3d[jid1], points3d[jid2],
+                max_distance=min_symmetric_distance,
+                min_distance=0,
+                AB_are_the_same=False)
+            As = ABdistance[:, 0].astype('int32')
+            Bs = ABdistance[:, 1].astype('int32')
+            for a, b in zip(As, Bs):
+                solver.Add(Nu[jid1, a] + Nu[jid2, b] <= 1)
 
         # ===========================================
         # HANDLE TRANSITIVITY CONSTRAINTS (1)
