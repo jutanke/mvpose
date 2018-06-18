@@ -84,7 +84,7 @@ class CandidateSelector:
                         if d < threshold_close_pair:
                             count_close_pairs += 1
 
-                    if count_close_pairs > min_nbr_joints:
+                    if count_close_pairs >= min_nbr_joints:
                         Visibility_Table[cid, a] = FLAG_COLLISION
                         Visibility_Table[cid, b] = FLAG_COLLISION
 
@@ -104,7 +104,7 @@ class CandidateSelector:
                             believe[jid] = score
 
                 total = np.sum((np.array(believe) > hm_detection_threshold))
-                if total > min_nbr_joints:
+                if total >= min_nbr_joints:
                     Visibility_Table[cid, a] = max(FLAG_VISIBLE, Visibility_Table[cid, a])
                 else:
                     Visibility_Table[cid, a] = FLAG_NOT_VISIBLE

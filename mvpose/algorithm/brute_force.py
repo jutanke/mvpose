@@ -67,7 +67,7 @@ def estimate(Calib, heatmaps, pafs, settings, debug):
     _start = time()
     candSelector = CandidateSelector(
         graphcut.person_candidates, heatmaps,
-        Calib, settings.min_nbr_joints)
+        Calib, min_nbr_joints=settings.min_nbr_joints)
     _end = time()
     if debug:
         print('step 5: elapsed', _end - _start)

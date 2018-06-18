@@ -1,6 +1,7 @@
 import numpy as np
 from ortools.linear_solver import pywraplp as mip
 from mvpose.algorithm.transitivity import TransitivityLookup
+#from mvpose.algorithm.connectivity import ConnectivityGraph
 import mvpose.geometry.geometry as gm
 import networkx as nx
 
@@ -62,10 +63,12 @@ class Graphcut:
         symmetric_joints = params.symmetric_joints
         n_joints = len(points3d)
 
+
+        print("MIN NBR J", min_nbr_joints)
+
         # ===========================================
         # COST  FUNCTIONS
         # ===========================================
-        #func1 = lambda u: np.tanh(pboost_small(u))
         func1 = lambda u: PBOOST_SMALL(u)
         func2 = lambda d: (-np.tanh(((d * scale_to_mm) - radius) / radius) * iota_scale)
         func3 = lambda x: PBOOST_BIG(x)
@@ -74,6 +77,8 @@ class Graphcut:
         # CREATE COST AND BOOLEAN VARIABLES
         # ===========================================
         solver = mip.Solver('m', mip.Solver.CBC_MIXED_INTEGER_PROGRAMMING)
+        #conn = ConnectivityGraph(func1, func2, func3)
+        #self.connectivity = conn
 
         D = []  # all nodes of the graph    (jid, a)
         E_j = []  # all edges on the joints (jid, a, b)
@@ -103,6 +108,8 @@ class Graphcut:
                 Nu[jid, idx] * func1(unary[idx]) for idx in range(n))
             Sum.append(s)
 
+            #conn.add_joints(jid, unary=unary)
+
             # ===========================================
             # HANDLE IOTA
             # ===========================================
@@ -120,6 +127,8 @@ class Graphcut:
             s = solver.Sum(
                 Iota[jid, int(a), int(b)] * func2(d) for a, b, d in distance)
             Sum.append(s)
+
+            #conn.add_iota_edge(jid, distance)
 
         # ===========================================
         # HANDLE LAMBDA
@@ -148,6 +157,8 @@ class Graphcut:
                 zip(As, Bs, Scores))
             Sum.append(s)
 
+            #conn.add_lambda_edge(jid1, jid2, As, Bs, Scores)
+
         # ===========================================
         # ONLY CONSIDER VALID EDGES
         # ===========================================
@@ -173,6 +184,14 @@ class Graphcut:
             Bs = ABdistance[:, 1].astype('int32')
             for a, b in zip(As, Bs):
                 solver.Add(Nu[jid1, a] + Nu[jid2, b] <= 1)
+
+        # s = solver.Sum(
+        #     lda * 99999999 for lda in Lambda.values()
+        # )
+        # s = solver.Sum(
+        #    Get_Lambda(jid1, jid2, a, b) * 1 for jid1, jid2, a, b in E_l
+        # )
+        # Sum.append(s)
 
         # ===========================================
         # HANDLE TRANSITIVITY CONSTRAINTS (1)
