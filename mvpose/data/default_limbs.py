@@ -47,6 +47,15 @@ DEFAULT_JOINT_TO_GT_JOINT = np.array([
 ])
 DEFAULT_JOINT_TO_GT_JOINT.setflags(write=False)  # read-only
 
+
+DEFAULT_SYMMETRIC_JOINTS = np.array([
+    (2, 5), (3, 6), (4, 7),
+    (8, 11), (9, 12), (10, 13),
+    (14, 15), (16, 17)
+])
+DEFAULT_SYMMETRIC_JOINTS.setflags(write=False)  # read-only
+
+
 # [ ... ( low, high) ... ]
 DEFAULT_SENSIBLE_LIMB_LENGTH = np.array([
     (30, 400),  # neck - shoulder right             # 0

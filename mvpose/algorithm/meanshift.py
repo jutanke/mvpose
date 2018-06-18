@@ -2,7 +2,6 @@ from mvpose.algorithm.peaks2d import Candidates2D
 from mvpose.algorithm.triangulation import Triangulation
 from mvpose.algorithm.limbs3d import Limbs3d
 from mvpose.algorithm.candidate_selection import CandidateSelector
-from mvpose.algorithm.candidate_merger import CandidateMerger
 from collections import namedtuple
 from time import time
 from scipy.spatial import KDTree
@@ -178,23 +177,11 @@ def estimate(Calib, heatmaps, pafs, settings,
         print('step 5: elapsed', _end - _start)
 
     # -------- step 6 --------
-    # Merge candidates if possible
-    # ------------------------
-    _start = time()
-
-    cand_merger = CandidateMerger(list(humans.values()), settings)
-
-    _end = time()
-    if debug:
-        print('step 6: elapsed', _end - _start)
-
-    # -------- step 7 --------
     # Select all candidates with enough parts
     # ------------------------
     _start = time()
     human_candidates = []
-    #for v in humans.values():
-    for v in cand_merger.merged_candidates:
+    for v in humans.values():
         v_result = [None] * cand2d.n_joints
         count_valid = 0
         for i in range(cand2d.n_joints):
@@ -206,9 +193,9 @@ def estimate(Calib, heatmaps, pafs, settings,
 
     _end = time()
     if debug:
-        print('step 7: elapsed', _end - _start)
+        print('step 6: elapsed', _end - _start)
 
-    # -------- step 8 --------
+    # -------- step 7 --------
     # candidate selection  "filter out bad detections"
     # ------------------------
     _start = time()
@@ -217,7 +204,7 @@ def estimate(Calib, heatmaps, pafs, settings,
         Calib, settings.min_nbr_joints)
     _end = time()
     if debug:
-        print('step 8: elapsed', _end - _start)
+        print('step 7: elapsed', _end - _start)
 
     # ------------------------
     # finalize
@@ -271,7 +258,7 @@ class Meanshift:
 
             pts3d = np.zeros((n, 4))
             pts3d[:, 0:3] = peaks3d[jid][:, 0:3]
-            pts3d[:, 3] = peaks3d[jid][:, 3] * peaks3d[jid][:, 4]  # TODO try different functions
+            pts3d[:, 3] = peaks3d[jid][:, 3] * peaks3d[jid][:, 4] * 2 # TODO try different functions
 
             all_centers = pts3d.copy()
 

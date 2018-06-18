@@ -1,6 +1,6 @@
 from collections import namedtuple
 from mvpose.data.default_limbs import DEFAULT_LIMB_SEQ, \
-    DEFAULT_MAP_IDX, DEFAULT_SENSIBLE_LIMB_LENGTH
+    DEFAULT_MAP_IDX, DEFAULT_SENSIBLE_LIMB_LENGTH, DEFAULT_SYMMETRIC_JOINTS
 
 
 def get_settings(min_nbr_joints=8, gc_iota_scale=1,
@@ -10,6 +10,8 @@ def get_settings(min_nbr_joints=8, gc_iota_scale=1,
                  max_epi_distance=10,
                  limb_seq=DEFAULT_LIMB_SEQ,
                  limb_map_idx=DEFAULT_MAP_IDX,
+                 symmetric_joints=DEFAULT_SYMMETRIC_JOINTS,
+                 min_symmetric_distance=20,
                  sensible_limb_length=DEFAULT_SENSIBLE_LIMB_LENGTH):
     """
         gets the parameters that are needed for the the program
@@ -38,6 +40,8 @@ def get_settings(min_nbr_joints=8, gc_iota_scale=1,
         (in pixel)
     :param limb_seq: [ (a, b), (a, c), ... ] list of limbs by joint connection
     :param limb_map_idx: maps the limb id to the part affinity field positions
+    :param symmetric_joints: [ (a, b), ... ] list of joints that are symmetric (left/right arm)
+    :param min_symmetric_distance: {float} minimal allowed distance between symmetric joints in [mm]
     :param sensible_limb_length: [ (min, max), (min, max), ... ] defines the
         sensible length in mm
     :return:
@@ -53,7 +57,9 @@ def get_settings(min_nbr_joints=8, gc_iota_scale=1,
         'max_epi_distance',
         'limb_seq',
         'limb_map_idx',
-        'sensible_limb_length'
+        'sensible_limb_length',
+        'min_symmetric_distance'
+        'symmetric_joints'
     ])
     assert len(sensible_limb_length) == len(limb_seq)
     params.gc_max_radius = gc_max_radius/scale_to_mm
@@ -67,4 +73,6 @@ def get_settings(min_nbr_joints=8, gc_iota_scale=1,
     params.limb_seq = limb_seq
     params.limb_map_idx = limb_map_idx
     params.sensible_limb_length = sensible_limb_length/scale_to_mm
+    params.symmetric_joints = symmetric_joints
+    params.min_symmetric_distance = min_symmetric_distance
     return params

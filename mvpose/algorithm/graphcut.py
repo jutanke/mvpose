@@ -10,7 +10,8 @@ def merge(person):
     for jid, points3d in enumerate(person):
         if points3d is not None:
             Pos = points3d[:, 0:3]
-            W = np.expand_dims(points3d[:, 3] * points3d[:, 4], axis=1)
+            unary = get_unary(points3d)
+            W = np.expand_dims(unary, axis=1)
             S = np.sum(W)
             WPos = np.multiply(Pos, W)
             WPos = np.sum(WPos, axis=0) / S
@@ -18,43 +19,37 @@ def merge(person):
     return result
 
 
-# def get_parameters(min_nbr_joints=8, iota_scale=1,
-#                    max_radius=300, radius=50,
-#                    hm_detection_threshold=0.1,
-#                    threshold_close_pair=10):
-#     """
-#         gets the parameters that are needed for the
-#         graphcut
-#     :param min_nbr_joints: number of joints that are needed
-#         to be a 'valid' human pose detection
-#     :param iota_scale: how to scale the cost function for iota
-#     :param max_radius: maximal radius for internal distances
-#         of 3d joint candidates in the measure of the cameras (e.g. mm)
-#     :param radius: drop-off value after which internal weights
-#         between 3d joint candidates are negative. Measure of the
-#         cameras is used (e.g. mm)
-#     :return:
-#     """
-#     params = namedtuple('GraphcutParams', [
-#         'max_radius',
-#         'radius',
-#         'min_nbr_joints',
-#         'iota_scale',
-#         'hm_detection_threshold',
-#         'threshold_close_pair'
-#     ])
-#     params.max_radius = max_radius
-#     params.radius = radius
-#     params.min_nbr_joints = min_nbr_joints
-#     params.iota_scale = iota_scale
-#     params.hm_detection_threshold = hm_detection_threshold
-#     params.threshold_close_pair = threshold_close_pair
-#     return params
+def get_unary(pts3d):
+    """
+
+    :param pts3d:
+    :return:
+    """
+    if pts3d.shape[1] == 5:
+        left = pts3d[:, 3]
+        right = pts3d[:, 4]
+        unary = np.multiply(left, right) * 2
+    elif pts3d.shape[1] == 4:
+        unary = pts3d[:, 3]
+    else:
+        raise ValueError("Shape of Points3d is wrong", pts3d.shape)
+    return unary
+
+XI = 0.7
+PBOOST_SMALL = lambda x: np.log((x + XI) / (1 - x))
+PBOOST_BIG = lambda x: np.log((x + 1) / (2 * (0.5 * (-x - 1) + 1))) * 2
 
 
 class Graphcut:
 
     def __init__(self, params, points3d, limbs3d, debug=False):
+        """
+
+        :param params:
+        :param points3d: {np.array} [ (x,y,z,w1,w2), ... ]
+        :param limbs3d:
+        :param debug:
+        """
         limbSeq = params.limb_seq
         sensible_limb_length = params.sensible_limb_length
         scale_to_mm = params.scale_to_mm
@@ -63,16 +58,17 @@ class Graphcut:
         min_nbr_joints = params.min_nbr_joints
         iota_scale = params.gc_iota_scale
         sensible_limb_length = sensible_limb_length
+        min_symmetric_distance = params.min_symmetric_distance
+        symmetric_joints = params.symmetric_joints
         n_joints = len(points3d)
 
         # ===========================================
         # COST  FUNCTIONS
         # ===========================================
-        pboost_big = lambda x: np.log((x + 1) / (2 * (0.5 * (-x - 1) + 1))) * 2
-        pboost_small = lambda x: np.log(x / (1 - x))
-        func1 = lambda u: np.tanh(pboost_small(u))
+        #func1 = lambda u: np.tanh(pboost_small(u))
+        func1 = lambda u: PBOOST_SMALL(u)
         func2 = lambda d: (-np.tanh(((d * scale_to_mm) - radius) / radius) * iota_scale)
-        func3 = lambda x: pboost_big(x)
+        func3 = lambda x: PBOOST_BIG(x)
 
         # ===========================================
         # CREATE COST AND BOOLEAN VARIABLES
@@ -95,9 +91,9 @@ class Graphcut:
             # ===========================================
             # HANDLE NU
             # ===========================================
-            left = pts3d[:, 3]
-            right = pts3d[:, 4]
-            unary = np.multiply(left, right)
+            unary = get_unary(pts3d)
+            unary = np.clip(unary, a_min=0.00000001, a_max=0.99999999)
+
             n = len(unary)
             for idx in range(n):
                 Nu[jid, idx] = solver.BoolVar('nu[%i,%i]' % (jid, idx))
@@ -162,6 +158,21 @@ class Graphcut:
         for jid, a, b in E_j:
             solver.Add(
                 Iota[jid, a, b] * 2 <= Nu[jid, a] + Nu[jid, b])
+
+        # ===========================================
+        # HANDLE SYMMETRY CONSTRAINTS
+        # ===========================================
+        for jid1, jid2 in symmetric_joints:
+            assert jid1 != jid2
+            ABdistance = gm.calculate_distance_all4all(
+                points3d[jid1], points3d[jid2],
+                max_distance=min_symmetric_distance,
+                min_distance=0,
+                AB_are_the_same=False)
+            As = ABdistance[:, 0].astype('int32')
+            Bs = ABdistance[:, 1].astype('int32')
+            for a, b in zip(As, Bs):
+                solver.Add(Nu[jid1, a] + Nu[jid2, b] <= 1)
 
         # ===========================================
         # HANDLE TRANSITIVITY CONSTRAINTS (1)
