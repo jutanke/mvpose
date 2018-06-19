@@ -1,7 +1,6 @@
 import numpy as np
 from ortools.linear_solver import pywraplp as mip
 from mvpose.algorithm.transitivity import TransitivityLookup
-#from mvpose.algorithm.connectivity import ConnectivityGraph
 import mvpose.geometry.geometry as gm
 import networkx as nx
 
@@ -41,6 +40,7 @@ PBOOST_SMALL = lambda x: np.log((x + XI) / (1 - x))
 PBOOST_BIG = lambda x: np.log((x + 1) / (2 * (0.5 * (-x - 1) + 1))) * 2
 
 
+
 class Graphcut:
 
     def __init__(self, params, points3d, limbs3d, debug=False):
@@ -74,8 +74,6 @@ class Graphcut:
         # CREATE COST AND BOOLEAN VARIABLES
         # ===========================================
         solver = mip.Solver('m', mip.Solver.CBC_MIXED_INTEGER_PROGRAMMING)
-        #conn = ConnectivityGraph(func1, func2, func3)
-        #self.connectivity = conn
 
         D = []  # all nodes of the graph    (jid, a)
         E_j = []  # all edges on the joints (jid, a, b)
@@ -105,8 +103,6 @@ class Graphcut:
                 Nu[jid, idx] * func1(unary[idx]) for idx in range(n))
             Sum.append(s)
 
-            #conn.add_joints(jid, unary=unary)
-
             # ===========================================
             # HANDLE IOTA
             # ===========================================
@@ -124,8 +120,6 @@ class Graphcut:
             s = solver.Sum(
                 Iota[jid, int(a), int(b)] * func2(d) for a, b, d in distance)
             Sum.append(s)
-
-            #conn.add_iota_edge(jid, distance)
 
         # ===========================================
         # HANDLE LAMBDA
@@ -154,8 +148,6 @@ class Graphcut:
                 zip(As, Bs, Scores))
             Sum.append(s)
 
-            #conn.add_lambda_edge(jid1, jid2, As, Bs, Scores)
-
         # ===========================================
         # ONLY CONSIDER VALID EDGES
         # ===========================================
@@ -182,18 +174,9 @@ class Graphcut:
             for a, b in zip(As, Bs):
                 solver.Add(Nu[jid1, a] + Nu[jid2, b] <= 1)
 
-        # s = solver.Sum(
-        #     lda * 99999999 for lda in Lambda.values()
-        # )
-        # s = solver.Sum(
-        #    Get_Lambda(jid1, jid2, a, b) * 1 for jid1, jid2, a, b in E_l
-        # )
-        # Sum.append(s)
-
         # ===========================================
         # HANDLE TRANSITIVITY CONSTRAINTS (1)
         # ===========================================
-
         Intra = []  # [ (jid, a, b, c), ...]
         Inter = []  # [ (jid1, a, b, jid2, c), ...]
         Intra_choice = []  # [ (jid, a, b, c), ...]

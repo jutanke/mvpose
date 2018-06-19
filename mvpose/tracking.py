@@ -2,6 +2,8 @@ from mvpose.pose import validate_input
 from mvpose.algorithm.peaks2d import Candidates2D
 from mvpose.algorithm.triangulation import Triangulation
 from mvpose.algorithm.meanshift import Meanshift
+from mvpose.algorithm.limbs3d import Limbs3d
+from mvpose.algorithm.brute_force_tracking import GraphcutTracking
 from time import time
 from collections import namedtuple
 
@@ -53,6 +55,8 @@ def track(Calib, Heatmaps, Pafs, settings=None, debug=False):
     print("calib", len(Calib))
     print("hm", len(Heatmaps))
     print("paf", len(Pafs))
+    _Limbs3d = []
+    _Points3d = []
     for frame, (calib, heatmaps, pafs) in enumerate(zip(Calib, Heatmaps, Pafs)):
         if debug:
             print("handling frame ", frame)
@@ -92,8 +96,34 @@ def track(Calib, Heatmaps, Pafs, settings=None, debug=False):
                               between_distance)
         _end = time()
         if debug:
-            print('step 3: elapsed', _end - _start)
+            print('\tstep 3: elapsed', _end - _start)
             Debug.meanshifts.append(meanshift)
+
+        # -------- step 4 --------
+        # calculate 3d limb weights
+        # ------------------------
+        _start = time()
+        limbs3d = Limbs3d(meanshift.centers3d,
+                          calib, pafs,
+                          settings.limb_seq,
+                          settings.sensible_limb_length,
+                          settings.limb_map_idx,
+                          oor_marker=0)
+        _end = time()
+        if debug:
+            print('\tstep 4: elapsed', _end - _start)
+
+        _Points3d.append(meanshift.centers3d)
+        _Limbs3d.append(limbs3d)
+
+    # -------- step 4 --------
+    # solve optimization problem
+    # ------------------------
+    _start = time()
+    graphcut = GraphcutTracking(settings, _Points3d, _Limbs3d, debug=debug)
+    _end = time()
+    if debug:
+        print('step 4: elapsed', _end - _start)
 
     if debug:
         return Debug
