@@ -33,7 +33,7 @@ def validate_input(Calib, heatmaps, pafs, settings):
 
 
 def estimate_heuristic(Calib, heatmaps, pafs, settings=None,
-                       radius=30, sigma=None, max_iterations=1000,
+
                        between_distance=100, debug=False, use_greedy=False):
     """
         Brute-Force graph partitioning algorithm (np-hard)
@@ -50,10 +50,9 @@ def estimate_heuristic(Calib, heatmaps, pafs, settings=None,
     :return:
     """
     settings = validate_input(Calib, heatmaps, pafs, settings)
-    # we might need to scale the radius according to the world coordinate scale
-    radius = radius/settings.scale_to_mm
-    if sigma is None:
-        sigma = radius
+    radius = settings.ms_radius
+    sigma = settings.ms_sigma
+    max_iterations = settings.ms_max_iterations
     if use_greedy:
         return meanshift.estimate(Calib, heatmaps, pafs, settings,
                                   radius, sigma, max_iterations,
