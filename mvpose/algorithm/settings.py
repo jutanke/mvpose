@@ -9,6 +9,7 @@ def get_settings(min_nbr_joints=7, gc_iota_scale=1,
                  threshold_close_pair=10, scale_to_mm=1,
                  max_epi_distance=10,
                  ms_radius=30, ms_sigma=None, ms_max_iterations=1000,
+                 ms_between_distance=100,
                  limb_seq=DEFAULT_LIMB_SEQ,
                  limb_map_idx=DEFAULT_MAP_IDX,
                  symmetric_joints=DEFAULT_SYMMETRIC_JOINTS,
@@ -42,6 +43,7 @@ def get_settings(min_nbr_joints=7, gc_iota_scale=1,
     :param ms_radius: range for the meanshift density estimation (in [mm])
     :param ms_sigma: width of the gaussian in the meanshift
     :param ms_max_iterations: cut-of threshold for meanshift
+    :param ms_between_distance: maximal distance between two points of a cluster in [mm]
     :param limb_seq: [ (a, b), (a, c), ... ] list of limbs by joint connection
     :param limb_map_idx: maps the limb id to the part affinity field positions
     :param symmetric_joints: [ (a, b), ... ] list of joints that are symmetric (left/right arm)
@@ -66,12 +68,14 @@ def get_settings(min_nbr_joints=7, gc_iota_scale=1,
         'symmetric_joints',
         'ms_radius',
         'ms_sigma',
-        'ms_max_iterations'
+        'ms_max_iterations',
+        'ms_between_distance'
     ])
     assert len(sensible_limb_length) == len(limb_seq)
     params.ms_radius = ms_radius/scale_to_mm
     if ms_sigma is None:
         ms_sigma = params.ms_radius
+    params.ms_between_distance = ms_between_distance/scale_to_mm
     params.ms_sigma = ms_sigma
     params.ms_max_iterations = ms_max_iterations
     params.gc_max_radius = gc_max_radius/scale_to_mm
