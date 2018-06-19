@@ -43,13 +43,14 @@ PBOOST_BIG = lambda x: np.log((x + 1) / (2 * (0.5 * (-x - 1) + 1))) * 2
 
 class Graphcut:
 
-    def __init__(self, params, points3d, limbs3d, debug=False):
+    def __init__(self, params, points3d, limbs3d, debug=False, silent=False):
         """
 
         :param params:
         :param points3d: {np.array} [ (x,y,z,w1,w2), ... ]
         :param limbs3d:
         :param debug:
+        :param silent: allow debugging but do not print
         """
         limbSeq = params.limb_seq
         sensible_limb_length = params.sensible_limb_length
@@ -196,7 +197,7 @@ class Graphcut:
         assert len(Inter_choice) == len(set(Inter_choice))
         assert len(Intra_choice) == len(set(Intra_choice))
 
-        if debug:
+        if debug and not silent:
             print('-------------------------------------------')
             print('Handle transitivity:')
             print('\tIntra:\t\t', len(Intra))
@@ -266,7 +267,7 @@ class Graphcut:
         # ===========================================
         solver.Maximize(solver.Sum(Sum))
         RESULT = solver.Solve()
-        if debug:
+        if debug and not silent:
             print('-------------------------------------------')
             print("\tTime = ", solver.WallTime(), " ms")
             print("\tresult:", RESULT)
@@ -283,7 +284,7 @@ class Graphcut:
                 valid_3d_points.add((jid, idx))
             else:
                 count_invalid_points += 1
-        if debug:
+        if debug and not silent:
             print("\n# valid points:\t\t", len(valid_3d_points))
             print("# invalid points:\t", count_invalid_points)
 

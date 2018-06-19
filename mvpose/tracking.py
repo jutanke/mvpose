@@ -1,4 +1,5 @@
 from mvpose.pose import validate_input
+from mvpose.algorithm.relaxed_brute_force import estimate
 from mvpose.algorithm.peaks2d import Candidates2D
 from mvpose.algorithm.triangulation import Triangulation
 from mvpose.algorithm.meanshift import Meanshift
@@ -47,83 +48,41 @@ def track(Calib, Heatmaps, Pafs, settings=None, debug=False):
         Debug.triangulations = []
         Debug.meanshifts = []
         Debug.n_frames = n_frames
+        Debug.n_joints = Heatmaps.shape[4]
+        Debug.humans = []
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Execute frame-wise detection
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    print("calib", len(Calib))
-    print("hm", len(Heatmaps))
-    print("paf", len(Pafs))
-    _Limbs3d = []
-    _Points3d = []
+    radius = settings.ms_radius
+    sigma = settings.ms_sigma
+    max_iterations = settings.ms_max_iterations
+    between_distance = settings.ms_between_distance
+    humans = []
     for frame, (calib, heatmaps, pafs) in enumerate(zip(Calib, Heatmaps, Pafs)):
+        _start = time()
         if debug:
             print("handling frame ", frame)
+            Debug_, candidates = estimate(calib, heatmaps, pafs, settings,
+                                         radius=radius, sigma=sigma,
+                                         between_distance=between_distance, silent=True,
+                                         max_iterations=max_iterations, debug=debug)
+            Debug.candidates.append(Debug_.candidates2d)
+            Debug.triangulations.append(Debug_.triangulation)
+            Debug.meanshifts.append(Debug_.meanshift)
+            Debug.humans.append(candidates)
+        else:
+            candidates = estimate(calib, heatmaps, pafs, settings,
+                                  radius=radius, sigma=sigma,
+                                  between_distance=between_distance,
+                                  max_iterations=max_iterations)
 
-        # -------- step 1 --------
-        # calculate 2d candidates
-        # ------------------------
-        _start = time()
-        cand2d = Candidates2D(heatmaps, calib,
-                              threshold=settings.hm_detection_threshold)
+        humans.append(candidates)
         _end = time()
         if debug:
-            print('\tstep 1: elapsed', _end - _start)
-            Debug.candidates.append(cand2d)
+            print('elapsed', _end - _start)
 
-        # -------- step 2 --------
-        # triangulate 2d candidates
-        # ------------------------
-        _start = time()
-        triangulation = Triangulation(cand2d, calib, settings.max_epi_distance)
-        _end = time()
-        if debug:
-            print('\tstep 2: elapsed', _end - _start)
-            Debug.triangulations.append(triangulation)
-
-        # -------- step 3 --------
-        # meanshift
-        # ------------------------
-        _start = time()
-        radius = settings.ms_radius
-        sigma = settings.ms_sigma
-        max_iterations = settings.ms_max_iterations
-        between_distance = settings.ms_between_distance
-        eps = 0.1 / settings.scale_to_mm
-        meanshift = Meanshift(triangulation.peaks3d_weighted,
-                              float(radius), float(sigma), max_iterations, eps,
-                              between_distance)
-        _end = time()
-        if debug:
-            print('\tstep 3: elapsed', _end - _start)
-            Debug.meanshifts.append(meanshift)
-
-        # -------- step 4 --------
-        # calculate 3d limb weights
-        # ------------------------
-        _start = time()
-        limbs3d = Limbs3d(meanshift.centers3d,
-                          calib, pafs,
-                          settings.limb_seq,
-                          settings.sensible_limb_length,
-                          settings.limb_map_idx,
-                          oor_marker=0)
-        _end = time()
-        if debug:
-            print('\tstep 4: elapsed', _end - _start)
-
-        _Points3d.append(meanshift.centers3d)
-        _Limbs3d.append(limbs3d)
-
-    # -------- step 4 --------
-    # solve optimization problem
-    # ------------------------
-    _start = time()
-    graphcut = GraphcutTracking(settings, _Points3d, _Limbs3d, debug=debug)
-    _end = time()
-    if debug:
-        print('step 4: elapsed', _end - _start)
 
     if debug:
         return Debug
+

@@ -10,7 +10,7 @@ from time import time
 
 def estimate(Calib, heatmaps, pafs, settings,
              radius, sigma, max_iterations, between_distance,
-             debug):
+             debug, silent=False):
     """
         use graph partitioning but simplify graph using meanshift
     :param Calib: [ mvpose.geometry.camera, mvpose.geometry.camera, ...] list of n cameras
@@ -22,6 +22,7 @@ def estimate(Calib, heatmaps, pafs, settings,
     :param max_iterations: cut-of threshold for meanshift
     :param between_distance: maximal distance between two points of a cluster
     :param debug:
+    :param silent: allow debugging but do not print
     :return:
     """
     # -------- step 1 --------
@@ -31,7 +32,7 @@ def estimate(Calib, heatmaps, pafs, settings,
     cand2d = Candidates2D(heatmaps, Calib,
                           threshold=settings.hm_detection_threshold)
     _end = time()
-    if debug:
+    if debug and not silent:
         print('step 1: elapsed', _end - _start)
 
     # -------- step 2 --------
@@ -40,7 +41,7 @@ def estimate(Calib, heatmaps, pafs, settings,
     _start = time()
     triangulation = Triangulation(cand2d, Calib, settings.max_epi_distance)
     _end = time()
-    if debug:
+    if debug and not silent:
         print('step 2: elapsed', _end - _start)
 
     # -------- step 3 --------
@@ -52,7 +53,7 @@ def estimate(Calib, heatmaps, pafs, settings,
                           float(radius), float(sigma), max_iterations, eps,
                           between_distance)
     _end = time()
-    if debug:
+    if debug and not silent:
         print('step 3: elapsed', _end - _start)
 
     # -------- step 4 --------
@@ -66,7 +67,7 @@ def estimate(Calib, heatmaps, pafs, settings,
                       settings.limb_map_idx,
                       oor_marker=0)
     _end = time()
-    if debug:
+    if debug and not silent:
         print('step 4: elapsed', _end - _start)
 
     # -------- step 5 --------
@@ -76,9 +77,9 @@ def estimate(Calib, heatmaps, pafs, settings,
     graphcut = Graphcut(settings,
                         meanshift.centers3d,
                         limbs3d,
-                        debug=debug)
+                        debug=debug, silent=silent)
     _end = time()
-    if debug:
+    if debug and not silent:
         print('step 5: elapsed', _end - _start)
 
     # -------- step 7 --------
@@ -90,7 +91,7 @@ def estimate(Calib, heatmaps, pafs, settings,
         human_candidates, heatmaps,
         Calib, settings.min_nbr_joints)
     _end = time()
-    if debug:
+    if debug and not silent:
         print('step 7: elapsed', _end - _start)
 
     # ------------------------
