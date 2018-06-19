@@ -37,16 +37,23 @@ def track(Calib, Heatmaps, Pafs, settings=None, debug=False):
     if debug:
         Debug = namedtuple('Debug', [
             'candidates',
-            'triangulations'
+            'triangulations',
+            'meanshifts',
+            'n_frames'
         ])
         Debug.candidates = []
         Debug.triangulations = []
+        Debug.meanshifts = []
+        Debug.n_frames = n_frames
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Execute frame-wise detection
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    for frame, calib, heatmaps, pafs in enumerate(zip(Calib, Heatmaps, Pafs)):
+    print("calib", len(Calib))
+    print("hm", len(Heatmaps))
+    print("paf", len(Pafs))
+    for frame, (calib, heatmaps, pafs) in enumerate(zip(Calib, Heatmaps, Pafs)):
         if debug:
             print("handling frame ", frame)
 
@@ -78,6 +85,7 @@ def track(Calib, Heatmaps, Pafs, settings=None, debug=False):
         radius = settings.ms_radius
         sigma = settings.ms_sigma
         max_iterations = settings.ms_max_iterations
+        between_distance = settings.ms_between_distance
         eps = 0.1 / settings.scale_to_mm
         meanshift = Meanshift(triangulation.peaks3d_weighted,
                               float(radius), float(sigma), max_iterations, eps,
@@ -85,6 +93,7 @@ def track(Calib, Heatmaps, Pafs, settings=None, debug=False):
         _end = time()
         if debug:
             print('step 3: elapsed', _end - _start)
+            Debug.meanshifts.append(meanshift)
 
     if debug:
         return Debug
