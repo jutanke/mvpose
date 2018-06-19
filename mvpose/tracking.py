@@ -62,7 +62,6 @@ def track(Calib, Heatmaps, Pafs, settings=None, debug=False):
     for frame, (calib, heatmaps, pafs) in enumerate(zip(Calib, Heatmaps, Pafs)):
         _start = time()
         if debug:
-            print("handling frame ", frame)
             Debug_, candidates = estimate(calib, heatmaps, pafs, settings,
                                          radius=radius, sigma=sigma,
                                          between_distance=between_distance, silent=True,
@@ -80,8 +79,14 @@ def track(Calib, Heatmaps, Pafs, settings=None, debug=False):
         humans.append(candidates)
         _end = time()
         if debug:
-            print('elapsed', _end - _start)
+            print("handling frame ", frame)
+            print('\telapsed', _end - _start)
 
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # fit the candidates
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    for t1, t2 in zip(range(0, n_frames -1), range(1, n_frames)):
+        pass
 
     if debug:
         return Debug
