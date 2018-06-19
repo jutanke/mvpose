@@ -33,18 +33,13 @@ def validate_input(Calib, heatmaps, pafs, settings):
 
 
 def estimate_heuristic(Calib, heatmaps, pafs, settings=None,
-
-                       between_distance=100, debug=False, use_greedy=False):
+                       debug=False, use_greedy=False):
     """
         Brute-Force graph partitioning algorithm (np-hard)
     :param Calib: [ mvpose.geometry.camera, mvpose.geometry.camera, ...] list of n cameras
     :param heatmaps: [n x h x w x j]   // j = #joints
     :param pafs:     [n x h x w x 2*l]  // l = #limbs
     :param settings: parameters for system
-    :param radius: range for the meanshift density estimation (in mm)
-    :param sigma: width of the gaussian in the meanshift
-    :param max_iterations: cut-of threshold for meanshift
-    :param between_distance: maximal distance between two points of a cluster in mm
     :param use_greedy: {boolean} if True use the greedy algorithm, o/w graphcut
     :param debug:
     :return:
@@ -53,14 +48,15 @@ def estimate_heuristic(Calib, heatmaps, pafs, settings=None,
     radius = settings.ms_radius
     sigma = settings.ms_sigma
     max_iterations = settings.ms_max_iterations
+    between_distance = settings.ms_between_distance
     if use_greedy:
         return meanshift.estimate(Calib, heatmaps, pafs, settings,
                                   radius, sigma, max_iterations,
-                                  between_distance/settings.scale_to_mm, debug)
+                                  between_distance, debug)
     else:
         return relaxed_brute_force.estimate(Calib, heatmaps, pafs, settings,
                                             radius, sigma, max_iterations,
-                                            between_distance/settings.scale_to_mm,
+                                            between_distance,
                                             debug)
 
 
