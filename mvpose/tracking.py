@@ -1,12 +1,10 @@
 from mvpose.pose import validate_input
 from mvpose.algorithm.relaxed_brute_force import estimate
-from mvpose.algorithm.peaks2d import Candidates2D
-from mvpose.algorithm.triangulation import Triangulation
-from mvpose.algorithm.meanshift import Meanshift
-from mvpose.algorithm.limbs3d import Limbs3d
-from mvpose.algorithm.brute_force_tracking import GraphcutTracking
+from mvpose.algorithm.temporal import avg_distance
 from time import time
 from collections import namedtuple
+import numpy as np
+from scipy.optimize import linear_sum_assignment
 
 
 def track(Calib, Heatmaps, Pafs, settings=None, debug=False):
@@ -85,9 +83,39 @@ def track(Calib, Heatmaps, Pafs, settings=None, debug=False):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # fit the candidates
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    for t1, t2 in zip(range(0, n_frames -1), range(1, n_frames)):
-        pass
+    tracks = []
+    for frame, hm in enumerate(humans):
+        if frame == 0:
+            tracks.append(list(range(len(hm))))
+        else:
+            tracks.append([-1 for _ in range(len(hm))])
+
+    current_pid = len(tracks[0])
+    max_distance = settings.track_max_distance
+    for t1, t2 in zip(range(0, n_frames - 1), range(1, n_frames)):
+        pidsA = tracks[t1]
+        pidsB = tracks[t2]
+        candsA = humans[t1]
+        candsB = humans[t2]
+        nA = len(candsA)
+        nB = len(candsB)
+        if nA > 0 and nB > 0:
+            D = np.zeros((nA, nB))
+            for i, candA in enumerate(candsA):
+                for j, candB in enumerate(candsB):
+                    D[i, j] = avg_distance(candA, candB)
+
+            row_ind, col_ind = linear_sum_assignment(D)
+            for a, b in zip(row_ind, col_ind):
+                dist = D[a, b]
+                if dist < max_distance:
+                    pidsB[b] = pidsA[a]
+                else:  # add a new person
+                    pidsB[b] = current_pid
+                    current_pid += 1
 
     if debug:
-        return Debug
+        return Debug, np.array(tracks), humans
+    else:
+        return np.array(tracks), humans
 

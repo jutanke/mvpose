@@ -11,13 +11,18 @@ def avg_distance(human1, human2):
     """
     n_joints = len(human1)
     assert n_joints == len(human2)
-    all_distances = []
+    avg_loc1 = []
+    avg_loc2 = []
     for jid in range(n_joints):
         pt1 = human1[jid]
         pt2 = human2[jid]
-        assert len(pt1) == 3
-        assert len(pt2) == 3
-        if pt1 is not None and pt2 is not None:
-            d = la.norm(pt1 - pt2)
-            all_distances.append(d)
-    return np.mean(all_distances)
+        if pt1 is not None:
+            assert len(pt1) == 3
+            avg_loc1.append(pt1)
+        if pt2 is not None:
+            assert len(pt2) == 3
+            avg_loc2.append(pt2)
+
+    avg_loc1 = np.mean(avg_loc1)
+    avg_loc2 = np.mean(avg_loc2)
+    return la.norm(avg_loc2 - avg_loc1)
