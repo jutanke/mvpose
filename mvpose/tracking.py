@@ -1,16 +1,19 @@
 from mvpose.pose import validate_input
 from mvpose.algorithm.relaxed_brute_force import estimate
+from mvpose.algorithm.track_graph_partitioning import GraphPartitioningTracker
 from mvpose.algorithm.temporal import avg_distance
 from time import time
 from collections import namedtuple
 import numpy as np
 from scipy.optimize import linear_sum_assignment
+from reid import reid
 
 
-def track(Calib, Heatmaps, Pafs, settings=None, debug=False):
+def track(Calib, Imgs, Heatmaps, Pafs, settings=None, debug=False):
     """
 
     :param Calib: [ [ {mvpose.geometry.camera}, .. ] * n_cameras ] * n_frames
+    :param Imgs: [ [n x h x w x 3], .... ] * n_frames
     :param Heatmaps: [ [n x h x w x j], ... ] * n_frames
     :param pafs: [ [n x h x w x 2*l], ... ] * n_frames
     :param settings: parameters for system
@@ -40,7 +43,8 @@ def track(Calib, Heatmaps, Pafs, settings=None, debug=False):
             'candidates',
             'triangulations',
             'meanshifts',
-            'n_frames'
+            'n_frames',
+            'track_partitioning'
         ])
         Debug.candidates = []
         Debug.triangulations = []
@@ -90,29 +94,34 @@ def track(Calib, Heatmaps, Pafs, settings=None, debug=False):
         else:
             tracks.append([-1 for _ in range(len(hm))])
 
-    current_pid = len(tracks[0])
-    max_distance = settings.track_max_distance
-    for t1, t2 in zip(range(0, n_frames - 1), range(1, n_frames)):
-        pidsA = tracks[t1]
-        pidsB = tracks[t2]
-        candsA = humans[t1]
-        candsB = humans[t2]
-        nA = len(candsA)
-        nB = len(candsB)
-        if nA > 0 and nB > 0:
-            D = np.zeros((nA, nB))
-            for i, candA in enumerate(candsA):
-                for j, candB in enumerate(candsB):
-                    D[i, j] = avg_distance(candA, candB)
+    graph_part = GraphPartitioningTracker(Calib, Imgs, humans, debug,
+                                          settings.tr_valid_person_bb_area)
+    if debug:
+        Debug.track_partitioning = graph_part
 
-            row_ind, col_ind = linear_sum_assignment(D)
-            for a, b in zip(row_ind, col_ind):
-                dist = D[a, b]
-                if dist < max_distance:
-                    pidsB[b] = pidsA[a]
-                else:  # add a new person
-                    pidsB[b] = current_pid
-                    current_pid += 1
+    # current_pid = len(tracks[0])
+    # max_distance = settings.track_max_distance
+    # for t1, t2 in zip(range(0, n_frames - 1), range(1, n_frames)):
+    #     pidsA = tracks[t1]
+    #     pidsB = tracks[t2]
+    #     candsA = humans[t1]
+    #     candsB = humans[t2]
+    #     nA = len(candsA)
+    #     nB = len(candsB)
+    #     if nA > 0 and nB > 0:
+    #         D = np.zeros((nA, nB))
+    #         for i, candA in enumerate(candsA):
+    #             for j, candB in enumerate(candsB):
+    #                 D[i, j] = avg_distance(candA, candB)
+    #
+    #         row_ind, col_ind = linear_sum_assignment(D)
+    #         for a, b in zip(row_ind, col_ind):
+    #             dist = D[a, b]
+    #             if dist < max_distance:
+    #                 pidsB[b] = pidsA[a]
+    #             else:  # add a new person
+    #                 pidsB[b] = current_pid
+    #                 current_pid += 1
 
     if debug:
         return Debug, np.array(tracks), humans

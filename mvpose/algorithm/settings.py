@@ -15,7 +15,8 @@ def get_settings(min_nbr_joints=7, gc_iota_scale=1,
                  limb_map_idx=DEFAULT_MAP_IDX,
                  symmetric_joints=DEFAULT_SYMMETRIC_JOINTS,
                  min_symmetric_distance=50,
-                 sensible_limb_length=DEFAULT_SENSIBLE_LIMB_LENGTH):
+                 sensible_limb_length=DEFAULT_SENSIBLE_LIMB_LENGTH,
+                 tr_valid_person_bb_area=300):
     """
         gets the parameters that are needed for the the program
         !!Careful!!: to set the parameters that are defined in world coordinates
@@ -53,6 +54,9 @@ def get_settings(min_nbr_joints=7, gc_iota_scale=1,
     :param min_symmetric_distance: {float} minimal allowed distance between symmetric joints in [mm]
     :param sensible_limb_length: [ (min, max), (min, max), ... ] defines the
         sensible length in mm
+    :param tr_valid_person_bb_area: valid area in [pixel] over
+        which a person reprojection into an image is considered
+        valid in tracking
     :return:
     """
     params = namedtuple('Settings', [
@@ -73,7 +77,8 @@ def get_settings(min_nbr_joints=7, gc_iota_scale=1,
         'ms_sigma',
         'ms_max_iterations',
         'ms_between_distance',
-        'track_max_distance'
+        'track_max_distance',
+        'tr_valid_person_bb_area'
     ])
     assert len(sensible_limb_length) == len(limb_seq)
     params.ms_radius = ms_radius/scale_to_mm
@@ -96,4 +101,8 @@ def get_settings(min_nbr_joints=7, gc_iota_scale=1,
     params.symmetric_joints = symmetric_joints
     params.min_symmetric_distance = min_symmetric_distance/scale_to_mm
     params.track_max_distance = track_max_distance
+
+    # -- tracking
+    params.tr_valid_person_bb_area = tr_valid_person_bb_area
+
     return params

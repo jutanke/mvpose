@@ -4,6 +4,17 @@ from numba import vectorize, float64, jit, boolean
 from math import sqrt
 
 
+def aabb_area(aabb):
+    """
+        calculate area of aabb
+    :param aabb: (tx, ty, bx, by)
+    :return:
+    """
+    tx, ty, bx, by = aabb
+    assert tx < bx
+    assert ty < by
+    return (bx - tx) * (by - ty)
+
 @vectorize([float64(float64,float64,float64,float64,float64, float64)])
 def point_to_point_distance(x1,y1,z1, x2, y2, z2):
     """
