@@ -130,10 +130,13 @@ class GraphPartitioningTracker:
         # predict similarity
         # =====================================
         _start = time()
-        scores = []
-        for A, B in zip(ImgsA, ImgsB):
-            score = tracking_setting.reid_model.predict(A, B)
-            scores.append(score)
+        if low_spec_mode:
+            scores = []
+            for A, B in zip(ImgsA, ImgsB):
+                score = tracking_setting.reid_model.predict(A, B)
+                scores.append(score)
+        else:
+            scores = tracking_setting.reid_model.predict(ImgsA, ImgsB)
         _end = time()
 
         if debug:
