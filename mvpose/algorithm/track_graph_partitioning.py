@@ -64,6 +64,7 @@ class GraphPartitioningTracker:
         n_frames = len(Ims)
         assert len(humans_candidates) == n_frames
         assert len(Calibs) == n_frames
+        low_spec_mode = tracking_setting.low_spec_mode
 
         # _start = time()
         # self.reid_model = reid.ReId()
@@ -105,22 +106,18 @@ class GraphPartitioningTracker:
                                     and gm.aabb_area(aabb_B) > valid_person_bb_area:
 
                                     tx, ty, bx, by = aabb_A
-                                    ImgsA.append(Ims[t1][cidA][ty: by, tx: bx])
+                                    imga = Ims[t1][cidA][ty: by, tx: bx]
+                                    ImgsA.append(imga)
                                     tx, ty, bx, by = aabb_B
-                                    ImgsB.append(Ims[t2][cidB][ty: by, tx: bx])
+                                    imgb = Ims[t2][cidB][ty: by, tx: bx]
+                                    ImgsB.append(imgb)
                                     pairs.append((t1, pidA, cidA,
                                                  t2, pidB, cidB))
+                                    # if low_spec_mode:
+                                    #     score = tracking_setting.reid_model.predict(imga, imgb)
+                                    # else:
+                                    #     score = -1
         _end = time()
-
-        print('\nALL COMBS:', len(ImgsA))
-
-        print("A")
-        for img in ImgsA:
-            print(img.shape)
-
-        print("B")
-        for img in ImgsB:
-            print(img.shape)
 
         self.ImgsA = ImgsA
         self.ImgsB = ImgsB
@@ -133,21 +130,21 @@ class GraphPartitioningTracker:
         # predict similarity
         # =====================================
         _start = time()
-
-        # on CPU this is the way to go.. :(
+        scores = []
         for A, B in zip(ImgsA, ImgsB):
-            print("calc score..")
-            score = tracking_setting.reid_model.predict(ImgsA, ImgsB)
+            score = tracking_setting.reid_model.predict(A, B)
+            scores.append(score)
         _end = time()
+
         if debug:
             print('\t[gp:step 2] elapsed', _end - _start)
 
         # =====================================
         # build graph
         # =====================================
-        solver = mip.Solver('t', mip.Solver.CBC_MIXED_INTEGER_PROGRAMMING)
-        Xi = {}
-
-        for t1 in range(n_frames - 1):
-            for t2 in range(t1 + 1, n_frames):
-                pass
+        # solver = mip.Solver('t', mip.Solver.CBC_MIXED_INTEGER_PROGRAMMING)
+        # Xi = {}
+        #
+        # for t1 in range(n_frames - 1):
+        #     for t2 in range(t1 + 1, n_frames):
+        #         pass
