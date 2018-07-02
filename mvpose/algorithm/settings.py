@@ -1,4 +1,5 @@
 from collections import namedtuple
+from reid import reid
 from mvpose.data.default_limbs import DEFAULT_LIMB_SEQ, \
     DEFAULT_MAP_IDX, DEFAULT_SENSIBLE_LIMB_LENGTH, DEFAULT_SYMMETRIC_JOINTS
 
@@ -6,7 +7,8 @@ from mvpose.data.default_limbs import DEFAULT_LIMB_SEQ, \
 def get_settings(min_nbr_joints=7, gc_iota_scale=1,
                  gc_max_radius=300, gc_radius=50,
                  hm_detection_threshold=0.1,
-                 threshold_close_pair=10, scale_to_mm=1,
+                 threshold_close_pair=10,
+                 scale_to_mm=1,
                  max_epi_distance=10,
                  ms_radius=30, ms_sigma=None, ms_max_iterations=1000,
                  ms_between_distance=100,
@@ -15,8 +17,7 @@ def get_settings(min_nbr_joints=7, gc_iota_scale=1,
                  limb_map_idx=DEFAULT_MAP_IDX,
                  symmetric_joints=DEFAULT_SYMMETRIC_JOINTS,
                  min_symmetric_distance=50,
-                 sensible_limb_length=DEFAULT_SENSIBLE_LIMB_LENGTH,
-                 tr_valid_person_bb_area=300):
+                 sensible_limb_length=DEFAULT_SENSIBLE_LIMB_LENGTH):
     """
         gets the parameters that are needed for the the program
         !!Careful!!: to set the parameters that are defined in world coordinates
@@ -54,9 +55,6 @@ def get_settings(min_nbr_joints=7, gc_iota_scale=1,
     :param min_symmetric_distance: {float} minimal allowed distance between symmetric joints in [mm]
     :param sensible_limb_length: [ (min, max), (min, max), ... ] defines the
         sensible length in mm
-    :param tr_valid_person_bb_area: valid area in [pixel] over
-        which a person reprojection into an image is considered
-        valid in tracking
     :return:
     """
     params = namedtuple('Settings', [
@@ -101,8 +99,44 @@ def get_settings(min_nbr_joints=7, gc_iota_scale=1,
     params.symmetric_joints = symmetric_joints
     params.min_symmetric_distance = min_symmetric_distance/scale_to_mm
     params.track_max_distance = track_max_distance
+    return params
 
+
+def get_tracking_settings(settings,
+                          valid_person_bb_area=300,
+                          max_moving_distance_per_frame=500,
+                          moving_factor_increase_per_frame=1,
+                          reid_model=None):
+    """
+
+    :param settings: normal settings, has to be provided
+    :param valid_person_bb_area: valid area in [pixel] over
+        which a person reprojection into an image is considered
+        valid in tracking
+    :param max_moving_distance_per_frame: maximum distance in [mm]
+        that two
+    :param reid_model: model for person re-identification, needs
+        to have a method "predict" that takes in two images and
+        returns a score between 0 (different person) and 1 (same person)
+    :return:
+    """
+    params = namedtuple('TrackingSettings', [
+        'valid_person_bb_area',
+        'reid_model',
+        'max_moving_distance_per_frame',
+        'moving_factor_increase_per_frame'
+    ])
+    scale_to_mm = settings.scale_to_mm
     # -- tracking
-    params.tr_valid_person_bb_area = tr_valid_person_bb_area
-
+    params.valid_person_bb_area = valid_person_bb_area
+    if reid_model is None:
+        # loading the model takes quite a while, thus
+        # we try to do it right at the start to buffer
+        # the model
+        reid_model = reid.ReId()
+    params.reid_model = reid_model
+    params.max_moving_distance_per_frame = \
+        max_moving_distance_per_frame/scale_to_mm
+    params.moving_factor_increase_per_frame = \
+        moving_factor_increase_per_frame/scale_to_mm
     return params

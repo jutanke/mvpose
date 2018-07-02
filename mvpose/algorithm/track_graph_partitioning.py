@@ -1,14 +1,27 @@
 from ortools.linear_solver import pywraplp as mip
-from reid import reid
 import numpy.linalg as la
 import numpy as np
 from time import time
 from mvpose.geometry import geometry as gm
 
-# loading the model takes quite a while, thus
-# we try to do it right at the start to buffer
-# the model
-reid_model = reid.ReId()
+
+def distance3d_humans(human1, human2):
+    """
+        calculates the distance between two humans
+    :param human1: [ (x, y, z, ?), ... ]
+    :param human2:  -"-
+    :return:
+    """
+    h1 = []
+    h2 = []
+    for j1, j2 in zip(human1, human2):
+        if j1 is not None:
+            h1.append(j1[0:3])
+        if j2 is not None:
+            h2.append(j2[0:3])
+    p1 = np.mean(h1, axis=0)
+    p2 = np.mean(h2, axis=0)
+    return la.norm(p1 - p2)
 
 
 def get_bb(cam, human, w, h):
@@ -36,7 +49,7 @@ def get_bb(cam, human, w, h):
 class GraphPartitioningTracker:
 
     def __init__(self, Calibs, Ims, humans_candidates, debug,
-                 valid_person_bb_area):
+                 tracking_setting):
         """
             Tracking using human poses
         :param Calibs:
@@ -45,44 +58,89 @@ class GraphPartitioningTracker:
         :param valid_person_bb_area: valid area in [pixel] over
             which a person reprojection into an image is considered
             valid
+        :param tracking_setting: {mvpose.algorithm.settings.Tracking_Settings}
         :param debug
         """
         n_frames = len(Ims)
         assert len(humans_candidates) == n_frames
         assert len(Calibs) == n_frames
 
+        # _start = time()
+        # self.reid_model = reid.ReId()
+        # _end = time()
+        # if debug:
+        #     print('\t[gp:step 1] elapsed', _end - _start)
+
         # =====================================
         # calculate Edge costs
         # =====================================
+        valid_person_bb_area = tracking_setting.valid_person_bb_area
+        max_moving_distance = tracking_setting.max_moving_distance_per_frame
+        moving_factor_increase = tracking_setting.moving_factor_increase_per_frame
         _, _, H, W, _ = Ims.shape
+
         ImgsA = []
         ImgsB = []
         pairs = []  # t1, pid1, cid1, t2 pid2, cid2
         _start = time()
         for t1 in range(n_frames - 1):
             for t2 in range(t1 + 1, n_frames):
+                dt = t2 - t1
+                max_d = max_moving_distance * dt * moving_factor_increase
+                print("dt:" + str(t1) + ',' + str(t2) + " = " + str(max_d))
                 for pidA, candA in enumerate(humans_candidates[t1]):
                     for pidB, candB in enumerate(humans_candidates[t2]):
+                        # -- when the two person candidates are too far
+                        # -- away from each other (depending on dt) we
+                        # -- will not make them
+                        distance = distance3d_humans(candA, candB)
+                        if distance > max_d:
+                            continue
+
                         for cidA, camA in enumerate(Calibs[t1]):
                             for cidB, camB in enumerate(Calibs[t2]):
                                 aabb_A = get_bb(camA, candA, W, H)
                                 aabb_B = get_bb(camB, candB, W, H)
-                                if  gm.aabb_area(aabb_A) > valid_person_bb_area \
+                                if gm.aabb_area(aabb_A) > valid_person_bb_area \
                                     and gm.aabb_area(aabb_B) > valid_person_bb_area:
 
                                     tx, ty, bx, by = aabb_A
-                                    ImgsA.append(Ims[t1][cidA][ty: by, tx: by])
-                                    tx, ty, bx, by = aabb_A
-                                    ImgsB.append(Ims[t2][cidB][ty: by, tx: by])
-                                    pairs.append(t1, pidA, cidA,
-                                                 t2, pidB, cidB)
+                                    ImgsA.append(Ims[t1][cidA][ty: by, tx: bx])
+                                    tx, ty, bx, by = aabb_B
+                                    ImgsB.append(Ims[t2][cidB][ty: by, tx: bx])
+                                    pairs.append((t1, pidA, cidA,
+                                                 t2, pidB, cidB))
         _end = time()
+
+        print('\nALL COMBS:', len(ImgsA))
+
+        print("A")
+        for img in ImgsA:
+            print(img.shape)
+
+        print("B")
+        for img in ImgsB:
+            print(img.shape)
+
         self.ImgsA = ImgsA
         self.ImgsB = ImgsB
         self.pairs = pairs
         if debug:
             print('\t[gp:step 1] elapsed', _end - _start)
             print('\t\t# boxes to compare:', len(ImgsA))
+
+        # =====================================
+        # predict similarity
+        # =====================================
+        _start = time()
+
+        # on CPU this is the way to go.. :(
+        for A, B in zip(ImgsA, ImgsB):
+            print("calc score..")
+            score = tracking_setting.reid_model.predict(ImgsA, ImgsB)
+        _end = time()
+        if debug:
+            print('\t[gp:step 2] elapsed', _end - _start)
 
         # =====================================
         # build graph

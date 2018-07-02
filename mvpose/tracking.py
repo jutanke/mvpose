@@ -1,15 +1,14 @@
 from mvpose.pose import validate_input
 from mvpose.algorithm.relaxed_brute_force import estimate
 from mvpose.algorithm.track_graph_partitioning import GraphPartitioningTracker
-from mvpose.algorithm.temporal import avg_distance
+from mvpose.algorithm.settings import get_tracking_settings
 from time import time
 from collections import namedtuple
 import numpy as np
-from scipy.optimize import linear_sum_assignment
-from reid import reid
 
 
-def track(Calib, Imgs, Heatmaps, Pafs, settings=None, debug=False):
+def track(Calib, Imgs, Heatmaps, Pafs,
+          settings=None, tracking_setting=None, debug=False):
     """
 
     :param Calib: [ [ {mvpose.geometry.camera}, .. ] * n_cameras ] * n_frames
@@ -17,6 +16,7 @@ def track(Calib, Imgs, Heatmaps, Pafs, settings=None, debug=False):
     :param Heatmaps: [ [n x h x w x j], ... ] * n_frames
     :param pafs: [ [n x h x w x 2*l], ... ] * n_frames
     :param settings: parameters for system
+    :param tracking_setting: {mvpose.algorithm.settings.Tracking_Settings}
     :param debug: {boolean} if True print debug messages
     :return:
     """
@@ -37,6 +37,8 @@ def track(Calib, Imgs, Heatmaps, Pafs, settings=None, debug=False):
         Calib = Calib_
 
     settings = validate_input(Calib[0], Heatmaps[0], Pafs[0], settings)
+    if tracking_setting is None:
+        tracking_setting = get_tracking_settings()  # default params
 
     if debug:
         Debug = namedtuple('Debug', [
@@ -95,7 +97,7 @@ def track(Calib, Imgs, Heatmaps, Pafs, settings=None, debug=False):
             tracks.append([-1 for _ in range(len(hm))])
 
     graph_part = GraphPartitioningTracker(Calib, Imgs, humans, debug,
-                                          settings.tr_valid_person_bb_area)
+                                          tracking_setting)
     if debug:
         Debug.track_partitioning = graph_part
 
