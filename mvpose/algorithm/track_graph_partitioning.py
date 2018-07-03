@@ -138,6 +138,8 @@ class GraphPartitioningTracker:
         else:
             scores = tracking_setting.reid_model.predict(ImgsA, ImgsB)
         _end = time()
+        self.scores = scores
+        assert len(scores) == len(ImgsA)
 
         if debug:
             print('\t[gp:step 2] elapsed', _end - _start)
