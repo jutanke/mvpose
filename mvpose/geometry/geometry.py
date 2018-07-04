@@ -2,6 +2,32 @@ import cv2
 import numpy as np
 from numba import vectorize, float64, jit, boolean
 from math import sqrt
+from pppr.aabb import IoU
+
+
+def convert_aabb(aabb):
+    """
+    (tx, ty, bx, by) => (tx, ty, w, h)
+    :param aabb:
+    :return:
+    """
+    tx = aabb[0]
+    ty = aabb[1]
+    w = aabb[2] - tx
+    h = aabb[3] - ty
+    return (tx, ty, w, h)
+
+
+def aabb_IoU(aabb1, aabb2):
+    """
+        calculate intersection over union
+    :param aabb1:
+    :param aabb2:
+    :return:
+    """
+    aabb1 = convert_aabb(aabb1)
+    aabb2 = convert_aabb(aabb2)
+    return IoU(aabb1, aabb2)
 
 
 def aabb_area(aabb):

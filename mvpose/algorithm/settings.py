@@ -12,7 +12,6 @@ def get_settings(min_nbr_joints=7, gc_iota_scale=1,
                  max_epi_distance=10,
                  ms_radius=30, ms_sigma=None, ms_max_iterations=1000,
                  ms_between_distance=100,
-                 track_max_distance=200,
                  limb_seq=DEFAULT_LIMB_SEQ,
                  limb_map_idx=DEFAULT_MAP_IDX,
                  symmetric_joints=DEFAULT_SYMMETRIC_JOINTS,
@@ -74,9 +73,7 @@ def get_settings(min_nbr_joints=7, gc_iota_scale=1,
         'ms_radius',
         'ms_sigma',
         'ms_max_iterations',
-        'ms_between_distance',
-        'track_max_distance',
-        'tr_valid_person_bb_area'
+        'ms_between_distance'
     ])
     assert len(sensible_limb_length) == len(limb_seq)
     params.ms_radius = ms_radius/scale_to_mm
@@ -98,7 +95,6 @@ def get_settings(min_nbr_joints=7, gc_iota_scale=1,
     params.sensible_limb_length = sensible_limb_length/scale_to_mm
     params.symmetric_joints = symmetric_joints
     params.min_symmetric_distance = min_symmetric_distance/scale_to_mm
-    params.track_max_distance = track_max_distance
     return params
 
 
@@ -106,6 +102,7 @@ def get_tracking_settings(settings,
                           valid_person_bb_area=300,
                           max_moving_distance_per_frame=500,
                           moving_factor_increase_per_frame=1,
+                          conflict_IoU=0.3,
                           low_spec_mode=False,
                           reid_model=None):
     """
@@ -116,6 +113,10 @@ def get_tracking_settings(settings,
         valid in tracking
     :param max_moving_distance_per_frame: maximum distance in [mm]
         that two
+    :param moving_factor_increase_per_frame: increase of
+        "max_moving_distance_per_frame" per frame dt
+    :param conflict_IoU: Intersection over Union [0 ... 1] to determine
+        if the person is in conflict or not in a given view
     :param low_spec_mode: {boolean} If True memory consumption is tried
         to be kept low - however, this might make the algorithm much
         slower
@@ -128,7 +129,9 @@ def get_tracking_settings(settings,
         'valid_person_bb_area',
         'reid_model',
         'max_moving_distance_per_frame',
-        'moving_factor_increase_per_frame'
+        'moving_factor_increase_per_frame',
+        'conflict_IoU',
+        'low_spec_mode'
     ])
     scale_to_mm = settings.scale_to_mm
     # -- tracking
@@ -144,4 +147,5 @@ def get_tracking_settings(settings,
     params.moving_factor_increase_per_frame = \
         moving_factor_increase_per_frame/scale_to_mm
     params.low_spec_mode = low_spec_mode
+    params.conflict_IoU = conflict_IoU
     return params

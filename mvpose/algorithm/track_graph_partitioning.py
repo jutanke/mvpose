@@ -78,12 +78,38 @@ class GraphPartitioningTracker:
         valid_person_bb_area = tracking_setting.valid_person_bb_area
         max_moving_distance = tracking_setting.max_moving_distance_per_frame
         moving_factor_increase = tracking_setting.moving_factor_increase_per_frame
+        conflict_IoU = tracking_setting.conflict_IoU
         _, _, H, W, _ = Ims.shape
+
+        _start = time()
+        # we first want to figure out which person reprojections we can safely
+        # use and which ones we cannot as others are in the vicinity
+        # (t, cid, pid)
+        conflict_lookup = set()  # if an item is "set", there is a conflict
+        for t in range(n_frames):
+            n_humans = len(humans_candidates[t])
+            for cid, cam in enumerate(Calibs[t]):
+                for pid, human in enumerate(humans_candidates[t]):
+                    aabb = get_bb(cam, human, W, H)
+
+                    # if the candidate is too small in this particular camera we
+                    # simply ignore it
+                    if gm.aabb_area(aabb) < valid_person_bb_area:
+                        conflict_lookup.add((t, cid, pid))
+                        continue
+
+                    # loop over all other humans in this particular view and check if
+                    # there is a conflict
+                    for pid2 in range(pid + 1, n_humans):
+                        aabb2 = get_bb(cam, humans_candidates[t][pid2], W, H)
+                        if gm.aabb_IoU(aabb, aabb2) > conflict_IoU:
+                            conflict_lookup.add((t, cid, pid))
+                            conflict_lookup.add((t, cid, pid2))
+                            break  # one conflict per pid is enough
 
         ImgsA = []
         ImgsB = []
         pairs = []  # t1, pid1, cid1, t2 pid2, cid2
-        _start = time()
         for t1 in range(n_frames - 1):
             for t2 in range(t1 + 1, n_frames):
                 dt = t2 - t1
@@ -98,15 +124,24 @@ class GraphPartitioningTracker:
                             continue
 
                         for cidA, camA in enumerate(Calibs[t1]):
+                            if (t1, cidA, pidA) in conflict_lookup:
+                                # in case of a conflicting camera view we
+                                # simply skip to the next one
+                                continue
+
                             for cidB, camB in enumerate(Calibs[t2]):
-                                aabb_A = get_bb(camA, candA, W, H)
-                                aabb_B = get_bb(camB, candB, W, H)
-                                if gm.aabb_area(aabb_A) < valid_person_bb_area \
-                                        or gm.aabb_area(aabb_B) < valid_person_bb_area:
-                                    # the bounding box must have a minimal area in the
-                                    # camera view to be considered
+                                if (t2, cidB, pidB) in conflict_lookup:
+                                    # in case of a conflicting camera view we
+                                    # simply skip to the next one
                                     continue
 
+                                aabb_A = get_bb(camA, candA, W, H)
+                                aabb_B = get_bb(camB, candB, W, H)
+                                # if gm.aabb_area(aabb_A) < valid_person_bb_area \
+                                #         or gm.aabb_area(aabb_B) < valid_person_bb_area:
+                                #     # the bounding box must have a minimal area in the
+                                #     # camera view to be considered
+                                #     continue
 
                                 tx, ty, bx, by = aabb_A
                                 imga = Ims[t1][cidA][ty: by, tx: bx]
