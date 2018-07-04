@@ -66,12 +66,6 @@ class GraphPartitioningTracker:
         assert len(Calibs) == n_frames
         low_spec_mode = tracking_setting.low_spec_mode
 
-        # _start = time()
-        # self.reid_model = reid.ReId()
-        # _end = time()
-        # if debug:
-        #     print('\t[gp:step 1] elapsed', _end - _start)
-
         # =====================================
         # calculate Edge costs
         # =====================================
@@ -182,11 +176,71 @@ class GraphPartitioningTracker:
             print('\t[gp:step 2] elapsed', _end - _start)
 
         # =====================================
+        # calculate 3d scores
+        # =====================================
+        _start = time()
+
+        div = {}
+        graph_3d = {}  # tA, pidA, tB, pidB
+        for s, meta in zip(scores, pairs):
+            tA, pidA, _, tB, pidB, _ = meta
+            assert tA < tB
+            if not (tA, pidA, tB, pidB) in graph_3d:
+                graph_3d[tA, pidA, tB, pidB] = s
+                div[tA, pidA, tB, pidB] = 1
+            else:
+                graph_3d[tA, pidA, tB, pidB] += s
+                div[tA, pidA, tB, pidB] += 1
+        for key, value in div.items():
+            graph_3d[key] = graph_3d[key]/value
+
+        self.graph_3d = graph_3d
+        _end = time()
+        if debug:
+            print('\t[gp:step 3] elapsed', _end - _start)
+            print("\t\t# nodes in 3D graph:", len(graph_3d))
+
+        # =====================================
         # build graph
         # =====================================
-        # solver = mip.Solver('t', mip.Solver.CBC_MIXED_INTEGER_PROGRAMMING)
-        # Xi = {}
-        #
-        # for t1 in range(n_frames - 1):
-        #     for t2 in range(t1 + 1, n_frames):
-        #         pass
+        solver = mip.Solver('t', mip.Solver.CBC_MIXED_INTEGER_PROGRAMMING)
+
+        pids_per_frame = {}
+        Tau = {}
+        costs = {}
+        for (tA, pidA, tB, pidB), score in graph_3d.items():
+            Tau[tA, pidA, tB, pidB] = solver.BoolVar('t[%i,%i,%i,%i]' % (tA, pidA, tB, pidB))
+            costs[tA, pidA, tB, pidB] = np.log(score / (1-score))
+            if tA not in pids_per_frame:
+                pids_per_frame[tA] = []
+            pids_per_frame[tA].append(pidA)
+            if tB not in pids_per_frame:
+                pids_per_frame[tB] = []
+            pids_per_frame[tB].append(pidB)
+
+        self.costs = costs
+        Sum = solver.Sum(Tau[edge] * costs[edge] for edge in graph_3d.keys())
+
+        # -- add constraints --
+        for t1 in range(n_frames - 1):
+            for t2 in range(t1 + 1, n_frames):
+                solver.Add(
+                    solver.Sum(Tau[t1, pid1, t2, pid2]\
+                               for pid1 in pids_per_frame[t1]\
+                               for pid2 in pids_per_frame[t2] if (t1, pid1, t2, pid2) in Tau) <= 1
+                )
+
+        solver.Maximize(Sum)
+        RESULT = solver.Solve()
+        if debug:
+            print('-------------------------------------------')
+            print("\t\tTime = ", solver.WallTime(), " ms")
+            print("\t\tresult:", RESULT)
+            print('\n\t\tTotal cost:', solver.Objective().Value())
+
+        # =====================================
+        # extract tracks
+        # =====================================
+        for (t1, pid1, t2, pid2), v in Tau.items():
+            if v.solution_value() > 0:
+                pass
