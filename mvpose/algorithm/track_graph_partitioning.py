@@ -88,12 +88,11 @@ class GraphPartitioningTracker:
             for t2 in range(t1 + 1, n_frames):
                 dt = t2 - t1
                 max_d = max_moving_distance * dt * moving_factor_increase
-                print("dt:" + str(t1) + ',' + str(t2) + " = " + str(max_d))
                 for pidA, candA in enumerate(humans_candidates[t1]):
                     for pidB, candB in enumerate(humans_candidates[t2]):
                         # -- when the two person candidates are too far
                         # -- away from each other (depending on dt) we
-                        # -- will not make them
+                        # -- will not make them linkable candidates
                         distance = distance3d_humans(candA, candB)
                         if distance > max_d:
                             continue
@@ -102,21 +101,21 @@ class GraphPartitioningTracker:
                             for cidB, camB in enumerate(Calibs[t2]):
                                 aabb_A = get_bb(camA, candA, W, H)
                                 aabb_B = get_bb(camB, candB, W, H)
-                                if gm.aabb_area(aabb_A) > valid_person_bb_area \
-                                    and gm.aabb_area(aabb_B) > valid_person_bb_area:
+                                if gm.aabb_area(aabb_A) < valid_person_bb_area \
+                                        or gm.aabb_area(aabb_B) < valid_person_bb_area:
+                                    # the bounding box must have a minimal area in the
+                                    # camera view to be considered
+                                    continue
 
-                                    tx, ty, bx, by = aabb_A
-                                    imga = Ims[t1][cidA][ty: by, tx: bx]
-                                    ImgsA.append(imga)
-                                    tx, ty, bx, by = aabb_B
-                                    imgb = Ims[t2][cidB][ty: by, tx: bx]
-                                    ImgsB.append(imgb)
-                                    pairs.append((t1, pidA, cidA,
-                                                 t2, pidB, cidB))
-                                    # if low_spec_mode:
-                                    #     score = tracking_setting.reid_model.predict(imga, imgb)
-                                    # else:
-                                    #     score = -1
+
+                                tx, ty, bx, by = aabb_A
+                                imga = Ims[t1][cidA][ty: by, tx: bx]
+                                ImgsA.append(imga)
+                                tx, ty, bx, by = aabb_B
+                                imgb = Ims[t2][cidB][ty: by, tx: bx]
+                                ImgsB.append(imgb)
+                                pairs.append((t1, pidA, cidA,
+                                             t2, pidB, cidB))
         _end = time()
 
         self.ImgsA = ImgsA

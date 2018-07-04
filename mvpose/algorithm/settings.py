@@ -21,7 +21,7 @@ def get_settings(min_nbr_joints=7, gc_iota_scale=1,
     """
         gets the parameters that are needed for the the program
         !!Careful!!: to set the parameters that are defined in world coordinates
-        the unit 'mm' MUST BE used. HowIT IS IN!ever, inside the setting object this
+        the unit 'mm' MUST BE used. However, inside the setting object this
         units will be scaled according to {scale_to_mm}.
 
     :param min_nbr_joints: number of joints that are needed
