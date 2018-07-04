@@ -165,10 +165,13 @@ class GraphPartitioningTracker:
         # =====================================
         _start = time()
         if low_spec_mode:
-            scores = []
-            for A, B in zip(ImgsA, ImgsB):
-                score = tracking_setting.reid_model.predict(A, B)
-                scores.append(score)
+            scores = np.zeros((0,))
+            batchsize = tracking_setting.personreid_batchsize
+            for i in range(0, len(ImgsB), batchsize):
+                A = ImgsA[i: i + batchsize]
+                B = ImgsB[i: i + batchsize]
+                _scores = tracking_setting.reid_model.predict(A, B)
+                scores = np.concatenate([scores, _scores], axis=0)
         else:
             scores = tracking_setting.reid_model.predict(ImgsA, ImgsB)
         _end = time()
