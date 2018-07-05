@@ -101,6 +101,14 @@ def track(Calib, Imgs, Heatmaps, Pafs,
     if debug:
         Debug.track_partitioning = graph_part
 
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # create tracks
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    G = graph_part.G
+
+
+
+
     # current_pid = len(tracks[0])
     # max_distance = settings.track_max_distance
     # for t1, t2 in zip(range(0, n_frames - 1), range(1, n_frames)):

@@ -3,6 +3,7 @@ import numpy.linalg as la
 import numpy as np
 from time import time
 from mvpose.geometry import geometry as gm
+import networkx as nx
 
 
 def distance3d_humans(human1, human2):
@@ -212,18 +213,23 @@ class GraphPartitioningTracker:
             Tau[tA, pidA, tB, pidB] = solver.BoolVar('t[%i,%i,%i,%i]' % (tA, pidA, tB, pidB))
             costs[tA, pidA, tB, pidB] = np.log(score / (1-score))
             if tA not in pids_per_frame:
-                pids_per_frame[tA] = []
-            pids_per_frame[tA].append(pidA)
+                pids_per_frame[tA] = set()
+            pids_per_frame[tA].add(pidA)
             if tB not in pids_per_frame:
-                pids_per_frame[tB] = []
-            pids_per_frame[tB].append(pidB)
+                pids_per_frame[tB] = set()
+            pids_per_frame[tB].add(pidB)
 
+        self.pids_per_frame = pids_per_frame
         self.costs = costs
         Sum = solver.Sum(Tau[edge] * costs[edge] for edge in graph_3d.keys())
 
         # -- add constraints --
         for t1 in range(n_frames - 1):
             for t2 in range(t1 + 1, n_frames):
+                A = [(t1, pid1, t2, pid2) for pid1 in pids_per_frame[t1]\
+                               for pid2 in pids_per_frame[t2] if (t1, pid1, t2, pid2) in Tau]
+                print('~~~~')
+                print(A)
                 solver.Add(
                     solver.Sum(Tau[t1, pid1, t2, pid2]\
                                for pid1 in pids_per_frame[t1]\
@@ -241,6 +247,29 @@ class GraphPartitioningTracker:
         # =====================================
         # extract tracks
         # =====================================
+        node_lookup = {}  # t, pid -> node number
+        reverse_node_lookup = {}  # node number -> t pid
+        self.node_lookup = node_lookup
+        self.reverse_node_lookup = reverse_node_lookup
+
+        G = nx.Graph()
+
+        nid = 1
+        for t in range(n_frames):
+            for pid in pids_per_frame[t]:
+                node_lookup[t, pid] = nid
+                reverse_node_lookup[nid] = (t, pid)
+                G.add_node(nid, key=(t, pid))
+                nid += 1
+
+        print('TAU', Tau.keys())
         for (t1, pid1, t2, pid2), v in Tau.items():
+            assert t1 < t2
+            print(str((t1, pid1)) + '--' + str((t2, pid2)) + ', ', v.solution_value())
             if v.solution_value() > 0:
-                pass
+                nid1 = node_lookup[t1, pid1]
+                nid2 = node_lookup[t2, pid2]
+                print('add edge ' + str((t1, pid1)) + " to " + str((t2, pid2)))
+                c = costs[t1, pid1, t2, pid2]
+                G.add_edge(nid1, nid2, cost=c)
+        self.G = G
