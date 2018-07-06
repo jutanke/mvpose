@@ -5,6 +5,7 @@ from mvpose.algorithm.settings import get_tracking_settings
 from time import time
 from collections import namedtuple
 import numpy as np
+import networkx as nx
 
 
 def track(Calib, Imgs, Heatmaps, Pafs,
@@ -89,51 +90,32 @@ def track(Calib, Imgs, Heatmaps, Pafs,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # fit the candidates
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    tracks = []
-    for frame, hm in enumerate(humans):
-        if frame == 0:
-            tracks.append(list(range(len(hm))))
-        else:
-            tracks.append([-1 for _ in range(len(hm))])
-
+    _start = time()
     graph_part = GraphPartitioningTracker(Calib, Imgs, humans, debug,
                                           tracking_setting)
+    _end = time()
     if debug:
         Debug.track_partitioning = graph_part
+        print('graph partitioning: elapsed', _end - _start)
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # create tracks
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    G = graph_part.G
+    _start = time()
+    tracks = []
+    for frame, hm in enumerate(humans):
+        tracks.append([-1 for _ in range(len(hm))])
 
+    for global_pid, comp in enumerate(nx.connected_components(graph_part.G)):
+        for nid in comp:
+            node = graph_part.G.nodes[nid]
+            t, local_pid = node['key']
+            tracks[t][local_pid] = global_pid
 
-
-
-    # current_pid = len(tracks[0])
-    # max_distance = settings.track_max_distance
-    # for t1, t2 in zip(range(0, n_frames - 1), range(1, n_frames)):
-    #     pidsA = tracks[t1]
-    #     pidsB = tracks[t2]
-    #     candsA = humans[t1]
-    #     candsB = humans[t2]
-    #     nA = len(candsA)
-    #     nB = len(candsB)
-    #     if nA > 0 and nB > 0:
-    #         D = np.zeros((nA, nB))
-    #         for i, candA in enumerate(candsA):
-    #             for j, candB in enumerate(candsB):
-    #                 D[i, j] = avg_distance(candA, candB)
-    #
-    #         row_ind, col_ind = linear_sum_assignment(D)
-    #         for a, b in zip(row_ind, col_ind):
-    #             dist = D[a, b]
-    #             if dist < max_distance:
-    #                 pidsB[b] = pidsA[a]
-    #             else:  # add a new person
-    #                 pidsB[b] = current_pid
-    #                 current_pid += 1
+    _end = time()
 
     if debug:
+        print('parse partitioning', _end - _start)
         return Debug, np.array(tracks), humans
     else:
         return np.array(tracks), humans

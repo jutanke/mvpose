@@ -224,17 +224,32 @@ class GraphPartitioningTracker:
         Sum = solver.Sum(Tau[edge] * costs[edge] for edge in graph_3d.keys())
 
         # -- add constraints --
+        # build constraint graph
+        #
+        #  t0      t1      t2     ...
+        #
+        #      ____________       1-3, 1-4, 1-5, 1,6
+        #     /            \      2-3, 2-4, 2-5, 2-6
+        #  (1)-----(3)-----(5)    3-5, 3-6
+        #      \  /   \  /        4-5, 4-6
+        #       \/     \/
+        #  (2)-----(4)-----(6)
+        #    \_____________/
+        added_constraints = []
         for t1 in range(n_frames - 1):
             for t2 in range(t1 + 1, n_frames):
-                A = [(t1, pid1, t2, pid2) for pid1 in pids_per_frame[t1]\
-                               for pid2 in pids_per_frame[t2] if (t1, pid1, t2, pid2) in Tau]
-                print('~~~~')
-                print(A)
-                solver.Add(
-                    solver.Sum(Tau[t1, pid1, t2, pid2]\
-                               for pid1 in pids_per_frame[t1]\
-                               for pid2 in pids_per_frame[t2] if (t1, pid1, t2, pid2) in Tau) <= 1
-                )
+                for pid1 in pids_per_frame[t1]:
+                    solver.Add(
+                        solver.Sum(Tau[t1, pid1, t2, pid2] for pid2 in pids_per_frame[t2]\
+                                   if (t1, pid1, t2, pid2) in Tau) <= 1
+                    )
+                    if debug:
+                        for pid2 in pids_per_frame[t2]:
+                            if (t1, pid1, t2, pid2) in Tau:
+                                added_constraints.append([t1, pid1, t2, pid2])
+
+        if debug:
+            self.added_constraints = added_constraints
 
         solver.Maximize(Sum)
         RESULT = solver.Solve()
@@ -247,13 +262,12 @@ class GraphPartitioningTracker:
         # =====================================
         # extract tracks
         # =====================================
+
         node_lookup = {}  # t, pid -> node number
         reverse_node_lookup = {}  # node number -> t pid
         self.node_lookup = node_lookup
         self.reverse_node_lookup = reverse_node_lookup
-
-        G = nx.Graph()
-
+        G = nx.Graph()  # for final step
         nid = 1
         for t in range(n_frames):
             for pid in pids_per_frame[t]:
@@ -262,14 +276,12 @@ class GraphPartitioningTracker:
                 G.add_node(nid, key=(t, pid))
                 nid += 1
 
-        print('TAU', Tau.keys())
         for (t1, pid1, t2, pid2), v in Tau.items():
             assert t1 < t2
             print(str((t1, pid1)) + '--' + str((t2, pid2)) + ', ', v.solution_value())
             if v.solution_value() > 0:
                 nid1 = node_lookup[t1, pid1]
                 nid2 = node_lookup[t2, pid2]
-                print('add edge ' + str((t1, pid1)) + " to " + str((t2, pid2)))
                 c = costs[t1, pid1, t2, pid2]
                 G.add_edge(nid1, nid2, cost=c)
         self.G = G
