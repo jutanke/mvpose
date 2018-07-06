@@ -235,21 +235,20 @@ class GraphPartitioningTracker:
         #       \/     \/
         #  (2)-----(4)-----(6)
         #    \_____________/
-        added_constraints = []
         for t1 in range(n_frames - 1):
             for t2 in range(t1 + 1, n_frames):
+                # -- forward pass --
                 for pid1 in pids_per_frame[t1]:
                     solver.Add(
                         solver.Sum(Tau[t1, pid1, t2, pid2] for pid2 in pids_per_frame[t2]\
                                    if (t1, pid1, t2, pid2) in Tau) <= 1
                     )
-                    if debug:
-                        for pid2 in pids_per_frame[t2]:
-                            if (t1, pid1, t2, pid2) in Tau:
-                                added_constraints.append([t1, pid1, t2, pid2])
-
-        if debug:
-            self.added_constraints = added_constraints
+                # -- backward pass --
+                for pid2 in pids_per_frame[t2]:
+                    solver.Add(
+                        solver.Sum(Tau[t1, pid1, t2, pid2] for pid1 in pids_per_frame[t1] \
+                                   if (t1, pid1, t2, pid2) in Tau) <= 1
+                    )
 
         solver.Maximize(Sum)
         RESULT = solver.Solve()
