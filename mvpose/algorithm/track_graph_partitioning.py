@@ -249,6 +249,21 @@ class GraphPartitioningTracker:
                         solver.Sum(Tau[t1, pid1, t2, pid2] for pid1 in pids_per_frame[t1] \
                                    if (t1, pid1, t2, pid2) in Tau) <= 1
                     )
+        # -- transitivity --
+        for t1 in range(n_frames - 2):
+            t2 = t1 + 1
+            t3 = t1 + 2
+            for pid1 in pids_per_frame[t1]:
+                for pid2 in pids_per_frame[t2]:
+                    for pid3 in pids_per_frame[t3]:
+                        ab = (t1, pid1, t2, pid2)
+                        bc = (t2, pid2, t3, pid3)
+                        ac = (t1, pid1, t3, pid3)
+                        if ab not in Tau or bc not in Tau or ac not in Tau:
+                            continue
+                        solver.Add(Tau[ab] + Tau[bc] - 1 <= Tau[ac])
+                        solver.Add(Tau[ab] + Tau[ac] - 1 <= Tau[bc])
+                        solver.Add(Tau[bc] + Tau[ac] - 1 <= Tau[ab])
 
         solver.Maximize(Sum)
         RESULT = solver.Solve()
