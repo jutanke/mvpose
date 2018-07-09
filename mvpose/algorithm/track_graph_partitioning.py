@@ -47,36 +47,20 @@ def get_bb(cam, human, w, h):
     return min_x, min_y, max_x, max_y
 
 
-class GraphPartitioningTracker:
+# =========================================
+# ValidImageCandidateExtractor
+# =========================================
+class ValidImageCandidateExtractor:
 
-    def __init__(self, Calibs, Ims, humans_candidates, debug,
-                 tracking_setting):
-        """
-            Tracking using human poses
-        :param Calibs:
-        :param Ims:
-        :param humans_candidates:
-        :param valid_person_bb_area: valid area in [pixel] over
-            which a person reprojection into an image is considered
-            valid
-        :param tracking_setting: {mvpose.algorithm.settings.Tracking_Settings}
-        :param debug
-        """
+    def __init__(self, Ims, humans_candidates, Calibs, tracking_setting):
         n_frames = len(Ims)
-        assert len(humans_candidates) == n_frames
-        assert len(Calibs) == n_frames
-        low_spec_mode = tracking_setting.low_spec_mode
-
-        # =====================================
-        # calculate Edge costs
-        # =====================================
+        _, _, H, W, _ = Ims.shape
         valid_person_bb_area = tracking_setting.valid_person_bb_area
         max_moving_distance = tracking_setting.max_moving_distance_per_frame
         moving_factor_increase = tracking_setting.moving_factor_increase_per_frame
         conflict_IoU = tracking_setting.conflict_IoU
-        _, _, H, W, _ = Ims.shape
+        T = tracking_setting.T
 
-        _start = time()
         # we first want to figure out which person reprojections we can safely
         # use and which ones we cannot as others are in the vicinity
         # (t, cid, pid)
@@ -106,7 +90,7 @@ class GraphPartitioningTracker:
         ImgsB = []
         pairs = []  # t1, pid1, cid1, t2 pid2, cid2
         for t1 in range(n_frames - 1):
-            for t2 in range(t1 + 1, n_frames):
+            for t2 in range(t1 + 1, min(t1 + T, n_frames)):
                 dt = t2 - t1
                 max_d = max_moving_distance * dt * moving_factor_increase
                 for pidA, candA in enumerate(humans_candidates[t1]):
@@ -145,12 +129,49 @@ class GraphPartitioningTracker:
                                 imgb = Ims[t2][cidB][ty: by, tx: bx]
                                 ImgsB.append(imgb)
                                 pairs.append((t1, pidA, cidA,
-                                             t2, pidB, cidB))
-        _end = time()
-
+                                              t2, pidB, cidB))
         self.ImgsA = ImgsA
         self.ImgsB = ImgsB
         self.pairs = pairs
+
+# =========================================
+# GraphPartitioningTracker
+# =========================================
+class GraphPartitioningTracker:
+
+    def __init__(self, Calibs, Ims, humans_candidates, debug,
+                 tracking_setting):
+        """
+            Tracking using human poses
+        :param Calibs:
+        :param Ims:
+        :param humans_candidates:
+        :param valid_person_bb_area: valid area in [pixel] over
+            which a person reprojection into an image is considered
+            valid
+        :param tracking_setting: {mvpose.algorithm.settings.Tracking_Settings}
+        :param debug
+        """
+        n_frames = len(Ims)
+        assert len(humans_candidates) == n_frames
+        assert len(Calibs) == n_frames
+        low_spec_mode = tracking_setting.low_spec_mode
+        T = tracking_setting.T
+
+        # =====================================
+        # calculate Edge costs
+        # =====================================
+        _, _, H, W, _ = Ims.shape
+
+        _start = time()
+        # --
+        img_cands = ValidImageCandidateExtractor(Ims, humans_candidates, Calibs,
+                                                 tracking_setting)
+        self.ImgsA = ImgsA = img_cands.ImgsA
+        self.ImgsB = ImgsB = img_cands.ImgsB
+        self.pairs = pairs = img_cands.pairs
+        # --
+        _end = time()
         if debug:
             print('\t[gp:step 1] elapsed', _end - _start)
             print('\t\t# boxes to compare:', len(ImgsA))
@@ -236,7 +257,7 @@ class GraphPartitioningTracker:
         #  (2)-----(4)-----(6)
         #    \_____________/
         for t1 in range(n_frames - 1):
-            for t2 in range(t1 + 1, n_frames):
+            for t2 in range(t1 + 1, min(t1 + T, n_frames)):
                 # -- forward pass --
                 for pid1 in pids_per_frame[t1]:
                     solver.Add(
@@ -251,8 +272,8 @@ class GraphPartitioningTracker:
                     )
         # -- transitivity --
         for t1 in range(n_frames - 2):
-            for t2 in range(t1 + 1, n_frames - 1):
-                for t3 in range(t2 + 1, n_frames):
+            for t2 in range(t1 + 1, min(t1 + T - 1, n_frames - 1)):
+                for t3 in range(t2 + 1, min(t1 + T, n_frames)):
                     for pid1 in pids_per_frame[t1]:
                         for pid2 in pids_per_frame[t2]:
                             for pid3 in pids_per_frame[t3]:

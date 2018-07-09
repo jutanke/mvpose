@@ -8,6 +8,26 @@ import numpy as np
 import networkx as nx
 
 
+def extend_calibration_to_frames(Calib, n_frames):
+    """
+        fix Calib: in some environments the cameras are fixed and do not
+        change: we then only get a single list of {mvpose.geometry.camera}'s
+        but in other instances we might have dynamic cameras where we have
+        a different calibration for each camera and frame. To be able to
+        handle both cases we 'equalize' them here by simply repeating the
+        same cameras if applicable
+    :param Calib: [ [ {mvpose.geometry.camera}, .. ] * n_cameras ] * n_frames
+    :param n_frames: {integer}
+    :return:
+    """
+    if len(Calib) == 1:
+        Calib_ = []
+        for _ in range(n_frames):
+            Calib_.append(Calib[0])
+        Calib = Calib_
+    return Calib
+
+
 def track(Calib, Imgs, Heatmaps, Pafs,
           settings=None, tracking_setting=None, debug=False):
     """
@@ -25,17 +45,7 @@ def track(Calib, Imgs, Heatmaps, Pafs,
     assert n_frames > 1
     assert len(Pafs) == n_frames
 
-    # fix Calib: in some environments the cameras are fixed and do not
-    # change: we then only get a single list of {mvpose.geometry.camera}'s
-    # but in other instances we might have dynamic cameras where we have
-    # a different calibration for each camera and frame. To be able to
-    # handle both cases we 'equalize' them here by simply repeating the
-    # same cameras if applicable
-    if len(Calib) == 1:
-        Calib_ = []
-        for _ in range(n_frames):
-            Calib_.append(Calib[0])
-        Calib = Calib_
+    Calib = extend_calibration_to_frames(Calib, n_frames)
 
     settings = validate_input(Calib[0], Heatmaps[0], Pafs[0], settings)
     if tracking_setting is None:

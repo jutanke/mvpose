@@ -104,6 +104,7 @@ def get_tracking_settings(settings,
                           moving_factor_increase_per_frame=1,
                           personreid_batchsize=12,
                           conflict_IoU=0.3,
+                          T=5,
                           low_spec_mode=False,
                           reid_model=None):
     """
@@ -121,6 +122,7 @@ def get_tracking_settings(settings,
     :param low_spec_mode: {boolean} If True memory consumption is tried
         to be kept low - however, this might make the algorithm much
         slower
+    :param T: {integer}: how far in the future the graph goes
     :param personreid_batchsize: batchsize for the person-reid network
     :param reid_model: model for person re-identification, needs
         to have a method "predict" that takes in two images and
@@ -133,7 +135,8 @@ def get_tracking_settings(settings,
         'max_moving_distance_per_frame',
         'moving_factor_increase_per_frame',
         'conflict_IoU',
-        'low_spec_mode'
+        'low_spec_mode',
+        'T'
     ])
     scale_to_mm = settings.scale_to_mm
     # -- tracking
@@ -151,4 +154,5 @@ def get_tracking_settings(settings,
     params.low_spec_mode = low_spec_mode
     params.personreid_batchsize = personreid_batchsize
     params.conflict_IoU = conflict_IoU
+    params.T = T
     return params
