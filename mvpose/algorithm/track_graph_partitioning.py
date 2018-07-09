@@ -134,6 +134,7 @@ class ValidImageCandidateExtractor:
         self.ImgsB = ImgsB
         self.pairs = pairs
 
+
 # =========================================
 # GraphPartitioningTracker
 # =========================================
