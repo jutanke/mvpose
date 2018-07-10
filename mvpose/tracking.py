@@ -28,6 +28,25 @@ def extend_calibration_to_frames(Calib, n_frames):
     return Calib
 
 
+def extract_tracks(humans, G):
+    """
+        extract tracks
+    :param humans:
+    :param G: graph from graph-partitioning
+    :return:
+    """
+    tracks = []
+    for frame, hm in enumerate(humans):
+        tracks.append([-1 for _ in range(len(hm))])
+
+    for global_pid, comp in enumerate(nx.connected_components(G)):
+        for nid in comp:
+            node = G.nodes[nid]
+            t, local_pid = node['key']
+            tracks[t][local_pid] = global_pid
+    return tracks
+
+
 def track(Calib, Imgs, Heatmaps, Pafs,
           settings=None, tracking_setting=None, debug=False):
     """
@@ -112,16 +131,7 @@ def track(Calib, Imgs, Heatmaps, Pafs,
     # create tracks
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     _start = time()
-    tracks = []
-    for frame, hm in enumerate(humans):
-        tracks.append([-1 for _ in range(len(hm))])
-
-    for global_pid, comp in enumerate(nx.connected_components(graph_part.G)):
-        for nid in comp:
-            node = graph_part.G.nodes[nid]
-            t, local_pid = node['key']
-            tracks[t][local_pid] = global_pid
-
+    tracks = extract_tracks(humans, graph_part.G)
     _end = time()
 
     if debug:

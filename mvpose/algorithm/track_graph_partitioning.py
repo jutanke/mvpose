@@ -253,29 +253,40 @@ class GraphPartitioningTracker:
         # =====================================
         # extract tracks
         # =====================================
+        self.G = construct_query_graph(graph_solver, n_frames)
 
-        node_lookup = {}  # t, pid -> node number
-        reverse_node_lookup = {}  # node number -> t pid
-        self.node_lookup = node_lookup
-        self.reverse_node_lookup = reverse_node_lookup
-        G = nx.Graph()  # for final step
-        nid = 1
-        for t in range(n_frames):
-            for pid in pids_per_frame[t]:
-                node_lookup[t, pid] = nid
-                reverse_node_lookup[nid] = (t, pid)
-                G.add_node(nid, key=(t, pid))
-                nid += 1
 
-        for (t1, pid1, t2, pid2), v in graph_solver.TauItems:
-            assert t1 < t2
-            print(str((t1, pid1)) + '--' + str((t2, pid2)) + ', ', v)
-            if v > 0:
-                nid1 = node_lookup[t1, pid1]
-                nid2 = node_lookup[t2, pid2]
-                c = costs[t1, pid1, t2, pid2]
-                G.add_edge(nid1, nid2, cost=c)
-        self.G = G
+def construct_query_graph(graph_solver, n_frames):
+    """
+
+    :param graph_solver:
+    :param n_frames:
+    :return:
+    """
+    pids_per_frame = graph_solver.pids_per_frame
+    costs = graph_solver.costs
+    node_lookup = {}  # t, pid -> node number
+    reverse_node_lookup = {}  # node number -> t pid
+    node_lookup = node_lookup
+    reverse_node_lookup = reverse_node_lookup
+    G = nx.Graph()  # for final step
+    nid = 1
+    for t in range(n_frames):
+        for pid in pids_per_frame[t]:
+            node_lookup[t, pid] = nid
+            reverse_node_lookup[nid] = (t, pid)
+            G.add_node(nid, key=(t, pid))
+            nid += 1
+
+    for (t1, pid1, t2, pid2), v in graph_solver.TauItems:
+        assert t1 < t2
+        #print(str((t1, pid1)) + '--' + str((t2, pid2)) + ', ', v)
+        if v > 0:
+            nid1 = node_lookup[t1, pid1]
+            nid2 = node_lookup[t2, pid2]
+            c = costs[t1, pid1, t2, pid2]
+            G.add_edge(nid1, nid2, cost=c)
+    return G
 
 
 # =========================================
@@ -283,7 +294,14 @@ class GraphPartitioningTracker:
 # =========================================
 class GraphSolver:
 
-    def __init__(self, graph_3d, n_frames, T):
+    def __init__(self, graph_3d, n_frames, T, strict_debug=True):
+        """
+
+        :param graph_3d: dict with (tA, pidA, tB, pidB) as keys and the re-id score as value
+        :param n_frames: {integer} number of frames
+        :param T: {integer} look-ahead value
+        :param strict_debug: {boolean} True forces debugging messages
+        """
         solver = mip.Solver('t', mip.Solver.CBC_MIXED_INTEGER_PROGRAMMING)
 
         pids_per_frame = {}
@@ -345,6 +363,9 @@ class GraphSolver:
                                 solver.Add(Tau[ab] + Tau[ac] - 1 <= Tau[bc])
                                 solver.Add(Tau[bc] + Tau[ac] - 1 <= Tau[ab])
 
+        if strict_debug:
+            print("[graph partitioning]")
+            print('\tsolve graph with ' + str(len(Tau)) + ' edges...')
         solver.Maximize(Sum)
         self.RESULT = solver.Solve()
         self.WallTime = solver.WallTime()
