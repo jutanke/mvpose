@@ -47,6 +47,30 @@ def get_bb(cam, human, w, h):
     return min_x, min_y, max_x, max_y
 
 
+def generate_graph3d(scores, pairs):
+    """
+        Helper structure for the graphcut
+    :param scores: [ 0.9, 0.4, 0.2, ... ] * n
+    :param pairs:  [ (t1, pid1, cid1, t2, pid2, cid2), .. ] * n
+    :return:
+    """
+    div = {}
+    graph_3d = {}  # tA, pidA, tB, pidB
+    for s, meta in zip(scores, pairs):
+        tA, pidA, _, tB, pidB, _ = meta
+        assert tA < tB
+        if not (tA, pidA, tB, pidB) in graph_3d:
+            graph_3d[tA, pidA, tB, pidB] = s
+            div[tA, pidA, tB, pidB] = 1
+        else:
+            graph_3d[tA, pidA, tB, pidB] += s
+            div[tA, pidA, tB, pidB] += 1
+    for key, value in div.items():
+        graph_3d[key] = graph_3d[key] / value
+
+    return graph_3d
+
+
 # =========================================
 # ValidImageCandidateExtractor
 # =========================================
@@ -202,21 +226,7 @@ class GraphPartitioningTracker:
         # calculate 3d scores
         # =====================================
         _start = time()
-
-        div = {}
-        graph_3d = {}  # tA, pidA, tB, pidB
-        for s, meta in zip(scores, pairs):
-            tA, pidA, _, tB, pidB, _ = meta
-            assert tA < tB
-            if not (tA, pidA, tB, pidB) in graph_3d:
-                graph_3d[tA, pidA, tB, pidB] = s
-                div[tA, pidA, tB, pidB] = 1
-            else:
-                graph_3d[tA, pidA, tB, pidB] += s
-                div[tA, pidA, tB, pidB] += 1
-        for key, value in div.items():
-            graph_3d[key] = graph_3d[key]/value
-
+        graph_3d = generate_graph3d(scores, pairs)
         self.graph_3d = graph_3d
         _end = time()
         if debug:
@@ -226,6 +236,54 @@ class GraphPartitioningTracker:
         # =====================================
         # build graph
         # =====================================
+        graph_solver = GraphSolver(graph_3d, n_frames, T)
+        self.graph_solver = graph_solver
+        pids_per_frame = graph_solver.pids_per_frame
+        costs = graph_solver.costs
+        self.pids_per_frame = pids_per_frame
+        self.costs = costs
+
+        # --
+        if debug:
+            print('-------------------------------------------')
+            print("\t\tTime = ", graph_solver.WallTime, " ms")
+            print("\t\tresult:", graph_solver.RESULT)
+            print('\n\t\tTotal cost:', graph_solver.TotalCost)
+
+        # =====================================
+        # extract tracks
+        # =====================================
+
+        node_lookup = {}  # t, pid -> node number
+        reverse_node_lookup = {}  # node number -> t pid
+        self.node_lookup = node_lookup
+        self.reverse_node_lookup = reverse_node_lookup
+        G = nx.Graph()  # for final step
+        nid = 1
+        for t in range(n_frames):
+            for pid in pids_per_frame[t]:
+                node_lookup[t, pid] = nid
+                reverse_node_lookup[nid] = (t, pid)
+                G.add_node(nid, key=(t, pid))
+                nid += 1
+
+        for (t1, pid1, t2, pid2), v in graph_solver.TauItems:
+            assert t1 < t2
+            print(str((t1, pid1)) + '--' + str((t2, pid2)) + ', ', v)
+            if v > 0:
+                nid1 = node_lookup[t1, pid1]
+                nid2 = node_lookup[t2, pid2]
+                c = costs[t1, pid1, t2, pid2]
+                G.add_edge(nid1, nid2, cost=c)
+        self.G = G
+
+
+# =========================================
+# GraphSolver
+# =========================================
+class GraphSolver:
+
+    def __init__(self, graph_3d, n_frames, T):
         solver = mip.Solver('t', mip.Solver.CBC_MIXED_INTEGER_PROGRAMMING)
 
         pids_per_frame = {}
@@ -233,7 +291,7 @@ class GraphPartitioningTracker:
         costs = {}
         for (tA, pidA, tB, pidB), score in graph_3d.items():
             Tau[tA, pidA, tB, pidB] = solver.BoolVar('t[%i,%i,%i,%i]' % (tA, pidA, tB, pidB))
-            costs[tA, pidA, tB, pidB] = np.log(score / (1-score))
+            costs[tA, pidA, tB, pidB] = np.log(score / (1 - score))
             if tA not in pids_per_frame:
                 pids_per_frame[tA] = set()
             pids_per_frame[tA].add(pidA)
@@ -262,7 +320,7 @@ class GraphPartitioningTracker:
                 # -- forward pass --
                 for pid1 in pids_per_frame[t1]:
                     solver.Add(
-                        solver.Sum(Tau[t1, pid1, t2, pid2] for pid2 in pids_per_frame[t2]\
+                        solver.Sum(Tau[t1, pid1, t2, pid2] for pid2 in pids_per_frame[t2] \
                                    if (t1, pid1, t2, pid2) in Tau) <= 1
                     )
                 # -- backward pass --
@@ -288,36 +346,11 @@ class GraphPartitioningTracker:
                                 solver.Add(Tau[bc] + Tau[ac] - 1 <= Tau[ab])
 
         solver.Maximize(Sum)
-        RESULT = solver.Solve()
-        if debug:
-            print('-------------------------------------------')
-            print("\t\tTime = ", solver.WallTime(), " ms")
-            print("\t\tresult:", RESULT)
-            print('\n\t\tTotal cost:', solver.Objective().Value())
+        self.RESULT = solver.Solve()
+        self.WallTime = solver.WallTime()
+        self.TotalCost = solver.Objective().Value()
 
-        # =====================================
-        # extract tracks
-        # =====================================
-
-        node_lookup = {}  # t, pid -> node number
-        reverse_node_lookup = {}  # node number -> t pid
-        self.node_lookup = node_lookup
-        self.reverse_node_lookup = reverse_node_lookup
-        G = nx.Graph()  # for final step
-        nid = 1
-        for t in range(n_frames):
-            for pid in pids_per_frame[t]:
-                node_lookup[t, pid] = nid
-                reverse_node_lookup[nid] = (t, pid)
-                G.add_node(nid, key=(t, pid))
-                nid += 1
-
-        for (t1, pid1, t2, pid2), v in Tau.items():
-            assert t1 < t2
-            print(str((t1, pid1)) + '--' + str((t2, pid2)) + ', ', v.solution_value())
-            if v.solution_value() > 0:
-                nid1 = node_lookup[t1, pid1]
-                nid2 = node_lookup[t2, pid2]
-                c = costs[t1, pid1, t2, pid2]
-                G.add_edge(nid1, nid2, cost=c)
-        self.G = G
+        self.TauItems = []
+        for key, v in Tau.items():
+            value = int(v.solution_value())
+            self.TauItems.append((key, value))
