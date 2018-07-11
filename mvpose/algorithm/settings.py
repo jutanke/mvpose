@@ -46,8 +46,6 @@ def get_settings(min_nbr_joints=7, gc_iota_scale=1,
     :param ms_sigma: width of the gaussian in the meanshift
     :param ms_max_iterations: cut-of threshold for meanshift
     :param ms_between_distance: maximal distance between two points of a cluster in [mm]
-    :param track_max_distance: maximal allowed distance in the tracking between two
-        persons in [mm]
     :param limb_seq: [ (a, b), (a, c), ... ] list of limbs by joint connection
     :param limb_map_idx: maps the limb id to the part affinity field positions
     :param symmetric_joints: [ (a, b), ... ] list of joints that are symmetric (left/right arm)

@@ -38,12 +38,32 @@ def calculate2d_proximity(person1, person2):
     return jointwise_proximity
 
 
+def center_distance(human_a, human_b):
+    """
+        calculates the center distance
+    :param human_a: 2d human
+    :param human_b:
+    :return:
+    """
+    assert len(human_a) == len(human_b)
+    avg_a = []
+    avg_b = []
+    for i in range(len(human_a)):
+        if human_a[i] is not None:
+            avg_a.append(human_a[i])
+        if human_b[i] is not None:
+            avg_b.append(human_b[i])
+    avg_a = np.mean(avg_a, axis=0)
+    avg_b = np.mean(avg_b, axis=0)
+    return la.norm(avg_a - avg_b)
+
+
 class CandidateSelector:
 
     def __init__(self, Humans, Heatmaps, Calib,
                  min_nbr_joints,
-                 hm_detection_threshold=0.1,
-                 threshold_close_pair=10):
+                 hm_detection_threshold,
+                 threshold_close_pair):
         """
         :param Humans: 3d human candidates
         :param Heatmaps:
@@ -75,7 +95,7 @@ class CandidateSelector:
                     human3d_b = Humans[b]
                     human2d_b = project_human_to_2d(human3d_b, cam)
 
-                    # check if co-incide
+                    # check if coincidence
                     distance = calculate2d_proximity(human2d_a, human2d_b)
                     count_close_pairs = 0
                     for d in distance:
@@ -87,6 +107,12 @@ class CandidateSelector:
                     if count_close_pairs >= min_nbr_joints:
                         Visibility_Table[cid, a] = FLAG_COLLISION
                         Visibility_Table[cid, b] = FLAG_COLLISION
+                    else:
+                        # check if the center points are too close to each other
+                        distance = center_distance(human2d_a, human2d_b)
+                        if distance < threshold_close_pair:  # in [pixel]
+                            Visibility_Table[cid, a] = FLAG_COLLISION
+                            Visibility_Table[cid, b] = FLAG_COLLISION
 
                 # ==============================================
                 # check the heatmap values in all views

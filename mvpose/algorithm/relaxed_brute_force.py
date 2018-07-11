@@ -89,7 +89,10 @@ def estimate(Calib, heatmaps, pafs, settings,
     human_candidates = graphcut.person_candidates
     candSelector = CandidateSelector(
         human_candidates, heatmaps,
-        Calib, settings.min_nbr_joints)
+        Calib,
+        settings.min_nbr_joints,
+        hm_detection_threshold=settings.hm_detection_threshold,
+        threshold_close_pair=settings.threshold_close_pair)
     _end = time()
     if debug and not silent:
         print('step 7: elapsed', _end - _start)
