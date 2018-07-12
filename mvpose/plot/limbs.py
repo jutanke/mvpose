@@ -25,6 +25,37 @@ def draw_vector_field(U, V):
     return Vec
 
 
+def draw_mscoco_human3d(ax, human, color, alpha=1):
+    """
+    :param ax
+    :param human: [ (x,y), None, ... ]
+    :param cam: {mvpose.geometry.camera}
+    :param color
+    :param alpha
+    :return:
+    """
+    assert len(human) == 18
+    for jid, pt3d in enumerate(human):
+        if pt3d is None:
+            continue
+        pt = pt3d[0:3]
+        marker = '*'
+        if jid in [2, 3, 4, 8, 9, 10, 14, 16]:
+            marker = '_'
+        elif jid in [5, 6, 7, 11, 12, 13, 15, 17]:
+            marker = '|'
+        ax.scatter(pt[0], pt[1], pt[2], color=color, marker=marker, alpha=alpha)
+
+        for a, b in DEFAULT_LIMB_SEQ:
+            ptA = human[a]
+            ptB = human[b]
+            if ptA is not None and ptB is not None:
+                x_a, y_a, z_a = ptA[0:3]
+                x_b, y_b, z_b = ptB[0:3]
+                ax.plot([x_a, x_b], [y_a, y_b], [z_a, z_b],
+                        color=color, alpha=alpha)
+
+
 def draw_mscoco_human(ax, human, cam, color, alpha=1):
     """
     :param ax
