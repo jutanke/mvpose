@@ -44,6 +44,23 @@ def estimate(Calib, heatmaps, pafs, settings,
     if debug and not silent:
         print('step 2: elapsed', _end - _start)
 
+    # check if there are NO detections
+    valid_joints = 0
+    for joint in triangulation.peaks3d_weighted:
+        if len(joint) > 0:
+            valid_joints += 1
+    if valid_joints < settings.min_nbr_joints:
+        if debug:
+            print('\tnot enough 3d points found: early stopping!', valid_joints)
+            Debug = namedtuple('Debug', [
+                               'candidates2d',
+                               'triangulation'])
+            Debug.candidates2d = cand2d
+            Debug.triangulation = triangulation
+            return Debug, []
+        else:
+            return []
+
     # -------- step 3 --------
     # meanshift
     # ------------------------
