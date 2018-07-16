@@ -280,7 +280,6 @@ def construct_query_graph(graph_solver, n_frames):
 
     for (t1, pid1, t2, pid2), v in graph_solver.TauItems:
         assert t1 < t2
-        #print(str((t1, pid1)) + '--' + str((t2, pid2)) + ', ', v)
         if v > 0:
             nid1 = node_lookup[t1, pid1]
             nid2 = node_lookup[t2, pid2]
@@ -317,6 +316,10 @@ class GraphSolver:
                 pids_per_frame[tB] = set()
             pids_per_frame[tB].add(pidB)
 
+        # fill up 'empty' frames so that we can still query them!
+        for frame in range(n_frames):
+            if frame not in pids_per_frame:
+                pids_per_frame[frame] = []
         self.pids_per_frame = pids_per_frame
         self.costs = costs
         Sum = solver.Sum(Tau[edge] * costs[edge] for edge in graph_3d.keys())

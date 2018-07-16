@@ -15,7 +15,7 @@ def convert_aabb(aabb):
     ty = aabb[1]
     w = aabb[2] - tx
     h = aabb[3] - ty
-    return (tx, ty, w, h)
+    return tx, ty, w, h
 
 
 def aabb_IoU(aabb1, aabb2):
@@ -37,8 +37,8 @@ def aabb_area(aabb):
     :return:
     """
     tx, ty, bx, by = aabb
-    assert tx < bx
-    assert ty < by
+    assert tx <= bx
+    assert ty <= by
     return (bx - tx) * (by - ty)
 
 
