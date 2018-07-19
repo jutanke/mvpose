@@ -94,6 +94,15 @@ def get_aabb(human2d):
     return min_x, min_y, w, h
 
 
+def total_covering(aabb1, aabb2):
+    I = aabb.intersection(aabb1, aabb2)
+    A1 = aabb1[2] * aabb1[3]
+    A2 = aabb2[2] * aabb2[3]
+    cov1 = I/A1
+    cov2 = I/A2
+    return max(cov1, cov2)
+
+
 def are_in_conflict(human2d_a, human2d_b,
                     threshold_close_pair,
                     min_nbr_joints,
@@ -125,6 +134,9 @@ def are_in_conflict(human2d_a, human2d_b,
         aabb2 = get_aabb(human2d_b)
         IoU = aabb.IoU(aabb1, aabb2)
         if IoU >= conflict_IoU:
+            return True
+
+        if total_covering(aabb1, aabb2) >= conflict_IoU:
             return True
 
     return False
