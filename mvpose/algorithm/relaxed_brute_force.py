@@ -2,7 +2,7 @@ from mvpose.algorithm.peaks2d import Candidates2D
 from mvpose.algorithm.triangulation import Triangulation
 from mvpose.algorithm.limbs3d import Limbs3d
 from mvpose.algorithm.meanshift import Meanshift
-from mvpose.algorithm.candidate_selection import CandidateSelector
+from mvpose.algorithm.candidate_selection import CandidateSelector, SmartCandidateSelector
 from mvpose.algorithm.graphcut import Graphcut
 from collections import namedtuple
 from time import time
@@ -104,10 +104,12 @@ def estimate(Calib, heatmaps, pafs, settings,
     # ------------------------
     _start = time()
     human_candidates = graphcut.person_candidates
-    candSelector = CandidateSelector(
+    conflict_IoU = settings.conflict_IoU
+    candSelector = SmartCandidateSelector(
         human_candidates, heatmaps,
         Calib,
         settings.min_nbr_joints,
+        conflict_IoU=conflict_IoU,
         hm_detection_threshold=settings.hm_detection_threshold,
         threshold_close_pair=settings.threshold_close_pair)
     _end = time()
@@ -124,13 +126,15 @@ def estimate(Calib, heatmaps, pafs, settings,
             'meanshift',
             'limbs3d',
             'graphcut',
-            'human_candidates'
+            'human_candidates',
+            'candidate_selector'
         ])
         Debug.candidates2d = cand2d
         Debug.triangulation = triangulation
         Debug.meanshift = meanshift
         Debug.limbs3d = limbs3d
         Debug.graphcut = graphcut
+        Debug.candidate_selector = candSelector
         Debug.human_candidates = human_candidates
         return Debug, candSelector.persons
     else:

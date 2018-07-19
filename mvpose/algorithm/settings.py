@@ -7,6 +7,7 @@ from mvpose.data.default_limbs import DEFAULT_LIMB_SEQ, \
 def get_settings(min_nbr_joints=7, gc_iota_scale=1,
                  gc_max_radius=300, gc_radius=50,
                  hm_detection_threshold=0.1,
+                 conflict_IoU=0.4,
                  threshold_close_pair=10,
                  scale_to_mm=1,
                  max_epi_distance=10,
@@ -33,6 +34,9 @@ def get_settings(min_nbr_joints=7, gc_iota_scale=1,
         between 3d joint candidates are negative in mm (GraphCut)
     :param hm_detection_threshold: confidence map threshold for
         when a peak is a detection and when it is an outlier [0 .. 1]
+    :param conflict_IoU: [0 .. 1] value that defines after what
+        IoU two persons (according to their aabb) are in conflict
+        in a camera view
     :param threshold_close_pair: number of joints that need to be
         "close" for two detections to be considered a collision in
         the back-projection (in pixel)
@@ -71,7 +75,8 @@ def get_settings(min_nbr_joints=7, gc_iota_scale=1,
         'ms_radius',
         'ms_sigma',
         'ms_max_iterations',
-        'ms_between_distance'
+        'ms_between_distance',
+        'conflict_IoU'
     ])
     assert len(sensible_limb_length) == len(limb_seq)
     params.ms_radius = ms_radius/scale_to_mm
@@ -93,6 +98,7 @@ def get_settings(min_nbr_joints=7, gc_iota_scale=1,
     params.sensible_limb_length = sensible_limb_length/scale_to_mm
     params.symmetric_joints = symmetric_joints
     params.min_symmetric_distance = min_symmetric_distance/scale_to_mm
+    params.conflict_IoU = conflict_IoU
     return params
 
 

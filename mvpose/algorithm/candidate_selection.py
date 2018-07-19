@@ -58,6 +58,78 @@ def center_distance(human_a, human_b):
     return la.norm(avg_a - avg_b)
 
 
+def get_aabb(human2d):
+    min_x = -1
+    min_y = -1
+    max_x = -1
+    max_y = -1
+    for jid, pt2d in enumerate(human2d):
+        if pt2d is None:
+            continue
+
+        x, y = pt2d
+        if min_x == -1:
+            min_x = x
+        if max_x == 1:
+            max_x = x
+        if min_y == -1:
+            min_y = y
+        if max_y == -1:
+            max_y = y
+
+        if min_x > x:
+            min_x = x
+        elif max_x < x:
+            max_x = x
+
+        if min_y > y:
+            min_y = y
+        elif max_y < y:
+            max_y = y
+
+    assert max_x > min_x
+    assert max_y > min_y
+    w = max_x - min_x
+    h = max_y - min_y
+    return min_x, min_y, w, h
+
+
+def are_in_conflict(human2d_a, human2d_b,
+                    threshold_close_pair,
+                    min_nbr_joints,
+                    conflict_IoU):
+    """
+
+    :param human2d_a:
+    :param human2d_b:
+    :param threshold_close_pair:
+    :param min_nbr_joints:
+    :return:
+    """
+    distance = calculate2d_proximity(human2d_a, human2d_b)
+    count_close_pairs = 0
+    for d in distance:
+        if d < 0:
+            continue
+        if d < threshold_close_pair:
+            count_close_pairs += 1
+
+    if count_close_pairs >= min_nbr_joints:
+        return True
+    else:
+        distance = center_distance(human2d_a, human2d_b)
+        if distance < threshold_close_pair:
+            return True
+
+        aabb1 = get_aabb(human2d_a)
+        aabb2 = get_aabb(human2d_b)
+        IoU = aabb.IoU(aabb1, aabb2)
+        if IoU >= conflict_IoU:
+            return True
+
+    return False
+
+
 class CandidateSelector:
 
     def __init__(self, Humans, Heatmaps, Calib,
@@ -72,6 +144,36 @@ class CandidateSelector:
         :param threshold_close_pair: {int} distance in pixels
             after which two points are considered to be close
         """
+
+        # step 1: kick out ALL candidates who are not visible
+        # in at least two views!
+        Triangulatedable_Humans = []
+        for human3d in Humans:
+            n_joints = len(human3d)
+            valid_views = 0
+            for cid, cam in enumerate(Calib):
+                human2d = project_human_to_2d(human3d, cam)
+                hm = Heatmaps[cid]
+                h, w, _ = hm.shape
+                believe = [-1] * n_joints
+                for jid, pt2d in enumerate(human2d):
+                    if pt2d is not None:
+                        if len(pt2d.shape) > 1:
+                            pt2d = np.squeeze(pt2d)
+                        x, y = np.around(pt2d).astype('int32')
+                        if x > 0 and x < w and y > 0 and y < h:
+                            score = hm[y, x, jid]
+                            believe[jid] = score
+                total = np.sum((np.array(believe) > hm_detection_threshold))
+                if total >= min_nbr_joints:
+                    valid_views += 1
+
+            print('\t\t\tvalid views: #', valid_views)
+            if valid_views > 1:
+                Triangulatedable_Humans.append(human3d)
+
+        Humans = Triangulatedable_Humans
+
         n = len(Humans)
         n_cams = len(Calib)
 
@@ -142,3 +244,145 @@ class CandidateSelector:
                 Valid_Humans.append(human3d)
 
         self.persons = Valid_Humans
+
+
+# ==============================================
+# SMART CANDIDATE SELECTION
+# ==============================================
+from ortools.linear_solver import pywraplp as mip
+import networkx as nx
+from pppr import aabb
+
+
+class SmartCandidateSelector:
+
+    def __init__(self, Humans, Heatmaps, Calib,
+                 min_nbr_joints,
+                 conflict_IoU,
+                 hm_detection_threshold,
+                 threshold_close_pair):
+        """
+        :param Humans: 3d human candidates
+        :param Heatmaps:
+        :param conflict_IoU
+        :param hm_detection_threshold: threshold after which a
+            detection in the confidence map is considered or not
+        :param threshold_close_pair: {int} distance in pixels
+            after which two points are considered to be close
+        """
+        G_valid = nx.Graph()
+        G_conflict = nx.Graph()
+        self.G_valid = G_valid
+        self.G_conflict = G_conflict
+        lookup = {}  # [pid, cid] -> gid
+        reverse_lookup = {}  # gid -> pid, cid
+        self.lookup = lookup
+        self.reverse_lookup = reverse_lookup
+        V = [0] * (len(Humans) * len(Calib)) # unary terms
+        E_c = []  # all conflict edges  -> pid, pid2, cid
+        E_v = []  # all identity edges
+        current_id = 0
+        for pid, human in enumerate(Humans):
+            for cid, cam in enumerate(Calib):
+                hm = Heatmaps[cid]
+                h, w, _ = hm.shape
+                lookup[pid, cid] = current_id
+                reverse_lookup[current_id] = (pid, cid)
+                G_valid.add_node(current_id)
+                G_conflict.add_node(current_id)
+
+                human2d = project_human_to_2d(human, cam)
+                unary_term = 0
+                n_joints = len(human2d)
+                valid_joints = 0
+                for jid, pt2d in enumerate(human2d):
+                    if pt2d is None:
+                        continue
+                    x, y = np.around(pt2d).astype('int32')
+                    if x > 0 and x < w and y > 0 and y < h:
+                        value = hm[y, x, jid]
+                        if value < hm_detection_threshold:
+                            value = 0
+                        else:
+                            valid_joints += 1
+                        unary_term += value
+
+                if valid_joints < min_nbr_joints:
+                    unary_term = 0
+                unary_term = unary_term/n_joints  # normalize to 1
+                V[current_id] = unary_term
+                current_id += 1
+
+        # -- create valid edges --
+        for pid in range(len(Humans)):
+            for cid1 in range(len(Calib) - 1):
+                for cid2 in range(cid1 + 1, len(Calib)):
+                    nid1 = lookup[pid, cid1]
+                    nid2 = lookup[pid, cid2]
+                    if V[nid1] > 0 and V[nid2] > 0:
+                        G_valid.add_edge(nid1, nid2)
+
+        # -- create conflict edges --
+        for pid, human in enumerate(Humans):
+            all_candidate_ids = []  # all ids for this candidate
+            for cid, cam in enumerate(Calib):
+                # check for conflicts
+                human2d = project_human_to_2d(human, cam)
+                for pid2 in range(pid + 1, len(Humans)):
+                    human2d_b = project_human_to_2d(Humans[pid2], cam)
+
+                    if are_in_conflict(human2d, human2d_b,
+                                       threshold_close_pair,
+                                       min_nbr_joints,
+                                       conflict_IoU):
+                        nid1 = lookup[pid, cid]
+                        nid2 = lookup[pid2, cid]
+                        G_conflict.add_edge(nid1, nid2)
+
+        # ==================================
+        # optimization
+        # ==================================
+        solver = mip.Solver('cand', mip.Solver.CBC_MIXED_INTEGER_PROGRAMMING)
+
+        n = len(V)
+        Sum = []
+        Rho = {}
+        Chi = {}
+        for idx in range(n):
+            Rho[idx] = solver.BoolVar('rho[%i]' % idx)
+
+        s = solver.Sum(Rho[idx] * V[idx] for idx in range(n))
+        Sum.append(s)
+
+        # --- constraints for conflicts ---
+        for clique in nx.find_cliques(G_conflict):
+            solver.Add(
+                solver.Sum(Rho[node] for node in clique) <= 1)
+
+        # --- constraints for valid edges ---
+        for a, b in G_valid.edges():
+            Chi[a, b] = solver.BoolVar('chi[%i,%i' % (a, b))
+            solver.Add(2 * Chi[a, b] <= Rho[a] + Rho[b])
+
+        s = solver.Sum(Chi[a, b] * 1/n_joints\
+                       for (a, b) in G_valid.edges())
+        Sum.append(s)
+        solver.Maximize(solver.Sum(Sum))
+        RESULT = solver.Solve()
+        print('(smart candidate selection) [')
+        print("\tTime = ", solver.WallTime(), " ms")
+        print("\tresult:", RESULT)
+        print('\n\tTotal cost:', solver.Objective().Value())
+        print('] (smart candidate selection)')
+
+        self.persons = []
+
+        # check which persons 'survive'
+        for pid, human in enumerate(Humans):
+            nbr_survivors = 0
+            for cid in range(len(Calib)):
+                nid = lookup[pid, cid]
+                if Rho[nid].solution_value() > 0:
+                    nbr_survivors += 1
+            if nbr_survivors > 1:
+                self.persons.append(human)
