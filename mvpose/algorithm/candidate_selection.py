@@ -272,7 +272,8 @@ class SmartCandidateSelector:
                  min_nbr_joints,
                  conflict_IoU,
                  hm_detection_threshold,
-                 threshold_close_pair):
+                 threshold_close_pair,
+                 debug=False):
         """
         :param Humans: 3d human candidates
         :param Heatmaps:
@@ -381,11 +382,12 @@ class SmartCandidateSelector:
         Sum.append(s)
         solver.Maximize(solver.Sum(Sum))
         RESULT = solver.Solve()
-        print('(smart candidate selection) [')
-        print("\tTime = ", solver.WallTime(), " ms")
-        print("\tresult:", RESULT)
-        print('\n\tTotal cost:', solver.Objective().Value())
-        print('] (smart candidate selection)')
+        if debug:
+            print('(smart candidate selection) [')
+            print("\tTime = ", solver.WallTime(), " ms")
+            print("\tresult:", RESULT)
+            print('\n\tTotal cost:', solver.Objective().Value())
+            print('] (smart candidate selection)')
 
         self.persons = []
 

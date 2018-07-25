@@ -111,7 +111,7 @@ def estimate(Calib, heatmaps, pafs, settings,
         settings.min_nbr_joints,
         conflict_IoU=conflict_IoU,
         hm_detection_threshold=settings.hm_detection_threshold,
-        threshold_close_pair=settings.threshold_close_pair)
+        threshold_close_pair=settings.threshold_close_pair, debug=debug)
     _end = time()
     if debug and not silent:
         print('step 7: elapsed', _end - _start)
