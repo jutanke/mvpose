@@ -370,6 +370,7 @@ class SmartCandidateSelector:
 
         n = len(V)
         Sum = []
+        Pi = {}
         Rho = {}
         Chi = {}
         for idx in range(n):
@@ -380,18 +381,27 @@ class SmartCandidateSelector:
 
         # --- constraints for conflicts ---
         for clique in nx.find_cliques(G_conflict):
+            # ~~~~ (1) ~~~~
             solver.Add(
                 solver.Sum(Rho[node] for node in clique) <= 1)
 
         # --- constraints for valid edges ---
         for a, b in G_valid.edges():
             Chi[a, b] = solver.BoolVar('chi[%i,%i' % (a, b))
+            # ~~~~ (2) ~~~~
             solver.Add(2 * Chi[a, b] <= Rho[a] + Rho[b])
 
-        # s = solver.Sum(Chi[a, b] * 1/n_joints\
-        #                for (a, b) in G_valid.edges())
-        s = solver.Sum(Chi[a, b] * 1 \
-                       for (a, b) in G_valid.edges())
+        s = solver.Sum(Chi[a, b] * 1 for (a, b) in G_valid.edges())
+
+        for pid, clique in enumerate(nx.connected_components(G_valid)):
+            Pi[pid] = solver.BoolVar('pi[%i]' % pid)
+            # ~~~~ (3) ~~~~
+            solver.Add(solver.Sum(Rho[a] for a in clique) <= Pi[pid] * n)
+
+            # ~~~~ (4) ~~~~
+            solver.Add(solver.Sum(Rho[a] for a in clique) >= 2 * Pi[pid])
+
+
         Sum.append(s)
         solver.Maximize(solver.Sum(Sum))
         RESULT = solver.Solve()
