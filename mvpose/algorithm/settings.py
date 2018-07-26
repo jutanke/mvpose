@@ -104,7 +104,7 @@ def get_settings(min_nbr_joints=7, gc_iota_scale=1,
 
 def get_tracking_settings(settings,
                           valid_person_bb_area=300,
-                          max_moving_distance_per_frame=800,
+                          max_moving_distance_per_frame=1500,
                           moving_factor_increase_per_frame=1,
                           personreid_batchsize=12,
                           conflict_IoU=0.3,

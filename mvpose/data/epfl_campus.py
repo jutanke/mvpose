@@ -11,7 +11,6 @@ def get(data_root, frame):
     """
     campus = EPFL_Campus(data_root)
     X, Y, _Calib = campus.get_frame(frame)
-
     Calib = []
     for P in _Calib:
         w = 360

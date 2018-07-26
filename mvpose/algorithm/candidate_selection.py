@@ -283,6 +283,19 @@ class SmartCandidateSelector:
         :param threshold_close_pair: {int} distance in pixels
             after which two points are considered to be close
         """
+        # step 0: get rid of all humans that are do not have enough limbs
+        Survivors = []
+        for human in Humans:
+            n_valid_joints = 0
+            for joint in human:
+                if joint is not None:
+                    n_valid_joints += 1
+            if n_valid_joints >= min_nbr_joints:
+                Survivors.append(human)
+        self.All_Candidates = Humans
+        self.Surviving_Candidates = Survivors
+        Humans = Survivors
+
         G_valid = nx.Graph()
         G_conflict = nx.Graph()
         self.G_valid = G_valid
@@ -292,8 +305,6 @@ class SmartCandidateSelector:
         self.lookup = lookup
         self.reverse_lookup = reverse_lookup
         V = [0] * (len(Humans) * len(Calib)) # unary terms
-        E_c = []  # all conflict edges  -> pid, pid2, cid
-        E_v = []  # all identity edges
         current_id = 0
         for pid, human in enumerate(Humans):
             for cid, cam in enumerate(Calib):
@@ -377,7 +388,9 @@ class SmartCandidateSelector:
             Chi[a, b] = solver.BoolVar('chi[%i,%i' % (a, b))
             solver.Add(2 * Chi[a, b] <= Rho[a] + Rho[b])
 
-        s = solver.Sum(Chi[a, b] * 1/n_joints\
+        # s = solver.Sum(Chi[a, b] * 1/n_joints\
+        #                for (a, b) in G_valid.edges())
+        s = solver.Sum(Chi[a, b] * 1 \
                        for (a, b) in G_valid.edges())
         Sum.append(s)
         solver.Maximize(solver.Sum(Sum))

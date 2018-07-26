@@ -2,7 +2,7 @@ from mvpose.algorithm.peaks2d import Candidates2D
 from mvpose.algorithm.triangulation import Triangulation
 from mvpose.algorithm.limbs3d import Limbs3d
 from mvpose.algorithm.graphcut import Graphcut
-from mvpose.algorithm.candidate_selection import CandidateSelector
+from mvpose.algorithm.candidate_selection import CandidateSelector, SmartCandidateSelector
 from collections import namedtuple
 from time import time
 
@@ -82,12 +82,20 @@ def estimate(Calib, heatmaps, pafs, settings, debug):
     # candidate selection  "filter out bad detections"
     # ------------------------
     _start = time()
-    candSelector = CandidateSelector(
+    # candSelector = CandidateSelector(
+    #     graphcut.person_candidates, heatmaps,
+    #     Calib,
+    #     min_nbr_joints=settings.min_nbr_joints,
+    #     hm_detection_threshold=settings.hm_detection_threshold,
+    #     threshold_close_pair=settings.threshold_close_pair)
+    candSelector = SmartCandidateSelector(
         graphcut.person_candidates, heatmaps,
         Calib,
-        min_nbr_joints=settings.min_nbr_joints,
+        settings.min_nbr_joints,
+        conflict_IoU=settings.conflict_IoU,
         hm_detection_threshold=settings.hm_detection_threshold,
-        threshold_close_pair=settings.threshold_close_pair)
+        threshold_close_pair=settings.threshold_close_pair,
+        debug=debug)
     _end = time()
     if debug:
         print('step 5: elapsed', _end - _start)
@@ -97,12 +105,14 @@ def estimate(Calib, heatmaps, pafs, settings, debug):
             'candidates2d',
             'triangulation',
             'limbs3d',
-            'graphcut'
+            'graphcut',
+            'candidate_selector'
         ])
         Debug.candidates2d = cand2d
         Debug.triangulation = triangulation
         Debug.limbs3d = limbs3d
         Debug.graphcut = graphcut
+        Debug.candidate_selector = candSelector
 
         return Debug, candSelector.persons
     else:

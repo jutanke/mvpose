@@ -38,19 +38,19 @@ def evaluate(gt, d, alpha):
     limbs = [(1, 2), (3, 4)]  # -- upper legs --
     result.upper_legs = calculate_pcp_for_limbs(alpha, d, gt, limbs)
 
-    limbs = [(2, 3)]  # -- pelvis --
-    result.pelvis = calculate_pcp_for_limbs(alpha, d, gt, limbs)
-
-    limbs = [(8, 9)]  # -- shoulder --
-    result.shoulder = calculate_pcp_for_limbs(alpha, d, gt, limbs)
-
-    limbs = [(12, 13)]  # -- head --
-    result.head = calculate_pcp_for_limbs(alpha, d, gt, limbs)
-
-    limbs = [(7, 6), (10, 11), (8, 7), (9, 10), (0, 1), (5, 4),
-             (1, 2), (3, 4), (2, 3), (8, 9),
-             (8, 2), (9, 3)]
-    result.all_parts = calculate_pcp_for_limbs(alpha, d, gt, limbs)
+    # limbs = [(2, 3)]  # -- pelvis --
+    # result.pelvis = calculate_pcp_for_limbs(alpha, d, gt, limbs)
+    #
+    # limbs = [(8, 9)]  # -- shoulder --
+    # result.shoulder = calculate_pcp_for_limbs(alpha, d, gt, limbs)
+    #
+    # limbs = [(12, 13)]  # -- head --
+    # result.head = calculate_pcp_for_limbs(alpha, d, gt, limbs)
+    #
+    # limbs = [(7, 6), (10, 11), (8, 7), (9, 10), (0, 1), (5, 4),
+    #          (1, 2), (3, 4), (2, 3), (8, 9),
+    #          (8, 2), (9, 3)]
+    # result.all_parts = calculate_pcp_for_limbs(alpha, d, gt, limbs)
     return result
 
 
