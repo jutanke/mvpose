@@ -92,7 +92,12 @@ def normalize(indv, scale_to_mm):
     pts = indv[:, 0:3]
     visible = indv[:, 3]
     div = 1000 / scale_to_mm
-    mu = np.mean(pts, axis=0)
+    valid_pts3d = []
+    for pt3d, v in zip(pts, visible):
+        if v == 1:
+            valid_pts3d.append(pt3d)
+    mu = np.mean(valid_pts3d, axis=0)
+    #mu = np.mean(pts, axis=0)
     result[:, 0:3] = (pts - mu)/div  # because we use mm!
     for i, v in enumerate(visible):
         if v == 0:
