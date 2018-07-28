@@ -99,10 +99,10 @@ def normalize(indv, scale_to_mm):
             result[i, 0] = 0
             result[i, 1] = 0
             result[i, 2] = 0
-    return result
+    return result, mu
 
 
-def denormalize(indv, scale_to_mm):
+def denormalize(indv, mu, scale_to_mm):
     """
         de-normalizes the data again
     :param indv:
@@ -110,7 +110,7 @@ def denormalize(indv, scale_to_mm):
     :return:
     """
     div = 1000 / scale_to_mm
-    mu = np.mean(indv, axis=0)
+    #mu = np.mean(indv, axis=0)
     return (indv + mu) * div
 
 
@@ -173,13 +173,16 @@ class LimbGenerator:
         if n == 0:
             return []
         humans_trans = self.transform_func(humans)
+        Mu = []
         for pid, human in enumerate(humans_trans):
-            humans_trans[pid] = normalize(human, self.scale_to_mm)
+            norm, mu = normalize(human, self.scale_to_mm)
+            humans_trans[pid] = norm
+            Mu.append(mu)
 
         y_pred = self.model.predict(humans_trans.reshape(n, 13*4)).reshape(n, 13, 3)
 
         result = np.zeros((n, 13, 3))
-        for pid, human in enumerate(y_pred):
-            result[pid] = denormalize(human, self.scale_to_mm)
+        for pid, (human, mu) in enumerate(zip(y_pred, Mu)):
+            result[pid] = denormalize(human, mu, self.scale_to_mm)
 
         return self.merge_func(humans, result)
