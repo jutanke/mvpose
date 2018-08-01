@@ -5,7 +5,7 @@ from mvpose.data.default_limbs import DEFAULT_LIMB_SEQ, \
 
 
 def get_settings(min_nbr_joints=7, gc_iota_scale=1,
-                 gc_max_radius=300, gc_radius=50,
+                 gc_max_radius=300, gc_radius=0,
                  hm_detection_threshold=0.1,
                  conflict_IoU=0.4,
                  threshold_close_pair=10,
