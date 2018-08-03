@@ -98,6 +98,14 @@ class ProjectiveCamera(Camera):
         P = gm.get_projection_matrix(K_new, rvec, tvec)
         Camera.__init__(self, P, w, h)
 
+    def get_C(self):
+        """
+        :return: (x, y, z) of the camera center in world coordinates
+        """
+        R = cv2.Rodrigues(self.rvec)[0]
+        tvec = self.tvec
+        return -np.transpose(R) @ tvec
+
     def undistort(self, im):
         """ undistorts the image
         :param im: {h x w x c}
