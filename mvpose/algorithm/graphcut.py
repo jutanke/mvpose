@@ -35,7 +35,8 @@ def get_unary(pts3d):
         raise ValueError("Shape of Points3d is wrong", pts3d.shape)
     return unary
 
-XI = 0.7
+#XI = 0.7
+XI = 1
 PBOOST_SMALL = lambda x: np.log((x + XI) / (1 - x))
 PBOOST_BIG = lambda x: np.log((x + 1) / (2 * (0.5 * (-x - 1) + 1))) * 2
 

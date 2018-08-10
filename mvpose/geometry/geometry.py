@@ -120,6 +120,8 @@ def reproject_points_to_2d(pts3d, rvec, tvec, K, w, h,
     :param distCoef:to match OpenCV API
     :return:
     """
+    if len(pts3d) == 0:
+        return [], []
     Pts3d = pts3d.astype('float64')
     pts2d, _ = cv2.projectPoints(Pts3d, rvec, tvec, K, distCoef)
     pts2d = np.squeeze(pts2d)
