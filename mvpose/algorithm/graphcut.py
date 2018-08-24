@@ -68,7 +68,7 @@ class Graphcut:
         # ===========================================
         # COST  FUNCTIONS
         # ===========================================
-        func1 = lambda u: PBOOST_SMALL(u)
+        #func1 = lambda u: PBOOST_SMALL(u)
         #func2 = lambda d: (-np.tanh(((d * scale_to_mm) - radius) / radius) * iota_scale)
         func2 = lambda d: (-np.tanh(d * scale_to_mm))
         func3 = lambda x: PBOOST_BIG(x)
@@ -102,9 +102,9 @@ class Graphcut:
                 Nu[jid, idx] = solver.BoolVar('nu[%i,%i]' % (jid, idx))
                 D.append((jid, idx))
 
-            s = solver.Sum(
-                Nu[jid, idx] * func1(unary[idx]) for idx in range(n))
-            Sum.append(s)
+            # s = solver.Sum(
+            #     Nu[jid, idx] * func1(unary[idx]) for idx in range(n))
+            # Sum.append(s)
 
             # ===========================================
             # HANDLE IOTA
