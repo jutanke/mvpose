@@ -4,17 +4,17 @@ DEFAULT_JOINT_NAMES = [
     'Nose',             # 0
     'Neck',
     'Shoulder right',   # 2
-    'Elbow right',
-    'Hand right',
+    'Elbow right',      # 3
+    'Hand right',       # 4
     'Shoulder left',    # 5
     'Elbow left',
     'Hand left',        # 7
-    'Hip right',
+    'Hip right',        # 8
     'Knee right',
     'Foot right',       # 10
     'Hip left',
     'Knee left',        # 12
-    'Foot left',
+    'Foot left',        # 13
     'Eye right',
     'Eye left',         # 15
     'Ear right',
@@ -22,20 +22,20 @@ DEFAULT_JOINT_NAMES = [
 ]
 
 # GT joints:
-# * head (1)                # 0
-# * neck (2)
-# * left-shoulder (3)
-# * left-elbow (4)
-# * left-hand (5)
-# * right-shoulder (6)      # 5
-# * right-elbow (7)
-# * right-hand (8)
-# * left-hip (9)
-# * left-knee (10)
-# * left-foot (11)          # 10
-# * right-hip (12)
-# * right-knee (13)
-# * right-foot (14)
+# * head (0)                # 0
+# * neck (1)
+# * left-shoulder (2)
+# * left-elbow (3)
+# * left-hand (4)
+# * right-shoulder (5)      # 5
+# * right-elbow (6)
+# * right-hand (7)
+# * left-hip (8)
+# * left-knee (9)
+# * left-foot (10)          # 10
+# * right-hip (11)
+# * right-knee (12)
+# * right-foot (13)
 DEFAULT_JOINT_TO_GT_JOINT = np.array([
     0,
     1,

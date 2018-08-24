@@ -170,6 +170,33 @@ def draw_limbs2d(ax, person3d, cam, color, print_length=False):
                       la.norm(person3d[a] - person3d[b]))
 
 
+def transform3d_from_umpm(humans):
+    """
+        transforms from umpm dataset ot kth
+    :param humans:
+    :return:
+    """
+    human_t = []
+    for human in humans:
+        new_human = [None] * 14
+        new_human[13] = human[0]
+        new_human[12] = human[1]
+        new_human[9] = human[2]
+        new_human[10] = human[3]
+        new_human[11] = human[4]
+        new_human[8] = human[5]
+        new_human[7] = human[6]
+        new_human[6] = human[7]
+        new_human[3] = human[8]
+        new_human[4] = human[9]
+        new_human[5] = human[10]
+        new_human[2] = human[11]
+        new_human[1] = human[12]
+        new_human[0] = human[13]
+        human_t.append(new_human)
+    return human_t
+
+
 def transform3d_from_mscoco(humans):
     """
         transforms the humans in the list from the mscoco
@@ -178,17 +205,17 @@ def transform3d_from_mscoco(humans):
     :return:
     """
     # R_ANKLE       0
-    # R_KNEE
+    # R_KNEE        1
     # R_HIP         2
     # L_HIP         3
-    # L_KNEE
+    # L_KNEE        4
     # L_ANKLE       5
-    # R_WRIST
+    # R_WRIST       6
     # R_ELBOW       7
     # R_SHOULDER    8
-    # L_SHOULDER
+    # L_SHOULDER    9
     # L_ELBOW       10
-    # L_WRIST
+    # L_WRIST       11
     # BOTTOM_HEAD   12
     # TOP_HEAD      13
     human_t = []

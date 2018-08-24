@@ -71,6 +71,28 @@ def generate_graph3d(scores, pairs):
     return graph_3d
 
 
+def generate_graph3d_max(scores, pairs):
+    """
+        Helper structure for the graphcut, uses max instead of avg
+    :param scores: [ 0.9, 0.4, 0.2, ... ] * n
+    :param pairs:  [ (t1, pid1, cid1, t2, pid2, cid2), .. ] * n
+    :return:
+    """
+    div = {}
+    graph_3d = {}  # tA, pidA, tB, pidB
+    for s, meta in zip(scores, pairs):
+        tA, pidA, _, tB, pidB, _ = meta
+        assert tA < tB
+        if not (tA, pidA, tB, pidB) in graph_3d:
+            graph_3d[tA, pidA, tB, pidB] = [s]
+        else:
+            graph_3d[tA, pidA, tB, pidB].append(s)
+    for key, value in graph_3d.items():
+        graph_3d[key] = np.max(graph_3d[key])
+
+    return graph_3d
+
+
 # =========================================
 # ValidImageCandidateExtractor
 # =========================================

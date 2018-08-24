@@ -23,8 +23,7 @@ def evaluate(gt, d, alpha):
         'pelvis',
         'shoulder',
         'all_parts',
-        'head'
-    ])
+        'head'])
 
     limbs = [(7, 6), (10, 11)]  # -- lower arms --
     result.lower_arms = calculate_pcp_for_limbs(alpha, d, gt, limbs)
