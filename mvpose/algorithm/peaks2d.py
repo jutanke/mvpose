@@ -1,7 +1,6 @@
 from skimage.feature import peak_local_max
-import mvpose.geometry.geometry as gm
-import cv2
 import numpy as np
+import concurrent.futures
 
 
 def get_all_peaks(heatmap, threshold):
@@ -28,6 +27,30 @@ def get_all_peaks(heatmap, threshold):
     return peaks
 
 
+def request_peaks(heatmaps, cid, cam, threshold):
+    """
+
+    :param cid:
+    :param cam:
+    :return:
+    """
+    hm = heatmaps[cid]
+
+    peaks = get_all_peaks(hm, threshold)
+
+    # -- undistort peaks --
+    peaks_undist = []
+    for joint in peaks:
+        if len(joint) > 0:
+            peaks_undist.append(cam.undistort_points(joint))
+        else:
+            peaks_undist.append([])
+
+    assert len(peaks) == len(peaks_undist)
+
+    return peaks, peaks_undist
+
+
 class Candidates2D:
     """
         Generates 2D candidates for the heatmaps
@@ -47,22 +70,33 @@ class Candidates2D:
 
         self.n_cameras = n
         self.n_joints = m
-        self.peaks2d = []
-        self.peaks2d_undistorted = []
+        self.peaks2d = [None] * n
+        self.peaks2d_undistorted = [None] * n
 
-        for cid, cam in enumerate(Calib):
-            hm = heatmaps[cid]
+        with concurrent.futures.ThreadPoolExecutor(max_workers=n) as executor:
+            futures_to_peaks = {
+                executor.submit(request_peaks, heatmaps, cid, cam, threshold): cid \
+                for cid, cam in enumerate(Calib)}
+            for future in concurrent.futures.as_completed(futures_to_peaks):
+                cid = futures_to_peaks[future]
+                print("maybe cid?", cid)
+                peaks, peaks_undist = future.result()
+                self.peaks2d[cid] = peaks
+                self.peaks2d_undistorted[cid] = peaks_undist
 
-            peaks = get_all_peaks(hm, threshold)
-            self.peaks2d.append(peaks)
-
-            # -- undistort peaks --
-            peaks_undist = []
-            for joint in peaks:
-                if len(joint) > 0:
-                    peaks_undist.append(cam.undistort_points(joint))
-                else:
-                    peaks_undist.append([])
-
-            assert len(peaks) == len(peaks_undist)
-            self.peaks2d_undistorted.append(peaks_undist)
+        # for cid, cam in enumerate(Calib):
+        #     hm = heatmaps[cid]
+        #
+        #     peaks = get_all_peaks(hm, threshold)
+        #     self.peaks2d.append(peaks)
+        #
+        #     # -- undistort peaks --
+        #     peaks_undist = []
+        #     for joint in peaks:
+        #         if len(joint) > 0:
+        #             peaks_undist.append(cam.undistort_points(joint))
+        #         else:
+        #             peaks_undist.append([])
+        #
+        #     assert len(peaks) == len(peaks_undist)
+        #     self.peaks2d_undistorted.append(peaks_undist)
