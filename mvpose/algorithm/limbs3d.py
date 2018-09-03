@@ -60,7 +60,6 @@ class Limbs3d:
     def __init__(self, peaks3d, Calib, Pafs,
                  limbSeq, sensible_limb_length, limbMapIdx, oor_marker=0):
         """
-
         :param peaks3d: [ [ (x,y,z,w1,w2) ... ], ... ] * n_joints
         :param Calib: [ camera, ..]
         :param Pafs: Part affinity fields

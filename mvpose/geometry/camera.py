@@ -22,7 +22,6 @@ class Camera:
 
     def undistort_points(self, points2d):
         """
-
         :param points2d: [ (x,y,w), ...]
         :return:
         """
@@ -115,7 +114,6 @@ class ProjectiveCamera(Camera):
 
     def undistort_points(self, points2d):
         """
-
         :param points2d: [ (x,y,w), ...]
         :return:
         """
