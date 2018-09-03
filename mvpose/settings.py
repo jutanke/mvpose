@@ -65,7 +65,7 @@ def get_settings(min_nbr_joints=7,
     params.min_nbr_joints = min_nbr_joints
     params.ms_max_iterations = ms_max_iterations
     params.limb_seq = limb_seq
-    params.sensible_limb_length = sensible_limb_length
+    params.sensible_limb_length = sensible_limb_length/scale_to_mm
     params.limb_map_idx = limb_map_idx
-    params.ms_between_distance = ms_between_distance
+    params.ms_between_distance = ms_between_distance/scale_to_mm
     return params

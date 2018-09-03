@@ -56,7 +56,8 @@ class GraphPartitioning:
         # ===========================================
         # COST  FUNCTIONS
         # ===========================================
-        func2 = lambda d: -d/scale_to_mm
+        func1 = lambda x: x
+        func2 = lambda d: -np.tanh(d/scale_to_mm)
         func3 = lambda x: x
 
         # ===========================================
@@ -77,10 +78,19 @@ class GraphPartitioning:
             if (jid1, jid2, a, b) in Lambda else Lambda[jid2, jid1, b, a]
 
         for jid, pts3d in enumerate(points3d):
+            # ===========================================
+            # HANDLE NU
+            # ===========================================
             n = len(pts3d)
             for idx in range(n):
                 Nu[jid, idx] = solver.BoolVar('nu[%i,%i]' % (jid, idx))
                 D.append((jid, idx))
+
+            # unary = get_unary(pts3d)
+            # unary = np.clip(unary, a_min=0.00000001, a_max=0.99999999)
+            # s = solver.Sum(
+            #     Nu[jid, idx] * func1(unary[idx]) for idx in range(n))
+            # Sum.append(s)
 
             # ===========================================
             # HANDLE IOTA
