@@ -10,6 +10,11 @@ The following additional (non-standard) libraries are needed:
 pip install --user --upgrade ortools
 ```
 
+**poseestimation**: for the part affinity fields
+```bash
+pip install git+https://github.com/jutanke/easy_multi_person_pose_estimation
+```
+
 **numba**: enables high performance functions in Python using NumPy
 ```bash
 conda install -c numba numba
@@ -44,4 +49,16 @@ cmake -DBUILD_opencv_java=OFF \
     -DPYTHON3_PACKAGES_PATH=$(python3 -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())") .. 
 make -j4
 make install
+```
+
+**person-re-id**: for re-identifying persons
+```bash
+pip install git+https://github.com/jutanke/person_reid.git
+```
+
+### Optional
+
+**cselect**: select colors
+```bash
+pip install git+https://github.com/jutanke/cselect.git
 ```
