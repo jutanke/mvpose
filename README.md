@@ -5,6 +5,11 @@ multiple view pose estimation
 The software is developed using Python 3.6 and we recommend to use Anaconda Python.
 The following additional (non-standard) libraries are needed:
 
+**scikit image**: image manipulation
+```bash
+conda install -c anaconda scikit-image 
+```
+
 **google or-tools**: for solving optimization problems
 ```bash
 pip install --user --upgrade ortools
