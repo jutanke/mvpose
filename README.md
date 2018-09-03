@@ -10,6 +10,11 @@ The following additional (non-standard) libraries are needed:
 pip install --user --upgrade ortools
 ```
 
+**poseestimation**: for the part affinity fields
+```bash
+pip install git+https://github.com/jutanke/easy_multi_person_pose_estimation
+```
+
 **numba**: enables high performance functions in Python using NumPy
 ```bash
 conda install -c numba numba
