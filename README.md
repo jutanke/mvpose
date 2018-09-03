@@ -50,3 +50,15 @@ cmake -DBUILD_opencv_java=OFF \
 make -j4
 make install
 ```
+
+**person-re-id**: for re-identifying persons
+```bash
+pip install git+https://github.com/jutanke/person_reid.git
+```
+
+### Optional
+
+**cselect**: select colors
+```bash
+pip install git+https://github.com/jutanke/cselect.git
+```
