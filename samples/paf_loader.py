@@ -11,7 +11,30 @@ import numpy as np
 from os.path import isfile, join
 
 
-def load_confidence_map_and_paf(name, Im, frame, with_gpu=False, dir='/tmp'):
+class Loader:
+    """
+    Use this loader instead of the function below if you need to load
+    many frames to avoid memory leaks!
+    """
+
+    def __init__(self):
+        self.pe = model.PoseEstimator()
+
+    def load_confidence_map_and_paf(self, name, Im, frame, with_gpu=False, dir='/tmp'):
+        """
+            loads the confidence map and paf
+        :param name: to store the data
+        :param Im: np.array: n x h x w x 3
+        :param frame: {int}
+        :param with_gpu:
+        :param dir
+        :return:
+        """
+        return load_confidence_map_and_paf(
+            name, Im, frame, with_gpu=with_gpu, dir=dir, pe=self.pe)
+
+
+def load_confidence_map_and_paf(name, Im, frame, with_gpu=False, dir='/tmp', pe=None):
     """
         loads the confidence map and paf
     :param name: to store the data
@@ -21,7 +44,8 @@ def load_confidence_map_and_paf(name, Im, frame, with_gpu=False, dir='/tmp'):
     :param dir
     :return:
     """
-    pe = model.PoseEstimator()
+    if pe is None:
+        pe = model.PoseEstimator()
     if with_gpu:
         heatmaps, pafs = pe.predict_pafs_and_heatmaps(Im)
     else:
