@@ -17,10 +17,11 @@ class Loader:
     many frames to avoid memory leaks!
     """
 
-    def __init__(self):
+    def __init__(self, with_gpu=False):
         self.pe = model.PoseEstimator()
+        self.with_gpu = with_gpu
 
-    def load_confidence_map_and_paf(self, name, Im, frame, with_gpu=False, dir='/tmp'):
+    def load_confidence_map_and_paf(self, name, Im, frame, dir='/tmp'):
         """
             loads the confidence map and paf
         :param name: to store the data
@@ -31,7 +32,7 @@ class Loader:
         :return:
         """
         return load_confidence_map_and_paf(
-            name, Im, frame, with_gpu=with_gpu, dir=dir, pe=self.pe)
+            name, Im, frame, with_gpu=self.with_gpu, dir=dir, pe=self.pe)
 
 
 def load_confidence_map_and_paf(name, Im, frame, with_gpu=False, dir='/tmp', pe=None):
