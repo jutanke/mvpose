@@ -2,6 +2,7 @@ from mvpose.settings import get_settings
 from mvpose.algorithm.candidates2d import Candidates2D
 from mvpose.algorithm.triangulation import Triangulation
 from mvpose.algorithm.meanshift import Meanshift
+from mvpose.algorithm.reweighting import ReWeighting
 from mvpose.algorithm.limbs3d import Limbs3d
 from mvpose.algorithm.graph_partitioning import GraphPartitioning
 from mvpose.algorithm.candidate_selection import CandidateSelector
@@ -70,7 +71,9 @@ def estimate(Calib, heatmaps, pafs, settings=None, debug=False):
     eps = 0.1 / settings.scale_to_mm
     meanshift = Meanshift(triangulation.peaks3d_weighted,
                           float(radius), float(sigma), max_iterations, eps,
-                          between_distance)
+                          between_distance, n_cameras=len(Calib))
+
+    reweighting = ReWeighting(Calib, heatmaps, meanshift.centers3d)
     _end = time()
     if debug:
         print('step 3: elapsed', _end - _start)
@@ -79,7 +82,7 @@ def estimate(Calib, heatmaps, pafs, settings=None, debug=False):
     # calculate 3d limb weights
     # ------------------------
     _start = time()
-    limbs3d = Limbs3d(meanshift.centers3d,
+    limbs3d = Limbs3d(reweighting.points3d,
                       Calib, pafs,
                       settings.limb_seq,
                       settings.sensible_limb_length,
@@ -93,7 +96,7 @@ def estimate(Calib, heatmaps, pafs, settings=None, debug=False):
     # solve optimization problem
     # ------------------------
     _start = time()
-    graphcut = GraphPartitioning(meanshift.centers3d,
+    graphcut = GraphPartitioning(reweighting.points3d,
                         limbs3d, settings, debug=debug)
     _end = time()
     if debug:
@@ -123,6 +126,7 @@ def estimate(Calib, heatmaps, pafs, settings=None, debug=False):
             'candidates2d',
             'triangulation',
             'meanshift',
+            'reweighting',
             'limbs3d',
             'graphcut',
             'human_candidates',
@@ -131,6 +135,7 @@ def estimate(Calib, heatmaps, pafs, settings=None, debug=False):
         Debug.candidates2d = cand2d
         Debug.triangulation = triangulation
         Debug.meanshift = meanshift
+        Debug.reweighting = reweighting
         Debug.limbs3d = limbs3d
         Debug.graphcut = graphcut
         Debug.candidate_selector = candSelector

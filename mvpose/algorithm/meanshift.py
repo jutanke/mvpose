@@ -39,7 +39,7 @@ class Meanshift:
         applies meanshift to 3d data
     """
 
-    def __init__(self, peaks3d, radius, sigma, max_iterations, eps, between_distance):
+    def __init__(self, peaks3d, radius, sigma, max_iterations, eps, between_distance, n_cameras):
         """
         :param peaks3d: [ [ (x,y,z,w1,w2), ...], ... ]
         :param radius: radius for meanshift density estimation
@@ -47,6 +47,7 @@ class Meanshift:
         :param max_iterations: cut-of threshold for meanshift
         :param eps: iteration epsilon
         :param between_distance: maximal distance between two points of a cluster
+        :param n_cameras: number of cameras
         """
         n_joints = len(peaks3d)
         LARGE = 999999999
@@ -141,7 +142,7 @@ class Meanshift:
                 Pts = N[:, 0:3]
                 W = np.expand_dims(N[:, 3] / total_w, axis=1)
                 Peaks[i, 0:3] = np.sum(Pts * W, axis=0)
-                Peaks[i, 3] = total_w
+                Peaks[i, 3] = total_w / n_cameras
             centers3d[jid] = Peaks
 
         for i in range(n_joints):
