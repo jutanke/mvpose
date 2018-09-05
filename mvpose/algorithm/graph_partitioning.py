@@ -56,10 +56,16 @@ class GraphPartitioning:
         # ===========================================
         # COST  FUNCTIONS
         # ===========================================
-        func1 = lambda x: x
-        #func2 = lambda d: -np.tanh(d/scale_to_mm)
-        func2 = lambda d: -(d / scale_to_mm)
-        func3 = lambda x: x
+        #func1 = lambda x: x
+        #func2 = lambda d: -(d/scale_to_mm)
+        #func3 = lambda x: x
+
+        PBOOST_SMALL = lambda x: np.log((x+0.7) / (1 - x))
+        PBOOST_BIG = lambda x: np.log((x + 1) / (2 * (0.5 * (-x - 1) + 1))) * 2
+
+        func1 = lambda x: PBOOST_SMALL(x)
+        func2 = lambda d: (-np.tanh(d * scale_to_mm))
+        func3 = lambda x: PBOOST_BIG(x)
 
         # ===========================================
         # CREATE COST AND BOOLEAN VARIABLES
@@ -87,11 +93,11 @@ class GraphPartitioning:
                 Nu[jid, idx] = solver.BoolVar('nu[%i,%i]' % (jid, idx))
                 D.append((jid, idx))
 
-            # unary = get_unary(pts3d)
-            # unary = np.clip(unary, a_min=0.00000001, a_max=0.99999999)
-            # s = solver.Sum(
-            #     Nu[jid, idx] * func1(unary[idx]) for idx in range(n))
-            # Sum.append(s)
+            unary = get_unary(pts3d)
+            unary = np.clip(unary, a_min=0.00000001, a_max=0.99999999)
+            s = solver.Sum(
+                Nu[jid, idx] * func1(unary[idx]) for idx in range(n))
+            Sum.append(s)
 
             # ===========================================
             # HANDLE IOTA
