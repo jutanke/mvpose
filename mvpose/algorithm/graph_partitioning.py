@@ -67,6 +67,8 @@ class GraphPartitioning:
         func2 = lambda d: (-np.tanh(d * scale_to_mm))
         func3 = lambda x: PBOOST_BIG(x)
 
+        #func2 = lambda d: (-np.log(d * scale_to_mm))
+
         # ===========================================
         # CREATE COST AND BOOLEAN VARIABLES
         # ===========================================
@@ -268,6 +270,8 @@ class GraphPartitioning:
             print("\tTime = ", solver.WallTime(), " ms")
             print("\tresult:", RESULT)
             print('\n\tTotal cost:', solver.Objective().Value())
+
+        self.objective_value = solver.Objective().Value()
 
         # ===========================================
         # EXTRACT INDIVIDUALS

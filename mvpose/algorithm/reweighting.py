@@ -24,7 +24,7 @@ class ReWeighting:
                     points2d = cam.projectPoints(points3d)
                     points2d = np.round(points2d).astype('int32')
                     for i, (x, y) in enumerate(points2d):
-                        if x >= 0 and y >= 0 and x <= w and y <= h:
+                        if x >= 0 and y >= 0 and x < w and y < h:
                             Count[i] += 1
                             W[i] += heatmaps[cid, y, x, jid]
 

@@ -73,7 +73,8 @@ def estimate(Calib, heatmaps, pafs, settings=None, debug=False):
                           float(radius), float(sigma), max_iterations, eps,
                           between_distance, n_cameras=len(Calib))
 
-    reweighting = ReWeighting(Calib, heatmaps, meanshift.centers3d)
+    #reweighting = ReWeighting(Calib, heatmaps, meanshift.centers3d)
+    points3d = meanshift.centers3d
     _end = time()
     if debug:
         print('step 3: elapsed', _end - _start)
@@ -82,7 +83,7 @@ def estimate(Calib, heatmaps, pafs, settings=None, debug=False):
     # calculate 3d limb weights
     # ------------------------
     _start = time()
-    limbs3d = Limbs3d(reweighting.points3d,
+    limbs3d = Limbs3d(points3d,
                       Calib, pafs,
                       settings.limb_seq,
                       settings.sensible_limb_length,
@@ -96,7 +97,7 @@ def estimate(Calib, heatmaps, pafs, settings=None, debug=False):
     # solve optimization problem
     # ------------------------
     _start = time()
-    graphcut = GraphPartitioning(reweighting.points3d,
+    graphcut = GraphPartitioning(points3d,
                         limbs3d, settings, debug=debug)
     _end = time()
     if debug:
@@ -135,11 +136,11 @@ def estimate(Calib, heatmaps, pafs, settings=None, debug=False):
         Debug.candidates2d = cand2d
         Debug.triangulation = triangulation
         Debug.meanshift = meanshift
-        Debug.reweighting = reweighting
+        #Debug.reweighting = reweighting
         Debug.limbs3d = limbs3d
         Debug.graphcut = graphcut
         Debug.candidate_selector = candSelector
         Debug.human_candidates = human_candidates
         return Debug, candSelector.persons
     else:
-        return candSelector.persons
+        return candSelector.persons, graphcut.objective_value, meanshift.centers3d, limbs3d.limbs3d, triangulation.peaks3d_weighted
