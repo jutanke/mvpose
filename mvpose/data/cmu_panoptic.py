@@ -20,7 +20,7 @@ def get(cmu_root, seq_name, panels, nodes, frame=0):
     assert len(panels) > 0 and len(panels) == len(nodes)
     seq_dir = join(cmu_root, seq_name); assert isdir(seq_dir)
 
-    vga_skel_json_path = join(seq_dir, 'vgaPose3d_stage1')
+    vga_skel_json_path = join(seq_dir, 'hdPose3d_stage1_coco19')
     vga_img_path = join(seq_dir, 'vgaImgs')
     assert isdir(vga_skel_json_path) and isdir(vga_img_path)
 
@@ -46,7 +46,7 @@ def get(cmu_root, seq_name, panels, nodes, frame=0):
     for p, n in zip(panels, nodes):
         all_videos.append('{0:02d}_{1:02d}'.format(p, n))
     for v in all_videos:
-        assert isdir(join(vga_img_path, v))
+        assert isdir(join(vga_img_path, v), ), 'does not exist:' + join(vga_img_path, v)
 
     nbr_videos = len(all_videos)
     w = 640; h = 480  # vga resolution!
@@ -84,7 +84,8 @@ def get(cmu_root, seq_name, panels, nodes, frame=0):
 
             for body in bframe['bodies']:
                 pid = body['id']
-                skel = np.array(body['joints15']).reshape((-1, 4))
+                #skel = np.array(body['joints15']).reshape((-1, 4))
+                skel = np.array(body['joints19']).reshape((-1, 4))
 
                 Y.append((pid, skel))
     except IOError as e:

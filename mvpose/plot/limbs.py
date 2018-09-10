@@ -56,13 +56,14 @@ def draw_mscoco_human3d(ax, human, color, alpha=1):
                         color=color, alpha=alpha)
 
 
-def draw_mscoco_human(ax, human, cam, color, alpha=1):
+def draw_mscoco_human(ax, human, cam, color, alpha=1, linewidth=1):
     """
     :param ax
     :param human: [ (x,y), None, ... ]
     :param cam: {mvpose.geometry.camera}
     :param color
     :param alpha
+    :param linewidth
     :return:
     """
     assert len(human) == 18
@@ -83,7 +84,7 @@ def draw_mscoco_human(ax, human, cam, color, alpha=1):
             if ptA is not None and ptB is not None:
                 x_a, y_a = cam.projectPoints(np.array([ptA[0:3]]))[0]
                 x_b, y_b = cam.projectPoints(np.array([ptB[0:3]]))[0]
-                ax.plot([x_a, x_b], [y_a, y_b], color=color, alpha=alpha)
+                ax.plot([x_a, x_b], [y_a, y_b], color=color, alpha=alpha, linewidth=linewidth)
 
 
 # @jit([float64[:, :](float64_2d_const, float64_2d_const)], nopython=True, nogil=True)

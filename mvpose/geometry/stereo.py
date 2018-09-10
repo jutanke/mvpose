@@ -20,12 +20,56 @@ def get_fundamental_matrix(P1, P2, scale_to_mm):
                     points.append((u * n + offsetx, v * n, w * n))
         return np.array(points)
 
-    cube1 = sample_cube(500/scale_to_mm, 10/scale_to_mm)
-    cube2 = sample_cube(-300/scale_to_mm, -5/scale_to_mm)
-    points3d = np.array(cube1 + cube2)
+    #scale_to_mm = 1
+    #cube1 = sample_cube(1500/scale_to_mm, 10/scale_to_mm)
+    #cube2 = sample_cube(-1300/scale_to_mm, -5/scale_to_mm)
+    #cube3 = sample_cube(-200/scale_to_mm, 0)
+    #points3d = np.array(cube1 + cube3)
+    #points3d = rnd.randint(0, 1500, (12, 3)).astype('float32')
+    #print('RANDOM POINTS:', points3d)
 
-    points1 = np.zeros((16, 2))
-    points2 = np.zeros((16, 2))
+    # [A]  --> 12
+    # points3d = np.array([
+    #     [   0,    0,    0],
+    #     [1500, 1500, 1500],
+    #     [ 300,  300,    0],
+    #     [1200,    0, 1200],
+    #     [   0,    0, 1355],
+    #     [1355,    0,    1],
+    #     [ 999,  999, 1001],
+    #     [1000, 1000, 1000],
+    #     [ 551,    5,  333],
+    #     [-100, -100, 1000],
+    #     [1000, -100,  531],
+    #     [-999,    5,   33]
+    # ], 'float32')
+
+    points3d = np.array([
+        [0, 0, 0],
+        [1505, 1493, 1501],
+        [300, 300, 0],
+        [1200, 0, 1200],
+        [0, 0, 1355],
+        [1355, 0, 1],
+        [999, 999, 1001],
+        [1005, 1001, 1000],
+        [551, 5, 333],
+        [-100, -100, 1005],
+        [1004, -100, 531],
+        [-999, 5, 33],
+        [-1500,-1000, -503],
+        [99, -99, 99],
+        [-99, 99, 99],
+        [99, 99, -99],
+        [5, 5, 5],
+        [-5, -5, 5],
+        [0.5, 0.5, 0.5],
+        [0.1, 0.9, 0.8],
+        [-0.1, -0.8, -.9]
+    ], 'float32')
+
+    points1 = np.zeros((21, 2))
+    points2 = np.zeros((21, 2))
     for i, (x, y, z) in enumerate(points3d):
         p3d = np.array([x, y, z, 1])
         a1, b1, c1 = P1 @ p3d
