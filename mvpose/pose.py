@@ -2,7 +2,6 @@ from mvpose.settings import get_settings
 from mvpose.algorithm.candidates2d import Candidates2D
 from mvpose.algorithm.triangulation import Triangulation
 from mvpose.algorithm.meanshift import Meanshift
-from mvpose.algorithm.reweighting import ReWeighting
 from mvpose.algorithm.limbs3d import Limbs3d
 from mvpose.algorithm.graph_partitioning import GraphPartitioning
 from mvpose.algorithm.candidate_selection import CandidateSelector
@@ -136,11 +135,11 @@ def estimate(Calib, heatmaps, pafs, settings=None, debug=False):
         Debug.candidates2d = cand2d
         Debug.triangulation = triangulation
         Debug.meanshift = meanshift
-        #Debug.reweighting = reweighting
         Debug.limbs3d = limbs3d
         Debug.graphcut = graphcut
         Debug.candidate_selector = candSelector
         Debug.human_candidates = human_candidates
         return Debug, candSelector.persons
     else:
-        return candSelector.persons, graphcut.objective_value, meanshift.centers3d, limbs3d.limbs3d, triangulation.peaks3d_weighted, cand2d.peaks2d_undistorted
+        #return candSelector.persons, graphcut.objective_value, meanshift.centers3d, limbs3d.limbs3d, triangulation.peaks3d_weighted, cand2d.peaks2d_undistorted
+        return candSelector.persons
