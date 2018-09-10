@@ -37,7 +37,7 @@ def estimate(Calib, heatmaps, pafs, settings=None, debug=False):
     # triangulate 2d candidates
     # ------------------------
     _start = time()
-    triangulation = Triangulation(cand2d, Calib, settings.max_epi_distance)
+    triangulation = Triangulation(cand2d, Calib, settings.max_epi_distance, settings.scale_to_mm)
     _end = time()
     if debug:
         print('step 2: elapsed', _end - _start)
@@ -143,4 +143,4 @@ def estimate(Calib, heatmaps, pafs, settings=None, debug=False):
         Debug.human_candidates = human_candidates
         return Debug, candSelector.persons
     else:
-        return candSelector.persons, graphcut.objective_value, meanshift.centers3d, limbs3d.limbs3d, triangulation.peaks3d_weighted
+        return candSelector.persons, graphcut.objective_value, meanshift.centers3d, limbs3d.limbs3d, triangulation.peaks3d_weighted, cand2d.peaks2d_undistorted

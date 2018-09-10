@@ -9,13 +9,14 @@ class Triangulation:
         point
     """
 
-    def __init__(self, candidates2d, Calib, max_epi_distance):
+    def __init__(self, candidates2d, Calib, max_epi_distance, scale_to_mm):
         """
         :param candidates2d: {mvpose.algorithm.Candidates2D}
         :param Calib: [cameras]
         :param max_epi_distance {integer} maximal distance
             in pixels from a point pair to their respective
             epipolar line
+        :param scale_to_mm: scales the values to mm
         """
         assert max_epi_distance > 0
         n_cameras = candidates2d.n_cameras
@@ -31,7 +32,9 @@ class Triangulation:
                 peaks2 = candidates2d.peaks2d_undistorted[cid2]
                 P1 = Calib[cid1].P
                 P2 = Calib[cid2].P
-                peaks3d = stereo.triangulate(peaks1, peaks2, P1, P2, max_epi_distance=max_epi_distance)
+                peaks3d = stereo.triangulate(peaks1, peaks2, P1, P2,
+                                             max_epi_distance=max_epi_distance,
+                                             scale_to_mm=scale_to_mm)
                 assert len(peaks3d) == n_joints
                 for k in range(n_joints):
                     Peaks3d[k] = np.concatenate([Peaks3d[k], peaks3d[k]], axis=0)

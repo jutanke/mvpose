@@ -4,40 +4,45 @@ import numpy.random as rnd
 import mvpose.geometry.geometry as gm
 
 
-def get_fundamental_matrix(P1, P2):
+def get_fundamental_matrix(P1, P2, scale_to_mm):
     """
         finds the fundamental matrix between two views
     :param P1: {3x4} projection matrix
     :param P2: {3x4} projection matrix
+    :param scale_to_mm: scales the values to mm
     :return:
     """
-    points3d = rnd.randint(0, 1500, (12, 3)).astype('float32')
-    points1 = np.zeros((12, 2))
-    points2 = np.zeros((12, 2))
-    for i, (x,y,z) in enumerate(points3d):
-        p3d = np.array([x,y,z,1])
+    def sample_cube(n, offsetx):
+        points = []
+        for u in range(2):
+            for v in range(2):
+                for w in range(2):
+                    points.append((u * n + offsetx, v * n, w * n))
+        return np.array(points)
+
+    cube1 = sample_cube(500/scale_to_mm, 10/scale_to_mm)
+    cube2 = sample_cube(-300/scale_to_mm, -5/scale_to_mm)
+    points3d = np.array(cube1 + cube2)
+
+    points1 = np.zeros((16, 2))
+    points2 = np.zeros((16, 2))
+    for i, (x, y, z) in enumerate(points3d):
+        p3d = np.array([x, y, z, 1])
         a1, b1, c1 = P1 @ p3d
         a2, b2, c2 = P2 @ p3d
-        # if c2 == 0 and c1 == 0:  # affine camera
-        #     assert np.count_nonzero(P1[2, :]) == 0
-        #     assert np.count_nonzero(P2[2, :]) == 0
-        #     points1[i, 0] = a1
-        #     points1[i, 1] = b1
-        #     points2[i, 0] = a2
-        #     points2[i, 1] = b2
-        # else:
         assert c1 != 0 and c2 != 0
         points1[i, 0] = a1 / c1
         points1[i, 1] = b1 / c1
         points2[i, 0] = a2 / c2
         points2[i, 1] = b2 / c2
+
     F, mask = cv2.findFundamentalMat(
         points1, points2, cv2.FM_8POINT
     )
     return F
 
 
-def triangulate(peaks1, peaks2, P1, P2, max_epi_distance):
+def triangulate(peaks1, peaks2, P1, P2, max_epi_distance, scale_to_mm):
     """
        triangulates all points in peaks1 with all points
        in peaks2 BUT drops them if the distance in pixels
@@ -48,12 +53,13 @@ def triangulate(peaks1, peaks2, P1, P2, max_epi_distance):
     :param P1: 3x4 projection matrix
     :param P2: 3x4 projection matrix
     :param max_epi_distance: drop triangulation threshold
+    :param scale_to_mm: scales the values to mm
     :return:
     """
     n_joints = len(peaks1)
     assert n_joints == len(peaks2)
 
-    F = get_fundamental_matrix(P1, P2)
+    F = get_fundamental_matrix(P1, P2, scale_to_mm)
     joints_3d = [None] * n_joints
 
     for j in range(n_joints):
