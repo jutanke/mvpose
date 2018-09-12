@@ -9,7 +9,7 @@ def get(data_root, frame):
     :param frame:
     :return:
     """
-    shelf = Shelf(data_root)
+    shelf = Shelf(data_root, verbose=False)
     X, Y, _Calib = shelf.get_frame(frame)
     Calib = []
     for P in _Calib:
