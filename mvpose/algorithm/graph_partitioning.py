@@ -60,7 +60,8 @@ class GraphPartitioning:
         #func2 = lambda d: -(d/scale_to_mm)
         #func3 = lambda x: x
 
-        PBOOST_SMALL = lambda x: np.log((x+0.7) / (1 - x))
+        __EPS = 0.9
+        PBOOST_SMALL = lambda x: np.log((x+__EPS) / (1 - x))
         PBOOST_BIG = lambda x: np.log((x + 1) / (2 * (0.5 * (-x - 1) + 1))) * 2
 
         func1 = lambda x: PBOOST_SMALL(x)
