@@ -96,11 +96,11 @@ class GraphPartitioning:
                 Nu[jid, idx] = solver.BoolVar('nu[%i,%i]' % (jid, idx))
                 D.append((jid, idx))
 
-            unary = get_unary(pts3d)
-            unary = np.clip(unary, a_min=0.00000001, a_max=0.99999999)
-            s = solver.Sum(
-                Nu[jid, idx] * func1(unary[idx]) for idx in range(n))
-            Sum.append(s)
+            # unary = get_unary(pts3d)
+            # unary = np.clip(unary, a_min=0.00000001, a_max=0.99999999)
+            # s = solver.Sum(
+            #     Nu[jid, idx] * func1(unary[idx]) for idx in range(n))
+            # Sum.append(s)
 
             # ===========================================
             # HANDLE IOTA
