@@ -68,7 +68,7 @@ class GraphPartitioning:
         func2 = lambda d: (-np.tanh(d * scale_to_mm))
         func3 = lambda x: PBOOST_BIG(x)
 
-        #func2 = lambda d: (-np.log(d * scale_to_mm))
+        # func2 = lambda d: -np.log(d * scale_to_mm)
 
         # ===========================================
         # CREATE COST AND BOOLEAN VARIABLES
@@ -87,6 +87,7 @@ class GraphPartitioning:
         Get_Lambda = lambda jid1, jid2, a, b: Lambda[jid1, jid2, a, b] \
             if (jid1, jid2, a, b) in Lambda else Lambda[jid2, jid1, b, a]
 
+        self.iota_sums = []  # for debugging
         for jid, pts3d in enumerate(points3d):
             # ===========================================
             # HANDLE NU
@@ -120,9 +121,12 @@ class GraphPartitioning:
                 Iota[jid, int(a), int(b)] * func2(d) for a, b, d in distance)
             Sum.append(s)
 
+            self.iota_sums.append([func2(d) for _, _, d in distance])
+
         # ===========================================
         # HANDLE LAMBDA
         # ===========================================
+        self.lambda_sums = []  # for debugging
         for lid, ((jid1, jid2), (mindist, maxdist)) in \
                 enumerate(zip(limbSeq, sensible_limb_length)):
             assert jid1 != jid2
@@ -146,6 +150,7 @@ class GraphPartitioning:
                 Get_Lambda(jid1, jid2, a, b) * func3(s) for a, b, s in \
                 zip(As, Bs, Scores))
             Sum.append(s)
+            self.lambda_sums.append([func3(s) for s in Scores])
 
         # ===========================================
         # ONLY CONSIDER VALID EDGES
