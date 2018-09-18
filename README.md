@@ -52,6 +52,10 @@ At the cmake-stage you can choose whatever additional flags you like (cuda, open
 however, keep the ones written below as they are. You might need to install
 additional packages (e.g. ffmpeg, libpng, etc.) before you are able to successfully
 build OpenCV (check out the OpenCV documentation for your OS for further instructions).
+(**Remarks**: The version of OpenCV does not matter too much as long as it is 3.X. However, 
+the version bundled with anaconda (I tested with cv2 version 3.1) is apparently not 
+compiled against ffmpeg so you cannot load video files. if you want to be on the 'safe' side
+compile it on your own!)
 ```bash
 git clone https://github.com/opencv/opencv.git
 cd opencv && git checkout 3.4.0
