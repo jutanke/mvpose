@@ -1,5 +1,54 @@
 # mvpose
-multiple view pose estimation
+off-the shelf multiple view multi-person pose estimation.
+
+```python
+import cv2
+from poseestimation import model
+from mvpose import settings, pose
+from mvpose.geometry.camera import ProjectiveCamera
+
+# pose estimation model
+pe = model.PoseEstimator()
+
+# the system uses [mm] as world coordinates. Thus, if your calibrated
+# cameras use another meaure you need to provide the appropriate scale.
+# For example, assuming the cameras are calibrated in [m] we need to
+# scale as follows:
+params = settings.get_settings(scale_to_mm=1000)
+
+imread = lambda p: cv2.cvtColor(cv2.imread(p), cv2.COLOR_BGR2RGB))
+
+# load 'n' frames 
+Im = [
+    imread('/path/cam1.jpg'),
+    imread('/path/cam2.jpg'),
+    ...,
+    imread('/path/camn.jpg')
+]
+heatmaps, pafs = pe.predict_pafs_and_heatmaps(Im)
+
+# prepare cameras
+# K := {3x3} camera calibration matrix
+# rvec := {1x3} rodrigues vector for rotation
+# tvec := {1x3} translation vector
+# distCoef := {1x5} distortion coefficient (can be [0, 0, 0, 0, 0])
+# w,h := width/height if images
+Calib = [
+    ProjectiveCamera(K1, rvec1, tvec1, distCoef1, w, h),
+    ProjectiveCamera(K2, rvec2, tvec2, distCoef2, w, h),
+    ...,
+    ProjectiveCamera(Kn, rvecn, tvecn, distCoefn, w, h)
+]
+
+detections = pose.estimate(Calib, heatmaps, pafs, settings=params)
+
+print('number of detected people: ', len(detections))
+
+# each detection consists of 17 joints (MSCOCO-style) that either represent a 
+# 3D location or 'None', in case of no detection of the joint.
+
+```
+
 
 <img src="https://user-images.githubusercontent.com/831215/45680464-44690d00-bb3b-11e8-87a7-fc5cc2cb6997.png" 
 width="500">
