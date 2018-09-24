@@ -119,11 +119,6 @@ make -j4
 make install
 ```
 
-**Easy Multi-Person Pose Estimation**: for generating heatmaps and part affinity fields
-```bash
-pip install git+https://github.com/jutanke/easy_multi_person_pose_estimation
-```
-
 ### Optional
 
 **cselect**: select colors
