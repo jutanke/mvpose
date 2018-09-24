@@ -119,9 +119,9 @@ make -j4
 make install
 ```
 
-**person-re-id**: for re-identifying persons
+**Easy Multi-Person Pose Estimation**: for generating heatmaps and part affinity fields
 ```bash
-pip install git+https://github.com/jutanke/person_reid.git
+pip install git+https://github.com/jutanke/easy_multi_person_pose_estimation
 ```
 
 ### Optional
