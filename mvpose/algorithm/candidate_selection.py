@@ -116,129 +116,138 @@ class CandidateSelector:
         self.All_Candidates = Humans
         self.Surviving_Candidates = Survivors
         Humans = Survivors
+        if len(Humans) <= 1:
+            self.persons = Humans
+        else:
+            G_valid = nx.Graph()
+            G_conflict = nx.Graph()
+            self.G_valid = G_valid
+            self.G_conflict = G_conflict
+            lookup = {}  # [pid, cid] -> gid
+            reverse_lookup = {}  # gid -> pid, cid
+            self.lookup = lookup
+            self.reverse_lookup = reverse_lookup
 
-        G_valid = nx.Graph()
-        G_conflict = nx.Graph()
-        self.G_valid = G_valid
-        self.G_conflict = G_conflict
-        lookup = {}  # [pid, cid] -> gid
-        reverse_lookup = {}  # gid -> pid, cid
-        self.lookup = lookup
-        self.reverse_lookup = reverse_lookup
-        V = [0] * (len(Humans) * len(Calib)) # unary terms
-        current_id = 0
-        for pid, human in enumerate(Humans):
-            for cid, cam in enumerate(Calib):
-                hm = Heatmaps[cid]
-                h, w, _ = hm.shape
-                lookup[pid, cid] = current_id
-                reverse_lookup[current_id] = (pid, cid)
-                G_valid.add_node(current_id)
-                G_conflict.add_node(current_id)
+            if debug:
+                self.projected_humans = {}
 
-                human2d = project_human_to_2d(human, cam)
-                unary_term = 0
-                n_joints = len(human2d)
-                valid_joints = 0
-                for jid, pt2d in enumerate(human2d):
-                    if pt2d is None:
-                        continue
-                    x, y = np.around(pt2d).astype('int32')
-                    if x > 0 and x < w and y > 0 and y < h:
-                        value = hm[y, x, jid]
-                        if value < hm_detection_threshold:
-                            value = 0
-                        else:
-                            valid_joints += 1
-                        unary_term += value
+            V = [0] * (len(Humans) * len(Calib))  # unary terms
+            current_id = 0
+            for pid, human in enumerate(Humans):
+                for cid, cam in enumerate(Calib):
+                    hm = Heatmaps[cid]
+                    h, w, _ = hm.shape
+                    lookup[pid, cid] = current_id
+                    reverse_lookup[current_id] = (pid, cid)
+                    G_valid.add_node(current_id)
+                    G_conflict.add_node(current_id)
 
-                if valid_joints < min_nbr_joints:
+                    human2d = project_human_to_2d(human, cam)
+                    if debug:
+                        self.projected_humans[pid, cid] = human2d
                     unary_term = 0
-                unary_term = unary_term/n_joints  # normalize to 1
-                V[current_id] = unary_term
-                current_id += 1
+                    n_joints = len(human2d)
+                    valid_joints = 0
+                    for jid, pt2d in enumerate(human2d):
+                        if pt2d is None:
+                            continue
+                        x, y = np.around(pt2d).astype('int32')
+                        if x > 0 and x < w and y > 0 and y < h:
+                            value = hm[y, x, jid]
+                            if value < hm_detection_threshold:
+                                value = 0
+                            else:
+                                valid_joints += 1
+                            unary_term += value
 
-        # -- create valid edges --
-        for pid in range(len(Humans)):
-            for cid1 in range(len(Calib) - 1):
-                for cid2 in range(cid1 + 1, len(Calib)):
-                    nid1 = lookup[pid, cid1]
-                    nid2 = lookup[pid, cid2]
-                    if V[nid1] > 0 and V[nid2] > 0:
-                        G_valid.add_edge(nid1, nid2)
+                    # if valid_joints < min_nbr_joints:
+                    #     unary_term = 0
+                    unary_term = unary_term/n_joints  # normalize to 1
+                    V[current_id] = unary_term
+                    current_id += 1
 
-        # -- create conflict edges --
-        for pid, human in enumerate(Humans):
-            all_candidate_ids = []  # all ids for this candidate
-            for cid, cam in enumerate(Calib):
-                # check for conflicts
-                human2d = project_human_to_2d(human, cam)
-                for pid2 in range(pid + 1, len(Humans)):
-                    human2d_b = project_human_to_2d(Humans[pid2], cam)
+            # -- create valid edges --
+            for pid in range(len(Humans)):
+                for cid1 in range(len(Calib) - 1):
+                    for cid2 in range(cid1 + 1, len(Calib)):
+                        nid1 = lookup[pid, cid1]
+                        nid2 = lookup[pid, cid2]
+                        if V[nid1] > 0 and V[nid2] > 0:
+                            G_valid.add_edge(nid1, nid2)
 
-                    if are_in_conflict(human2d, human2d_b,
-                                       conflict_covering):
-                        nid1 = lookup[pid, cid]
-                        nid2 = lookup[pid2, cid]
-                        G_conflict.add_edge(nid1, nid2)
+            # -- create conflict edges --
+            for pid, human in enumerate(Humans):
+                all_candidate_ids = []  # all ids for this candidate
+                for cid, cam in enumerate(Calib):
+                    # check for conflicts
+                    human2d = project_human_to_2d(human, cam)
+                    for pid2 in range(pid + 1, len(Humans)):
+                        human2d_b = project_human_to_2d(Humans[pid2], cam)
 
-        # ==================================
-        # optimization
-        # ==================================
-        solver = mip.Solver('cand', mip.Solver.CBC_MIXED_INTEGER_PROGRAMMING)
+                        if are_in_conflict(human2d, human2d_b,
+                                           conflict_covering):
+                            nid1 = lookup[pid, cid]
+                            nid2 = lookup[pid2, cid]
+                            G_conflict.add_edge(nid1, nid2)
 
-        n = len(V)
-        Sum = []
-        Pi = {}
-        Rho = {}
-        Chi = {}
-        for idx in range(n):
-            Rho[idx] = solver.BoolVar('rho[%i]' % idx)
+            # ==================================
+            # optimization
+            # ==================================
+            solver = mip.Solver('cand', mip.Solver.CBC_MIXED_INTEGER_PROGRAMMING)
 
-        s = solver.Sum(Rho[idx] * V[idx] for idx in range(n))
-        Sum.append(s)
+            n = len(V)
+            Sum = []
+            Pi = {}
+            Rho = {}
+            Chi = {}
+            for idx in range(n):
+                Rho[idx] = solver.BoolVar('rho[%i]' % idx)
 
-        # --- constraints for conflicts ---
-        for clique in nx.find_cliques(G_conflict):
-            # ~~~~ (1) ~~~~
-            solver.Add(
-                solver.Sum(Rho[node] for node in clique) <= 1)
+            s = solver.Sum(Rho[idx] * V[idx] for idx in range(n))
+            Sum.append(s)
 
-        # --- constraints for valid edges ---
-        for a, b in G_valid.edges():
-            Chi[a, b] = solver.BoolVar('chi[%i,%i' % (a, b))
-            # ~~~~ (2) ~~~~
-            solver.Add(2 * Chi[a, b] <= Rho[a] + Rho[b])
+            # --- constraints for conflicts ---
+            for clique in nx.find_cliques(G_conflict):
+                # ~~~~ (1) ~~~~
+                # solver.Add(
+                #     solver.Sum(Rho[node] for node in clique) == 1)
+                solver.Add(
+                    solver.Sum(Rho[node] for node in clique) <= 1)
 
-        s = solver.Sum(Chi[a, b] * 1 for (a, b) in G_valid.edges())
+            # --- constraints for valid edges ---
+            for a, b in G_valid.edges():
+                Chi[a, b] = solver.BoolVar('chi[%i,%i' % (a, b))
+                # ~~~~ (2) ~~~~
+                solver.Add(2 * Chi[a, b] <= Rho[a] + Rho[b])
 
-        for pid, clique in enumerate(nx.connected_components(G_valid)):
-            Pi[pid] = solver.BoolVar('pi[%i]' % pid)
-            # ~~~~ (3) ~~~~
-            solver.Add(solver.Sum(Rho[a] for a in clique) <= Pi[pid] * n)
+            s = solver.Sum(Chi[a, b] * 1 for (a, b) in G_valid.edges())
 
-            # ~~~~ (4) ~~~~
-            solver.Add(solver.Sum(Rho[a] for a in clique) >= 2 * Pi[pid])
+            for pid, clique in enumerate(nx.connected_components(G_valid)):
+                Pi[pid] = solver.BoolVar('pi[%i]' % pid)
+                # ~~~~ (3) ~~~~
+                solver.Add(solver.Sum(Rho[a] for a in clique) <= Pi[pid] * n)
 
+                # ~~~~ (4) ~~~~
+                solver.Add(solver.Sum(Rho[a] for a in clique) >= 2 * Pi[pid])
 
-        Sum.append(s)
-        solver.Maximize(solver.Sum(Sum))
-        RESULT = solver.Solve()
-        if debug:
-            print('(smart candidate selection) [')
-            print("\tTime = ", solver.WallTime(), " ms")
-            print("\tresult:", RESULT)
-            print('\n\tTotal cost:', solver.Objective().Value())
-            print('] (smart candidate selection)')
+            Sum.append(s)
+            solver.Maximize(solver.Sum(Sum))
+            RESULT = solver.Solve()
+            if debug:
+                print('(smart candidate selection) [')
+                print("\tTime = ", solver.WallTime(), " ms")
+                print("\tresult:", RESULT)
+                print('\n\tTotal cost:', solver.Objective().Value())
+                print('] (smart candidate selection)')
 
-        self.persons = []
+            self.persons = []
 
-        # check which persons 'survive'
-        for pid, human in enumerate(Humans):
-            nbr_survivors = 0
-            for cid in range(len(Calib)):
-                nid = lookup[pid, cid]
-                if Rho[nid].solution_value() > 0:
-                    nbr_survivors += 1
-            if nbr_survivors > 1:
-                self.persons.append(human)
+            # check which persons 'survive'
+            for pid, human in enumerate(Humans):
+                nbr_survivors = 0
+                for cid in range(len(Calib)):
+                    nid = lookup[pid, cid]
+                    if Rho[nid].solution_value() > 0:
+                        nbr_survivors += 1
+                if nbr_survivors > 1:
+                    self.persons.append(human)
