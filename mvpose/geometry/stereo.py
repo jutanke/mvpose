@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import numpy.random as rnd
 import mvpose.geometry.geometry as gm
 
 
