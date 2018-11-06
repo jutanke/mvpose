@@ -130,7 +130,7 @@ def draw_mscoco_human(ax, human, cam, color, alpha=1, linewidth=1):
 
 
 # Taken from https://stackoverflow.com/questions/37765197/darken-or-lighten-a-color-in-matplotlib
-def lighten_color(color, amount=0.8):
+def lighten_color(color, amount=0.65):
     """
     Lightens the given color by multiplying (1-luminosity) by the given amount.
     Input can be matplotlib color string, hex string, or RGB tuple.
