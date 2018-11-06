@@ -33,6 +33,12 @@ def estimate(Calib, heatmaps, pafs, settings=None, debug=False):
         print('step 1: elapsed', _end - _start)
 
     # -------- step 2 --------
+    # bundle adjustment -> 3d
+    # ------------------------
+    # TODO: attach new things HERE
+
+
+    # -------- step 2 --------
     # triangulate 2d candidates
     # ------------------------
     _start = time()
@@ -72,8 +78,15 @@ def estimate(Calib, heatmaps, pafs, settings=None, debug=False):
                           float(radius), float(sigma), max_iterations, eps,
                           between_distance, n_cameras=len(Calib))
 
-    #reweighting = ReWeighting(Calib, heatmaps, meanshift.centers3d)
     points3d = meanshift.centers3d
+
+    # points3d = []
+    # for jid in range(triangulation.n_joints):
+    #     points3d_w = triangulation.peaks3d_weighted[jid]
+    #     if points3d_w is None:
+    #         points3d.append(None)
+    #     else:
+    #         points3d.append(points3d_w[:, 0:3])
     _end = time()
     if debug:
         print('step 3: elapsed', _end - _start)

@@ -21,8 +21,13 @@ def get(cmu_root, seq_name, panels, nodes, frame=0):
     seq_dir = join(cmu_root, seq_name); assert isdir(seq_dir)
 
     vga_skel_json_path = join(seq_dir, 'hdPose3d_stage1_coco19')
-    vga_img_path = join(seq_dir, 'vgaImgs')
+    vga_img_path = join(seq_dir, 'hdImgs')
     assert isdir(vga_skel_json_path) and isdir(vga_img_path)
+
+    # sometimes the skel are stored in a additional folder "hd"
+    vga_skel_json_path_hd = join(vga_skel_json_path, 'hd')
+    if isdir(vga_skel_json_path_hd):
+        vga_skel_json_path = vga_skel_json_path_hd
 
     with open(join(seq_dir, 'calibration_{0}.json'.format(seq_name))) as cfile:
         calib = json.load(cfile)
@@ -49,8 +54,9 @@ def get(cmu_root, seq_name, panels, nodes, frame=0):
         assert isdir(join(vga_img_path, v), ), 'does not exist:' + join(vga_img_path, v)
 
     nbr_videos = len(all_videos)
-    w = 640; h = 480  # vga resolution!
-    # get shortest video
+    #w = 640; h = 480  # vga resolution!
+    w = 1920; h = 1080  # hd resolution
+    # get shortest videonbr_frames
     nbr_frames = min([len(listdir(join(vga_img_path, v))) for v in all_videos])
     assert frame < nbr_frames
 

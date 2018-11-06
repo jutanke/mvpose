@@ -116,7 +116,8 @@ def denormalize(indv, mu, scale_to_mm):
     """
     div = 1000 / scale_to_mm
     #mu = np.mean(indv, axis=0)
-    return (indv + mu) * div
+    #return (indv + mu) * div
+    return indv * div + mu
 
 
 def plot_indv(ax, indv, visible=np.ones((13,)), color='red'):
@@ -190,4 +191,4 @@ class LimbGenerator:
         for pid, (human, mu) in enumerate(zip(y_pred, Mu)):
             result[pid] = denormalize(human, mu, self.scale_to_mm)
 
-        return self.merge_func(humans, result)
+        return self.merge_func(humans, result), humans_trans, y_pred, result

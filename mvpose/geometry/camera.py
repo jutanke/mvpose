@@ -110,7 +110,7 @@ class ProjectiveCamera(Camera):
         :param im: {h x w x c}
         :return:
         """
-        cv2.remap(im, self.mapx, self.mapy, cv2.INTER_LINEAR)
+        return cv2.remap(im, self.mapx, self.mapy, cv2.INTER_LINEAR)
 
     def undistort_points(self, points2d):
         """

@@ -56,6 +56,48 @@ def draw_mscoco_human3d(ax, human, color, alpha=1):
                         color=color, alpha=alpha)
 
 
+def draw_mscoco_human2d(ax, human, color, alpha=1, linewidth=1):
+    """ draws a 2d person
+    :param ax:
+    :param human:
+    :param color:
+    :param alpha:
+    :param linewidth:
+    :return:
+    """
+    RIGHT = {2, 3, 4, 8, 9, 10, 14, 16}
+    LEFT = {5, 6, 7, 11, 12, 13, 15, 17}
+    lcolor = lighten_color(color)
+    rcolor = color
+    assert len(human) == 18
+    for jid, pt2d in enumerate(human):
+        if pt2d is None:
+            if jid in RIGHT:
+                clr = rcolor
+            elif jid in LEFT:
+                clr = lcolor
+
+            ax.scatter(*pt2d, color=clr, alpha=alpha)
+
+    for a, b in DEFAULT_LIMB_SEQ:
+        ptA = human[a]
+        ptB = human[b]
+        if ptA is not None and ptB is not None:
+            clr = rcolor
+            if a in LEFT or b in LEFT:
+                clr = lcolor
+            x_a, y_a = ptA
+            x_b, y_b = ptB
+
+            if x_a == -1 or x_b == -1:
+                continue
+
+            ax.plot([x_a, x_b], [y_a, y_b], color=clr,
+                    alpha=alpha, linewidth=linewidth)
+
+
+
+
 def draw_mscoco_human(ax, human, cam, color, alpha=1, linewidth=1):
     """
     :param ax
@@ -87,22 +129,22 @@ def draw_mscoco_human(ax, human, cam, color, alpha=1, linewidth=1):
                 ax.plot([x_a, x_b], [y_a, y_b], color=color, alpha=alpha, linewidth=linewidth)
 
 
-# @jit([float64[:, :](float64_2d_const, float64_2d_const)], nopython=True, nogil=True)
-# def draw_vector_field_readonly(U, V):
-#     """
-#         draw the single part affinity field for a given limb
-#     :param U: numpy.array: hxw, X-direction
-#     :param V: numpy.array: hxw, Y-direction
-#     :return:
-#     """
-#     assert U.shape == V.shape
-#     h, w = U.shape
-#     Vec = np.zeros((h, w))
-#     for x in range(w):
-#         for y in range(h):
-#             vx = U[y, x]
-#             vy = V[y, x]
-#             N = la.norm(np.array([vx, vy]))
-#             Vec[y, x] = N
-#
-#     return Vec
+# Taken from https://stackoverflow.com/questions/37765197/darken-or-lighten-a-color-in-matplotlib
+def lighten_color(color, amount=0.8):
+    """
+    Lightens the given color by multiplying (1-luminosity) by the given amount.
+    Input can be matplotlib color string, hex string, or RGB tuple.
+
+    Examples:
+    >> lighten_color('g', 0.3)
+    >> lighten_color('#F034A3', 0.6)
+    >> lighten_color((.3,.55,.1), 0.5)
+    """
+    import matplotlib.colors as mc
+    import colorsys
+    try:
+        c = mc.cnames[color]
+    except:
+        c = color
+    c = colorsys.rgb_to_hls(*mc.to_rgb(c))
+    return colorsys.hls_to_rgb(c[0], 1 - amount * (1 - c[1]), c[2])
