@@ -96,8 +96,6 @@ def draw_mscoco_human2d(ax, human, color, alpha=1, linewidth=1):
                     alpha=alpha, linewidth=linewidth)
 
 
-
-
 def draw_mscoco_human(ax, human, cam, color, alpha=1, linewidth=1):
     """
     :param ax

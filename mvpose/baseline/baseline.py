@@ -3,7 +3,7 @@ from mvpose.baseline.hypothesis import Hypothesis
 from scipy.optimize import linear_sum_assignment
 
 
-def estimate(calib, poses, epi_threshold=20):
+def estimate(calib, poses, epi_threshold=40):
     """
     :param calib:
     :param poses:
@@ -39,8 +39,10 @@ def estimate(calib, poses, epi_threshold=20):
 
         rows, cols = linear_sum_assignment(C)
 
+        handled_pids = set()
         for hid, pid in zip(rows, cols):
             is_masked = Mask[hid, pid] == 1
+            handled_pids.add(pid)
             if is_masked:
                 # even the closest other person is
                 # too far away (> threshold)
@@ -50,3 +52,17 @@ def estimate(calib, poses, epi_threshold=20):
                     epi_threshold))
             else:
                 H[hid].merge(all_detections[pid], cam)
+
+        for pid, person in enumerate(all_detections):
+            if pid not in handled_pids:
+                H.append(Hypothesis(
+                    all_detections[pid],
+                    cam,
+                    epi_threshold
+                ))
+
+    surviving_H = []
+    for hyp in H:
+        if hyp.size() > 1:
+            surviving_H.append(hyp)
+    return surviving_H

@@ -8,10 +8,11 @@ import mvpose.geometry.geometry as gm
 
 class Camera:
 
-    def __init__(self, P, w, h):
+    def __init__(self, P, w, h, cid=-1):
         self.P = P
         self.w = w
         self.h = h
+        self.cid = cid  # for debugging
 
     def undistort(self, im):
         """ undistorts the image

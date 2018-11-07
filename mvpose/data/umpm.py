@@ -17,11 +17,13 @@ def get(root, video_name, user, pwd):
     X_, Y, Calib_ = umpm.get_data(video_name)
     X = []
     Calib = []
-    for cam in ['l', 'r', 's', 'f']:
+    for cid, cam in enumerate(['l', 'r', 's', 'f']):
         X.append(X_[cam])
         _, h, w, _ = X_[cam].shape
         K, rvec, tvec, distCoef = gm.get_camera_parameters(Calib_[cam])
-        Calib.append(ProjectiveCamera(K, rvec, tvec, distCoef, w, h))
+        __cam = ProjectiveCamera(K, rvec, tvec, distCoef, w, h)
+        __cam.cid = cid
+        Calib.append(__cam)
 
     return X, transform_umpm(Y), Calib
 
