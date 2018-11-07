@@ -64,5 +64,5 @@ def estimate(calib, poses, epi_threshold=40):
     surviving_H = []
     for hyp in H:
         if hyp.size() > 1:
-            surviving_H.append(hyp)
+            surviving_H.append(hyp.get_3d_person())
     return surviving_H

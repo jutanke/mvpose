@@ -31,8 +31,11 @@ def calculate_cost(cam1, person1, cam2, person2):
     weights1 = np.clip(weights1, a_min=0, a_max=1)
     weights2 = np.clip(weights2, a_min=0, a_max=1)
 
-    pts1 = np.array(pts1, 'float32')
-    pts2 = np.array(pts2, 'float32')
+    if len(pts1) == 0:
+        return np.finfo(np.float32).max
+
+    pts1 = np.array(pts1)
+    pts2 = np.array(pts2)
 
     epilines_1to2 = np.squeeze(
         cv2.computeCorrespondEpilines(pts1, 1, F))
@@ -44,6 +47,10 @@ def calculate_cost(cam1, person1, cam2, person2):
 
     n_pairs = len(pts1)
     assert n_pairs == len(pts2)
+
+    if n_pairs == 1:
+        epilines_1to2 = np.expand_dims(epilines_1to2, axis=0)
+        epilines_2to1 = np.expand_dims(epilines_2to1, axis=0)
 
     for p1, l1to2, w1, p2, l2to1, w2 in zip(
             pts1, epilines_1to2, weights1,
