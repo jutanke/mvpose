@@ -131,6 +131,7 @@ class Limbs3d:
                         for score, (i, j) in zip(line_int, pair_candidates):
                             W[i, j] += score
 
+            W = np.clip(W, a_min=-0.9999, a_max=0.9999)  # to ensure we are in range
             self.limbs3d[idx] = W
 
     def __getitem__(self, item):
