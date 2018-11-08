@@ -33,12 +33,6 @@ def estimate(Calib, heatmaps, pafs, settings=None, debug=False):
         print('step 1: elapsed', _end - _start)
 
     # -------- step 2 --------
-    # bundle adjustment -> 3d
-    # ------------------------
-    # TODO: attach new things HERE
-
-
-    # -------- step 2 --------
     # triangulate 2d candidates
     # ------------------------
     _start = time()

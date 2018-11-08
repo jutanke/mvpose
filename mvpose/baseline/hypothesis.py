@@ -63,7 +63,7 @@ def calculate_cost(cam1, person1, cam2, person2):
 
 class Hypothesis:
 
-    def __init__(self, pts, cam, threshold):
+    def __init__(self, pts, cam, threshold, debug_2d_id=None):
         """
         :param pts: [ (x, y, w), ... ] x18
         :param cam: ProjectiveCamera
@@ -73,6 +73,8 @@ class Hypothesis:
         self.points = [pts]
         self.cams = [cam]
         self.threshold = threshold
+        if debug_2d_id is not None:  # only for debugging
+            self.debug_2d_ids = [debug_2d_id]
 
     def size(self):
         return len(self.points)

@@ -7,6 +7,42 @@ from scipy.ndimage import imread
 from mvpose.geometry.camera import ProjectiveCamera
 
 
+def transform_y(Y):
+    """
+    :param Y: [ (pid, [(x,y,z), (x,y,z), ...] ]
+    :return:
+    """
+    reorder = [
+        (0, 1),  # nose
+        (1, 0),  # neck
+        (2, 9),  # shoulder right
+        (3, 10),
+        (4, 11),
+        (5, 3),  # shoulder left
+        (6, 4),
+        (7, 5),
+        (8, 12),  # hip right
+        (9, 13),
+        (10, 14),
+        (11, 6),  # hip left
+        (12, 7),
+        (13, 8),
+        (14, 17),  # eye right
+        (15, 15),
+        (16, 18),  # ear left
+        (17, 16)
+
+    ]  # (ours, cmu)
+
+    result = []
+    for pid, skel in Y:
+        new_skel = np.zeros((18, 4))
+        for ours, cmu in reorder:
+            new_skel[ours] = skel[cmu]
+        result.append((pid, new_skel))
+    return result
+
+
 def get(cmu_root, seq_name, panels, nodes, frame=0):
     """ Gets the data from the cmu panoptic dataset.
         Due to how the authors of the dataset want it to
@@ -98,3 +134,4 @@ def get(cmu_root, seq_name, panels, nodes, frame=0):
         print('Error reading {0}\n'.format(skel_json_fname) + e.strerror)
 
     return X, Y, Calib
+
