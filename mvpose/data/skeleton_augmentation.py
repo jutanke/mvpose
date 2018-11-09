@@ -48,6 +48,7 @@ def merge_with_mscoco(humans_coco, humans_pred):
             else:
                 current_human[a] = coco[a]
         result.append(current_human)
+    result = np.array(result)
     return result
 
 
@@ -191,4 +192,5 @@ class LimbGenerator:
         for pid, (human, mu) in enumerate(zip(y_pred, Mu)):
             result[pid] = denormalize(human, mu, self.scale_to_mm)
 
-        return self.merge_func(humans, result), humans_trans, y_pred, result
+        out = self.merge_func(humans, result)
+        return out

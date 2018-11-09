@@ -1,11 +1,11 @@
 import numpy as np
-import numpy.linalg as la
 from ortools.linear_solver import pywraplp as mip
 import networkx as nx
 from pppr import aabb
+from mvpose.geometry.human_polygon import polygonize
 
 
-def project_human_to_2d(human3d, cam):
+def project_human_to_2d(human3d, cam, undistorted=True):
     """
     :param human3d: [ (x,y,z) ... ] OR [ (x,y,z,w), ... ]
     :param cam:
@@ -20,7 +20,10 @@ def project_human_to_2d(human3d, cam):
                 Pt = np.array([pt3d[0:3]])
             else:
                 raise ValueError('pt3d invalid:', pt3d.shape)
-            points2d = cam.projectPoints_undist(Pt)  # TODO shouldn't this be WITH distortion?
+            if undistorted:
+                points2d = cam.projectPoints_undist(Pt)  # TODO shouldn't this be WITH distortion?
+            else:
+                points2d = cam.projectPoints(Pt)
             human2d[jid] = np.squeeze(points2d)
             if len(pt3d) == 4:
                 human2d[jid] = np.append(human2d[jid], pt3d[3])
@@ -85,6 +88,20 @@ def are_in_conflict(human2d_a, human2d_b, conflict_covering):
     aabb2 = get_aabb(human2d_b)
     if total_covering(aabb1, aabb2) >= conflict_covering:
         return True
+
+    # p1 = polygonize(human2d_a)
+    # p2 = polygonize(human2d_b)
+    #
+    # A1 = p1.area
+    # A2 = p2.area
+    # InA = p1.intersection(p2).area
+    #
+    # cov1 = InA/A1
+    # cov2 = InA/A2
+    #
+    # if max(cov1, cov2) >= conflict_covering:
+    #     return True
+
     return False
 
 

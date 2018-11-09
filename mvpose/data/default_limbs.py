@@ -58,26 +58,47 @@ DEFAULT_SYMMETRIC_JOINTS.setflags(write=False)  # read-only
 
 # [ ... ( low, high) ... ]
 DEFAULT_SENSIBLE_LIMB_LENGTH = np.array([
-    (30, 400),  # neck - shoulder right             # 0
-    (30, 400),  # neck - shoulder left
-    (150, 500),  # shoulder right - elbow right
-    (150, 550),  # elbow right - hand right
-    (150, 500),  # shoulder left - elbow left
-    (150, 550),  # elbow left - hand left           # 5
-    (200, 800),  # neck - hip right
-    (200, 600),  # hip right - knee right
-    (200, 600),  # knee right - foot right
-    (200, 800),  # neck - hip left
-    (200, 600),  # hip left - knee left             # 10
-    (200, 600),  # knee left - foot left,
+    (100, 250),  # neck - shoulder right             # 0
+    (100, 250),  # neck - shoulder left
+    (200, 400),  # shoulder right - elbow right
+    (200, 400),  # elbow right - hand right
+    (200, 400),  # shoulder left - elbow left
+    (200, 400),  # elbow left - hand left           # 5
+    (400, 700),  # neck - hip right
+    (400, 600),  # hip right - knee right
+    (400, 600),  # knee right - foot right
+    (400, 700),  # neck - hip left
+    (400, 600),  # hip left - knee left             # 10
+    (400, 600),  # knee left - foot left,
     (50, 400),  # neck - nose
-    (5, 200),  # nose - eye right
-    (5, 200),  # eye right - ear right
-    (5, 200),  # nose - eye left                    # 15
-    (5, 200),  # eye left - ear left
-    (0, 550),  # shoulder right - ear right
-    (0, 550)  # shoulder left - ear left
+    (5, 100),  # nose - eye right
+    (5, 100),  # eye right - ear right
+    (5, 100),  # nose - eye left                    # 15
+    (5, 100),  # eye left - ear left
+    (0, 350),  # shoulder right - ear right
+    (0, 350)  # shoulder left - ear left
 ])
+# DEFAULT_SENSIBLE_LIMB_LENGTH = np.array([
+#     (30, 400),  # neck - shoulder right             # 0
+#     (30, 400),  # neck - shoulder left
+#     (150, 500),  # shoulder right - elbow right
+#     (150, 550),  # elbow right - hand right
+#     (150, 500),  # shoulder left - elbow left
+#     (150, 550),  # elbow left - hand left           # 5
+#     (200, 800),  # neck - hip right
+#     (200, 600),  # hip right - knee right
+#     (200, 600),  # knee right - foot right
+#     (200, 800),  # neck - hip left
+#     (200, 600),  # hip left - knee left             # 10
+#     (200, 600),  # knee left - foot left,
+#     (50, 400),  # neck - nose
+#     (5, 200),  # nose - eye right
+#     (5, 200),  # eye right - ear right
+#     (5, 200),  # nose - eye left                    # 15
+#     (5, 200),  # eye left - ear left
+#     (0, 550),  # shoulder right - ear right
+#     (0, 550)  # shoulder left - ear left
+# ])
 DEFAULT_SENSIBLE_LIMB_LENGTH.setflags(write=False)  # read-only
 
 # assuming 18 joints

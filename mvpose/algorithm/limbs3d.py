@@ -86,6 +86,7 @@ class Limbs3d:
             nB = len(candB3d)
 
             W = np.zeros((nA, nB))
+            Mask = np.zeros((nA, nB))  # so we do not normalize zeros
 
             if oor_marker != 0:
                 # -- disable all connections that are too far away from each other
@@ -119,17 +120,22 @@ class Limbs3d:
                                 ptA_candidates.append(ptA)
                                 ptB_candidates.append(ptB)
                                 pair_candidates.append((i, j))
+                                Mask[i, j] = 1
 
                     if len(ptA_candidates) > 0:
                         line_int = calculate_line_integral_elementwise(
                             np.array(ptA_candidates), np.array(ptB_candidates), U, V)
                         line_int = np.clip(line_int, a_min=-1, a_max=1)
                         assert len(line_int) == len(pair_candidates)
-                        line_int = np.squeeze(line_int / CAMERA_NORM)
+                        #line_int = np.squeeze((line_int - 0.5) / CAMERA_NORM)
+                        line_int = np.squeeze(line_int)
                         if len(line_int.shape) == 0:  # this happens when line_int.shape = (1, 1)
                             line_int = np.expand_dims(line_int, axis=0)
                         for score, (i, j) in zip(line_int, pair_candidates):
                             W[i, j] += score
+
+            Mask = Mask * 0.6
+            W = (W-Mask) / CAMERA_NORM
 
             W = np.clip(W, a_min=-0.9999, a_max=0.9999)  # to ensure we are in range
             self.limbs3d[idx] = W
