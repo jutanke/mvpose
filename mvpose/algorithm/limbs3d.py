@@ -134,7 +134,7 @@ class Limbs3d:
                         for score, (i, j) in zip(line_int, pair_candidates):
                             W[i, j] += score
 
-            Mask = Mask * 0.6
+            Mask = Mask * 0.4
             W = (W-Mask) / CAMERA_NORM
 
             W = np.clip(W, a_min=-0.9999, a_max=0.9999)  # to ensure we are in range
