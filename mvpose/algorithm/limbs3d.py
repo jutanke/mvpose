@@ -27,11 +27,11 @@ def calculate_line_integral_elementwise(candA, candB, mapx, mapy):
     assert nA == nB
 
     h, w = mapx.shape
-    score_mid = np.zeros((h,w,2))
+    score_mid = np.zeros((h,w,2), np.float64)
     score_mid[:,:,0] = mapx
     score_mid[:,:,1] = mapy
 
-    W = np.zeros((nA, 1))
+    W = np.zeros((nA, 1), np.float64)
 
     for i in range(nA):
         d = np.subtract(candB[i], candA[i])
@@ -132,10 +132,13 @@ class Limbs3d:
                         if len(line_int.shape) == 0:  # this happens when line_int.shape = (1, 1)
                             line_int = np.expand_dims(line_int, axis=0)
                         for score, (i, j) in zip(line_int, pair_candidates):
+                            if score < 0.002:
+                                score = -0.5
                             W[i, j] += score
 
-            Mask = Mask * 0.4
-            W = (W-Mask) / CAMERA_NORM
+            #Mask = Mask * 0.4
+            #W = (W-Mask) / CAMERA_NORM
+            W = W / CAMERA_NORM
 
             W = np.clip(W, a_min=-0.9999, a_max=0.9999)  # to ensure we are in range
             self.limbs3d[idx] = W

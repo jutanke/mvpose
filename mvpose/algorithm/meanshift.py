@@ -1,18 +1,18 @@
 from scipy.spatial import KDTree
-from numba import jit, vectorize, float64
+from numba import jit, vectorize, float32
 from math import exp, sqrt, pi
 import numpy as np
 import numpy.linalg as la
 import sklearn.metrics as mt
 
 
-@vectorize([float64(float64, float64, float64, float64)])
+@vectorize([float32(float32, float32, float32, float32)])
 def gauss3d(x, y, z, sigma):
     N = 1/sqrt(2**3 * sigma**6 * pi**2)
     return N * exp(- (x*x + y*y + z*z) / sigma**2)
 
 
-@jit([float64[:](float64[:], float64[:, :], float64)], nopython=True, nogil=True)
+@jit([float32[:](float32[:], float32[:, :], float32)], nopython=True, nogil=True)
 def m(y, Nx, sigma):
     """
         applies a meanshift step
@@ -24,14 +24,16 @@ def m(y, Nx, sigma):
     num = len(Nx)
     G = gauss3d(y[0]-Nx[:, 0], y[1]-Nx[:, 1], y[2]-Nx[:, 2], sigma)
 
-    result = np.zeros((3,))
+    result = np.zeros((3,), np.float32)
     div = 0
 
     for i in range(num):
         result += Nx[i ,0:3] * G[i] * Nx[i, 3]
         div += G[i] * Nx[i, 3]
 
-    return result /div
+    div = np.array(div, np.float32)
+    result = result / div
+    return result
 
 
 class Meanshift:
@@ -76,7 +78,8 @@ class Meanshift:
                 if max_iterations > 0:
                     for _ in range(max_iterations):
                         Nx = pts3d[lookup.query_ball_point(y_t, r=radius)]
-                        y_tp1 = m(y_t, Nx, sigma)
+                        y_tp1 = m(y_t.astype('float32'),
+                                  Nx.astype('float32'), sigma)
                         step_size = la.norm(y_t - y_tp1)
                         if step_size < eps:
                             break

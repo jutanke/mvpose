@@ -1,10 +1,10 @@
 import numpy as np
-from numba import jit, float64
+from numba import jit, float32
 import numpy.linalg as la
 from mvpose.data.default_limbs import DEFAULT_LIMB_SEQ
 
 
-@jit([float64[:, :](float64[:, :], float64[:, :])], nopython=True, nogil=True)
+@jit([float32[:, :](float32[:, :], float32[:, :])], nopython=True, nogil=True)
 def draw_vector_field(U, V):
     """
         draw the single part affinity field for a given limb
@@ -14,7 +14,7 @@ def draw_vector_field(U, V):
     """
     assert U.shape == V.shape
     h, w = U.shape
-    Vec = np.zeros((h, w))
+    Vec = np.zeros((h, w), np.float32)
     for x in range(w):
         for y in range(h):
             vx = U[y, x]
@@ -106,6 +106,7 @@ def draw_mscoco_human(ax, human, cam, color, alpha=1, linewidth=1):
     :param linewidth
     :return:
     """
+    RIGHT_JOINT = {2, 3, 4, 8, 9, 10, 14, 16}
     assert len(human) == 18
     for jid, pt3d in enumerate(human):
         if pt3d is None:
@@ -119,12 +120,18 @@ def draw_mscoco_human(ax, human, cam, color, alpha=1, linewidth=1):
         ax.scatter(pt[0], pt[1], color=color, marker=marker, alpha=alpha)
 
         for a, b in DEFAULT_LIMB_SEQ:
+            cur_color = color
+            if a in RIGHT_JOINT or b in RIGHT_JOINT:
+                cur_color = lighten_color(color)
             ptA = human[a]
             ptB = human[b]
             if ptA is not None and ptB is not None:
                 x_a, y_a = cam.projectPoints(np.array([ptA[0:3]]))[0]
                 x_b, y_b = cam.projectPoints(np.array([ptB[0:3]]))[0]
-                ax.plot([x_a, x_b], [y_a, y_b], color=color, alpha=alpha, linewidth=linewidth)
+                ax.plot([x_a, x_b], [y_a, y_b],
+                        color=cur_color,
+                        alpha=alpha,
+                        linewidth=linewidth)
 
 
 # Taken from https://stackoverflow.com/questions/37765197/darken-or-lighten-a-color-in-matplotlib

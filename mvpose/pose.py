@@ -3,6 +3,7 @@ from mvpose.algorithm.candidates2d import Candidates2D
 from mvpose.algorithm.triangulation import Triangulation
 from mvpose.algorithm.meanshift import Meanshift
 from mvpose.algorithm.limbs3d import Limbs3d
+from mvpose.algorithm.sanityChecker import SanityChecker
 from mvpose.algorithm.graph_partitioning import GraphPartitioning
 from mvpose.algorithm.candidate_selection import CandidateSelector
 from collections import namedtuple
@@ -74,13 +75,14 @@ def estimate(Calib, heatmaps, pafs, settings=None, debug=False):
 
     points3d = meanshift.centers3d
 
-    # points3d = []
-    # for jid in range(triangulation.n_joints):
-    #     points3d_w = triangulation.peaks3d_weighted[jid]
-    #     if points3d_w is None:
-    #         points3d.append(None)
-    #     else:
-    #         points3d.append(points3d_w[:, 0:3])
+    points3d_ = []
+    for jid in range(triangulation.n_joints):
+        hms = heatmaps[:, :, :, jid]
+        sc = SanityChecker(points3d[jid], hms, Calib, settings)
+        points3d_.append(sc.survivors)
+
+    points3d = points3d_
+
     _end = time()
     if debug:
         print('step 3: elapsed', _end - _start)

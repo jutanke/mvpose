@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from numba import vectorize, float64, jit, boolean
+from numba import vectorize, float32, float64, jit, boolean
 from math import sqrt
 from pppr.aabb import IoU
 
@@ -64,7 +64,7 @@ def point_to_point_distance(x1,y1,z1, x2, y2, z2):
 def calculate_distance_all4all_opti(A, B, max_distance, min_distance, AB_are_the_same):
     n = len(A)
     m = len(B)
-    result_ids = np.zeros((n * m, 3))
+    result_ids = np.zeros((n * m, 3), np.float64)
     FCTR = 1 if AB_are_the_same else 0  # makes j start counting from 0 every time
 
     if max_distance == 0 and min_distance == 0:  # no distance min/max range considered!
@@ -104,8 +104,12 @@ def calculate_distance_all4all_opti(A, B, max_distance, min_distance, AB_are_the
         return result_ids[0:cur_pointer]
 
 
-def calculate_distance_all4all(A, B, max_distance=0, min_distance=0, AB_are_the_same=False):
-    return calculate_distance_all4all_opti(A, B, max_distance, min_distance, AB_are_the_same)
+def calculate_distance_all4all(A, B, max_distance=0,
+                               min_distance=0,
+                               AB_are_the_same=False):
+    return calculate_distance_all4all_opti(
+        A.astype('float64'), B.astype('float64'),
+        max_distance, min_distance, AB_are_the_same)
 
 
 def reproject_points_to_2d(pts3d, rvec, tvec, K, w, h,
@@ -122,7 +126,7 @@ def reproject_points_to_2d(pts3d, rvec, tvec, K, w, h,
     """
     if len(pts3d) == 0:
         return [], []
-    Pts3d = pts3d.astype('float64')
+    Pts3d = pts3d.astype('float32')
     pts2d, _ = cv2.projectPoints(Pts3d, rvec, tvec, K, distCoef)
     pts2d = np.squeeze(pts2d)
     if len(pts2d.shape) == 1:
