@@ -82,6 +82,7 @@ def estimate(Calib, heatmaps, pafs, settings=None, debug=False):
         points3d_.append(sc.survivors)
 
     points3d = points3d_
+    meanshift.centers3d = points3d
 
     _end = time()
     if debug:

@@ -2,6 +2,8 @@ import numpy as np
 
 
 class SanityChecker:
+    """ Drop obviously broken points
+    """
 
     def __init__(self, pts3d, heatmaps, calib, settings):
         """ reprojects all points and drops those that do

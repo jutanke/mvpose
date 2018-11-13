@@ -124,7 +124,8 @@ class Limbs3d:
 
                     if len(ptA_candidates) > 0:
                         line_int = calculate_line_integral_elementwise(
-                            np.array(ptA_candidates), np.array(ptB_candidates), U, V)
+                            np.array(ptA_candidates, np.float64),
+                            np.array(ptB_candidates, np.float64), U, V)
                         line_int = np.clip(line_int, a_min=-1, a_max=1)
                         assert len(line_int) == len(pair_candidates)
                         #line_int = np.squeeze((line_int - 0.5) / CAMERA_NORM)
@@ -133,7 +134,7 @@ class Limbs3d:
                             line_int = np.expand_dims(line_int, axis=0)
                         for score, (i, j) in zip(line_int, pair_candidates):
                             if score < 0.002:
-                                score = -0.5
+                                score = -0.2
                             W[i, j] += score
 
             #Mask = Mask * 0.4
