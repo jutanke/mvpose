@@ -134,7 +134,7 @@ class Limbs3d:
                             line_int = np.expand_dims(line_int, axis=0)
                         for score, (i, j) in zip(line_int, pair_candidates):
                             if score < 0.002:
-                                score = -0.2
+                                score = -0.5
                             W[i, j] += score
 
             #Mask = Mask * 0.4
