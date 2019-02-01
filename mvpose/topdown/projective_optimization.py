@@ -33,3 +33,13 @@ def project_3d_to_2d(points3d, P):
         tf.matmul(P, tf.transpose(points3d_h)))
     return from_homogenous(points2d_h)
 
+
+def mean_euclidean_distance(pts_A, pts_B):
+    """
+    :param pts_A: {tf.Tensor} [ n x d ]
+    :param pts_B: {tf.Tensor} [ n x d ]
+    :return:
+    """
+    diff_sq = tf.square(pts_A - pts_B)
+    distance = tf.sqrt(tf.reduce_sum(diff_sq, axis=1))
+    return tf.reduce_mean(distance)
