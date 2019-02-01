@@ -91,7 +91,8 @@ class BasePoses:
 
         scale = BasePoses.get_scale_factors(L, base_pose, visible, norm_index)
 
-        return scale
+        L_scaled = L * scale
+        return L_scaled
 
     def find_closest_base_pose(self, L, norm_index):
         """
