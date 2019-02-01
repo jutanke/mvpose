@@ -80,6 +80,23 @@ class TestHelperFunctions(unittest.TestCase):
 
 class TestProjection(unittest.TestCase):
 
+    def test_loss_per_cam(self):
+
+        umpm3d = np.random.random((12, 3))
+        P = np.random.random((3, 4)).flatten()
+        L = np.random.random((12,)).flatten()
+        pts2d = np.random.random((12, 2)).flatten()
+
+        y_true = np.concatenate([P, pts2d, L], axis=0).astype(np.float32)
+        y_pred = umpm3d.flatten().astype(np.float32)
+
+        _y_true = tf.convert_to_tensor(y_true)
+        _y_pred = tf.convert_to_tensor(y_pred)
+
+        _loss = po.loss_per_camera(_y_true, _y_pred)
+
+
+
     def test_simple(self):
         n = 20
         P = np.random.random((3, 4))
