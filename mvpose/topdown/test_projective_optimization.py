@@ -7,9 +7,22 @@ import mvpose.topdown.projective_optimization as po
 
 class TestHelperFunctions(unittest.TestCase):
 
+    def test_from_homogeneous(self):
+        n = 15
+        pts3d = np.random.random((n, 4)) - 0.5
+        pts3d[:, 3] += 2  # make sure its not 0
+        _pts3d = tf.convert_to_tensor(pts3d)
+        _pts3d_clear = po.from_homogenous(_pts3d)
+        sess = tf.Session()
+        pts3d_clear = sess.run(_pts3d_clear)
+        H = np.expand_dims(pts3d[:, 3], axis=1)
+        pts3d_dehom = pts3d/H
+        diff = np.sum(np.abs(pts3d_dehom[:, 0:3] - pts3d_clear))
+        self.assertAlmostEqual(0, diff)
+
     def test_to_homogeneous(self):
         n = 20
-        pts3d = np.random.random((n, 3))
+        pts3d = np.random.random((n, 3)) - 0.5
         _pts3d = tf.convert_to_tensor(pts3d)
 
         _pts3d_h = po.to_homogenous(_pts3d)
@@ -25,6 +38,13 @@ class TestHelperFunctions(unittest.TestCase):
         diff = np.sum(np.abs(pts3d_h[:, 0:3] - pts3d))
         self.assertAlmostEqual(0, diff)
 
+        _pts3d_back = po.from_homogenous(_pts3d_h)
+        pts3d_back = sess.run(_pts3d_back)
+        self.assertEqual(n, pts3d_back.shape[0])
+        self.assertEqual(3, pts3d_back.shape[1])
+        diff = np.sum(np.abs(pts3d_back - pts3d))
+        self.assertAlmostEqual(0, diff)
+
 
 class TestProjection(unittest.TestCase):
 
@@ -32,8 +52,20 @@ class TestProjection(unittest.TestCase):
         n = 20
         P = np.random.random((3, 4))
         pts3d = np.random.random((n, 3))
-
-
+        _pts3d = tf.convert_to_tensor(pts3d)
+        _P = tf.convert_to_tensor(P)
+        _pts2d = po.project_3d_to_2d(_pts3d, _P)
+        sess = tf.Session()
+        pts2d_tf = sess.run(_pts2d)
+        self.assertEqual(2, pts2d_tf.shape[1])
+        self.assertEqual(n, pts2d_tf.shape[0])
+        pts3d_np_H = np.pad(pts3d, [[0, 0], [0, 1]], 'constant',
+                            constant_values=1)
+        pts2d_np_H = np.transpose(P @ pts3d_np_H.T)
+        pts2d_np_H = pts2d_np_H / np.expand_dims(pts2d_np_H[:, 2], axis=1)
+        pts2d_np = pts2d_np_H[:, 0:2]
+        diff = np.sum(np.abs(pts2d_np - pts2d_tf))
+        self.assertAlmostEqual(0, diff)
 
 
 if __name__ == '__main__':
