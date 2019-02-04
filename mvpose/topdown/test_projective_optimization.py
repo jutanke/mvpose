@@ -7,6 +7,37 @@ import mvpose.topdown.projective_optimization as po
 
 class TestHelperFunctions(unittest.TestCase):
 
+    def test_masked_mean_euclidean_distance3d(self):
+        A = np.array([
+            [10, 0, 0, 0],
+            [0, 0, 0, 1]
+        ], np.float32)
+        B = np.array([
+            [0, 0, 0],
+            [0, 0, 0]
+        ], np.float32)
+        _A = tf.convert_to_tensor(A)
+        _B = tf.convert_to_tensor(B)
+        _d = po.masked_mean_euclidean_distance(_A, _B)
+        sess = tf.Session()
+        d = sess.run(_d)
+        self.assertAlmostEqual(d, 0)
+
+        A = np.array([
+            [10, 0, 0, 1],
+            [0, 0, 0, 1]
+        ], np.float32)
+        B = np.array([
+            [0, 0, 0],
+            [0, 0, 0]
+        ], np.float32)
+        _A = tf.convert_to_tensor(A)
+        _B = tf.convert_to_tensor(B)
+        _d = po.masked_mean_euclidean_distance(_A, _B)
+        sess = tf.Session()
+        d = sess.run(_d)
+        self.assertAlmostEqual(d, 5)
+
     def test_mean_euclidean_distance3d(self):
         A = np.array([
             [10, 0, 0],

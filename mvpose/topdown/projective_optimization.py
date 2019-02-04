@@ -24,14 +24,15 @@ def loss_per_camera(y_true, y_pred):
     :return:
     """
     J = 12
+    dim_2d = 3  # (x, y, vis)
     P = tf.reshape(y_true[0:3*4], (3, 4))
-    pts2d_true = tf.reshape(y_true[3*4:3*4 + J * 2], (J, 2))  # x, y, vis
-    limb_len_true = y_true[3*4 + J * 2:]
+    pts2d_true = tf.reshape(y_true[3*4:3*4 + J * dim_2d], (J, dim_2d))  # x, y, vis
+    limb_len_true = y_true[3*4 + J * dim_2d:]
 
     pts3d = tf.reshape(y_pred, (J, 3))
     pts2d_pred = project_3d_to_2d(pts3d, P)
 
-    distance2d = mean_euclidean_distance(pts2d_true, pts2d_pred)
+    distance2d = masked_mean_euclidean_distance(pts2d_true, pts2d_pred)
 
     umpm_limbs = np.array([
         (2, 3),  # lu arm
@@ -101,6 +102,20 @@ def project_3d_to_2d(points3d, P):
     points2d_h = tf.transpose(
         tf.matmul(P, tf.transpose(points3d_h)))
     return from_homogenous(points2d_h)
+
+
+def masked_mean_euclidean_distance(pts_A_masked, pts_B):
+    """
+    :param pts_A_masked: {tf.Tensor} [ n x d + 1 ]
+    :param pts_B: {tf.Tensor} [ n x d ]
+    :return:
+    """
+    pts_A = pts_A_masked[:, 0:-1]
+    visible = tf.expand_dims(pts_A_masked[:, -1], axis=0)
+    diff_sq = tf.square(pts_A - pts_B)
+    distance = tf.sqrt(tf.reduce_sum(diff_sq, axis=1))
+    distance = distance * visible
+    return tf.reduce_mean(distance)
 
 
 def mean_euclidean_distance(pts_A, pts_B):
