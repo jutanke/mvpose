@@ -31,7 +31,8 @@ def estimate(calib, poses, epi_threshold=40,
     # TODO: handle the case when there is NO pose in 1. cam
     first_cid = 0
     H = [
-        Hypothesis(pose, calib[0], epi_threshold, debug_2d_id=(first_cid, pid))
+        Hypothesis(pose, calib[0], epi_threshold,
+                   debug_2d_id=(first_cid, pid))
         for pid, pose in enumerate(poses[first_cid])]
 
     for cid in range(1, n_cameras):

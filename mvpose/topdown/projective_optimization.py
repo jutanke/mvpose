@@ -2,6 +2,85 @@ import tensorflow as tf
 import numpy as np
 
 
+def mscoco_to_headless_umpm_3d(detection3d):
+    """
+    :param detection3d: [ 18 x 3 ] if not detected: None
+    :return:
+    """
+    assert len(detection3d) == 18
+    result = np.zeros((12, 3))
+    translation = [  # (umpm - 2, coco)
+        (0, 5),
+        (1, 6),
+        (2, 7),
+        (3, 2),
+        (4, 3),
+        (5, 4),
+        (6, 11),
+        (7, 12),
+        (8, 13),
+        (9, 8),
+        (10, 9),
+        (11, 10)
+    ]
+
+    # set invalid points to mean position rather then (0, 0, 0)
+    # so that the optimization has it easier
+    valid_points = []
+    invalid_jids = []
+
+    for jid_left, jid_right in translation:
+        if detection3d[jid_right] is None:
+            invalid_jids.append(jid_left)
+            continue
+        x, y, z = detection3d[jid_right]
+        valid_points.append((x, y, z))
+        result[jid_left, 0] = x
+        result[jid_left, 1] = y
+        result[jid_left, 2] = z
+
+    mean = np.mean(valid_points, axis=0)
+    for jid in invalid_jids:
+        result[jid] = mean
+
+    return result
+
+
+def mscoco_to_headless_umpm_2d(detections2d):
+    """ convert the mscoco detections into
+        headless umpm so that we can run the
+        optimization
+    :param detections2d: [ n x 18 x 3 ] (x, y, w)
+    :return:
+    """
+    n = len(detections2d)
+    assert detections2d.shape[1] == 18
+    assert detections2d.shape[2] == 3
+    result = np.zeros((n, 12, 3))
+    translation = [  # (umpm - 2, coco)
+        (0, 5),
+        (1, 6),
+        (2, 7),
+        (3, 2),
+        (4, 3),
+        (5, 4),
+        (6, 11),
+        (7, 12),
+        (8, 13),
+        (9, 8),
+        (10, 9),
+        (11, 10)
+    ]
+    for i, detection in enumerate(detections2d):
+        for jid_left, jid_right in translation:
+            x, y, w = detection[jid_right]
+            result[i, jid_left, 0] = x
+            result[i, jid_left, 1] = y
+            result[i, jid_left, 2] = w if w > 0 else 0
+
+    return result
+
+
 def loss_per_cameras(y_true, y_pred):
     """
     :param y_true: {batch}
