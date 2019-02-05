@@ -44,14 +44,17 @@ def merge3d(persons3d, weights):
     result = [None] * J
     for jid in range(J):
         w_acc = 0
+        never_hit = True
         pt3d = np.array([0, 0, 0], np.float32)
         for i in range(n):
             if persons3d[i][jid] is not None:
                 w = weights[i]
                 w_acc += w
                 pt3d += w * persons3d[i][jid]
-        pt3d = pt3d / w_acc
-        result[jid] = pt3d
+                never_hit = False
+        if not never_hit:
+            pt3d = pt3d / w_acc
+            result[jid] = pt3d
     return result
 
 
