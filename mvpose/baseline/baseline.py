@@ -1,6 +1,6 @@
 import numpy as np
 import numpy.linalg as la
-from mvpose.baseline.hypothesis import Hypothesis, HypothesisList
+from mvpose.baseline.hypothesis import Hypothesis, HypothesisList, get_believe
 from scipy.optimize import linear_sum_assignment
 
 
@@ -63,21 +63,22 @@ def estimate(calib, poses,
     :param get_hypothesis:
     :return:
     """
-
-    # -- debug<
-    # lookup = {}
-    # reverse_lookup = {}
-    # global_id = 0
-    # for cid, poses_on_image in enumerate(poses):
-    #     for pid, pose in enumerate(poses_on_image):
-    #         lookup[cid, pid] = global_id
-    #         reverse_lookup[global_id] = (cid, pid)
-    #         global_id += 1
-    # -- >debug
-
     n_cameras = len(calib)
     assert n_cameras == len(poses)
     assert n_cameras >= 3, 'Expect multi-camera setup'
+
+    # ~~~~~~~~~~~~~~~~~~~~~
+    # cleanup
+    poses_ = []
+    for cid in range(len(calib)):
+        cam_ = []
+        loc_pred = poses[cid]
+        poses_.append(cam_)
+        for pose in loc_pred:
+            if get_believe(pose) > 0.30:
+                cam_.append(pose)
+    poses = poses_
+    # ~~~~~~~~~~~~~~~~~~~~~
 
     # add all detections in the first frames as hypothesis
     # TODO: handle the case when there is NO pose in 1. cam

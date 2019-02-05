@@ -226,7 +226,7 @@ class Hypothesis:
             cost = calculate_cost(cam, person,
                                   o_cam, o_points)
             total_cost += cost
-            if cost > self.threshold:
+            if cost > self.threshold and get_believe(person) > 0.5:
                 veto = True
 
         return total_cost / len(self.points), veto
@@ -273,6 +273,15 @@ class HypothesisList:
         return result
 
 
+def get_believe(points2d):
+    believe = []
+    for jid in range(18):
+        w = points2d[jid, 2]
+        if w >= 0:
+            believe.append(w)
+    return np.mean(believe)
+
+
 class Person2d:
 
     @staticmethod
@@ -301,12 +310,7 @@ class Person2d:
         """
         self.cid = cid
         self.cam = cam
-        believe = []
-        for jid in range(18):
-            w = points2d[jid, 2]
-            if w >= 0:
-                believe.append(w)
-        self.believe = np.mean(believe)
+        self.believe = get_believe(points2d)
 
         if noundistort:
             self.points2d = points2d
