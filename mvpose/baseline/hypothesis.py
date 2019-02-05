@@ -210,3 +210,35 @@ class Hypothesis:
         """
         self.cams.append(o_cam)
         self.points.append(o_points)
+
+
+class HypothesisList:
+
+    def __init__(self, hypothesis_list):
+        """
+        :param hypothesis_list: list of hypothesis'
+        """
+        self.hypothesis_list = hypothesis_list
+
+    def get_3d_person(self):
+        """
+        :return:
+        """
+        poses = []
+        for hyp in self.hypothesis_list:
+            pose = hyp.get_3d_person()
+            poses.append(pose)
+
+        J = len(poses[0])
+        result = [None] * J
+        for jid in range(J):
+            valid_points = []
+            for pose in poses:
+                if pose[jid] is not None:
+                    valid_points.append(pose[jid])
+            if len(valid_points) > 0:
+                result[jid] = np.mean(valid_points, axis=0)
+            else:
+                result[jid] = None
+
+        return result

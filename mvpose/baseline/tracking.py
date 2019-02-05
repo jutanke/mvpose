@@ -1,6 +1,5 @@
 import numpy as np
-import numpy.linalg as la
-from mvpose.baseline.baseline import estimate
+from mvpose.baseline.baseline import estimate, distance_between_poses
 from scipy.optimize import linear_sum_assignment
 
 
@@ -8,6 +7,7 @@ def tracking(calib_per_frame, poses_per_frame,
              actual_frames=None,
              epi_threshold=40,
              scale_to_mm=1,
+             min_track_length=4,
              max_distance_between_tracks=100):
     """
     :param calib_per_frame: [ [cam1, ... ], ... ] * frames
@@ -16,7 +16,8 @@ def tracking(calib_per_frame, poses_per_frame,
     :param epi_threshold:
     :param scale_to_mm: d * scale_to_mm = d_in_mm
         that means: if our scale is in [m] we need to set
-        scale_to_mm = 1/1000
+        scale_to_mm = 1000
+    :param min_track_length:
     :param max_distance_between_tracks: maximal distance between
         two tracks in [mm]
     :return:
@@ -50,6 +51,7 @@ def tracking(calib_per_frame, poses_per_frame,
         assert len(poses) == len(calib)
 
         predictions = estimate(calib, poses,
+                               scale_to_mm=scale_to_mm,
                                epi_threshold=epi_threshold)
 
         possible_tracks = []
@@ -95,7 +97,12 @@ def tracking(calib_per_frame, poses_per_frame,
                               last_seen_delay=last_seen_delay)
                 all_tracks.append(track)
 
-    return all_tracks
+    surviving_tracks = []
+    for track in all_tracks:
+        if len(track) >= min_track_length:
+            surviving_tracks.append(track)
+
+    return surviving_tracks
 
 
 class Track:
@@ -110,6 +117,14 @@ class Track:
         self.poses = [pose]
         self.last_seen_delay = last_seen_delay
         self.lookup = None
+
+    def __len__(self):
+        if len(self.frames) == 1:
+            return 1
+        else:
+            first = self.frames[0]
+            last = self.frames[-1]
+            return last - first + 1
 
     def last_seen(self):
         return self.frames[-1]
@@ -150,37 +165,4 @@ class Track:
         :return:
         """
         last_pose = self.poses[-1]
-        J = len(last_pose)
-        assert len(pose) == J
-        distances = []
-        for jid in range(J):
-            if pose[jid] is None or last_pose[jid] is None:
-                continue
-            d = la.norm(pose[jid] - last_pose[jid])
-            distances.append(d)
-
-        if len(distances) == 0:
-            # TODO check this heuristic
-            # take the centre distance in x-y coordinates
-            valid1 = []
-            valid2 = []
-            for jid in range(J):
-                if last_pose[jid] is not None:
-                    valid1.append(last_pose[jid])
-                if pose[jid] is not None:
-                    valid2.append(pose[jid])
-
-            assert len(valid1) > 0
-            assert len(valid2) > 0
-            mean1 = np.mean(valid1, axis=0)
-            mean2 = np.mean(valid2, axis=0)
-            assert len(mean1) == 3
-            assert len(mean2) == 3
-
-            # we only care about xy coordinates
-            mean1[2] = 0
-            mean2[2] = 0
-
-            return la.norm(mean1 - mean2)
-        else:
-            return np.mean(distances)  # TODO try different versions
+        return distance_between_poses(pose, last_pose)
