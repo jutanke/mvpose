@@ -53,6 +53,8 @@ tracks = tracking(Calib, poses_per_frame)
 
 track = tracks[0]
 
+track.interpolate()
+
 fig = plt.figure(figsize=(12, 12))
 ax = fig.add_subplot(111, projection='3d')
 
@@ -72,4 +74,4 @@ for frame in range(0, end_frame):
     if person is not None:
         draw_mscoco_human3d(ax, person, 'red')
 
-    plt.pause(1/33)
+    plt.pause(1/15)

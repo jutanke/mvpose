@@ -6,6 +6,7 @@ from scipy.optimize import linear_sum_assignment
 def tracking(calib_per_frame, poses_per_frame,
              actual_frames=None,
              epi_threshold=40,
+             merge_distance=-1,
              scale_to_mm=1,
              min_track_length=4,
              max_distance_between_tracks=100):
@@ -52,7 +53,9 @@ def tracking(calib_per_frame, poses_per_frame,
 
         predictions = estimate(calib, poses,
                                scale_to_mm=scale_to_mm,
-                               epi_threshold=epi_threshold)
+                               epi_threshold=epi_threshold,
+                               merge_distance=merge_distance,
+                               get_hypothesis=False)
 
         possible_tracks = []
         for track in all_tracks:
@@ -166,3 +169,116 @@ class Track:
         """
         last_pose = self.poses[-1]
         return distance_between_poses(pose, last_pose)
+
+    def interpolate(self):
+        """ interpolates the values
+        :return:
+        """
+        interpolation_range = 3
+
+        frames = self.frames
+        poses = self.poses
+        last_seen_delay = self.last_seen_delay
+
+        new_poses = []
+        new_frames = []
+
+        start_frame = frames[0]
+        end_frame = frames[-1]
+
+        # -- step 1 --
+        # fill in easy-to-fill ins
+        for frame in range(start_frame+1, end_frame - 1):
+
+            prev_pose = self.get_by_frame(frame - 1)
+            pose = self.get_by_frame(frame)
+            next_pose = self.get_by_frame(frame + 1)
+
+            if pose is None or \
+                    prev_pose is None or \
+                    next_pose is None:
+                continue
+
+            for jid in range(18):
+                prev_ok = prev_pose[jid] is not None
+                next_ok = next_pose[jid] is not None
+                cur_not_ok = pose[jid] is None
+
+                if prev_ok and next_ok and cur_not_ok:
+                    prev = prev_pose[jid]
+                    next = next_pose[jid]
+                    pose[jid] = (prev + next) / 2
+
+        # -- step 2 --
+        # fill in hard-to-fill ins
+        for frame in range(start_frame+interpolation_range,
+                           end_frame-interpolation_range-1):
+            pose = self.get_by_frame(frame)
+
+            if pose is None:
+                continue
+
+            for jid in range(18):
+                if pose[jid] is not None:
+                    continue
+
+                # fix jid
+                before = []
+                after = []
+                for frame_prev in range(frame - interpolation_range, frame):
+                    prev_pose = self.get_by_frame(frame_prev)
+                    if prev_pose is not None and prev_pose[jid] is not None:
+                        before.append(prev_pose[jid])
+
+                for frame_next in range(frame + 1,
+                                        frame + interpolation_range + 1):
+                    next_pose = self.get_by_frame(frame_next)
+                    if next_pose is not None and next_pose[jid] is not None:
+                        after.append(next_pose[jid])
+                        break
+
+                can_interpolate_from_left = len(before) > 0
+                can_interpolate_from_right = len(after) > 0
+
+                if can_interpolate_from_left and \
+                        can_interpolate_from_right:
+                    next = after[0]
+                    prev = before[-1]
+                    pose[jid] = (next + prev) / 2
+                elif can_interpolate_from_right:
+                    pose[jid] = after[0]
+                elif can_interpolate_from_left:
+                    pose[jid] = before[-1]
+
+
+
+
+
+
+
+
+
+        # # -- step 1 --
+        # # fill whole gaps
+        # for i, frame in enumerate(range(start_frame, end_frame - 1)):
+        #     pose = poses[i]
+        #
+        #     print('handle ' + str(frame))
+        #     print('\t', pose is None)
+        #
+        #     if pose is None:
+        #         # fill gap
+        #         prev_pose = poses[i-1]
+        #         next_pose = None
+        #
+        #         for frame_ahead in range(frame + 1, frame + 1 + last_seen_delay):
+        #             pose = poses[frame_ahead]
+        #             if pose is not None:
+        #                 next_pose = pose
+        #                 break
+        #
+        #         assert next_pose is not None
+        #         steps = frame_ahead - frame
+        #         print('steps', steps)
+
+
