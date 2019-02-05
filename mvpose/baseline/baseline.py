@@ -50,6 +50,7 @@ def estimate(calib, poses,
              scale_to_mm=1,
              merge_distance=-1,
              epi_threshold=40,
+             variance_threshold=-1,
              get_hypothesis=False):
     """
     :param calib:
@@ -83,6 +84,8 @@ def estimate(calib, poses,
     first_cid = 0
     H = [
         Hypothesis(pose, calib[0], epi_threshold,
+                   scale_to_mm=scale_to_mm,
+                   variance_threshold=variance_threshold,
                    debug_2d_id=(first_cid, pid))
         for pid, pose in enumerate(poses[first_cid])]
 
@@ -116,6 +119,8 @@ def estimate(calib, poses,
                     all_detections[pid],
                     cam,
                     epi_threshold,
+                    scale_to_mm=scale_to_mm,
+                    variance_threshold=variance_threshold,
                     debug_2d_id=(cid, pid)))
             else:
                 H[hid].merge(all_detections[pid], cam)
@@ -127,8 +132,9 @@ def estimate(calib, poses,
                     all_detections[pid],
                     cam,
                     epi_threshold,
-                    debug_2d_id=(cid, pid)
-                ))
+                    scale_to_mm=scale_to_mm,
+                    variance_threshold=variance_threshold,
+                    debug_2d_id=(cid, pid)))
 
     surviving_H = []
     humans = []
