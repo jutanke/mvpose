@@ -22,12 +22,36 @@ def get_single_human3d(humans3d):
 def get_distance3d(person1, person2):
     J = len(person1)
     assert len(person2) == J
-    result = [-1] * J
+    result = []
     for jid in range(J):
         if person1[jid] is None or person2[jid] is None:
             continue
         d = la.norm(person1[jid] - person2[jid])
-        result[jid] = d
+        result.append(d)
+    return np.array(result)
+
+
+def merge3d(persons3d, weights):
+    """
+    :param person3d:
+    :param weights:
+    :return:
+    """
+    assert len(persons3d) == len(weights)
+    assert 1.001 > np.sum(weights) > 0.99
+    J = len(persons3d[0])
+    n = len(persons3d)
+    result = [None] * J
+    for jid in range(J):
+        w_acc = 0
+        pt3d = np.array([0, 0, 0], np.float32)
+        for i in range(n):
+            if persons3d[i][jid] is not None:
+                w = weights[i]
+                w_acc += w
+                pt3d += w * persons3d[i][jid]
+        pt3d = pt3d / w_acc
+        result[jid] = pt3d
     return result
 
 
@@ -91,7 +115,7 @@ class Hypothesis:
 
     def __init__(self, pts, cam, threshold,
                  scale_to_mm,
-                 variance_threshold,
+                 distance_threshold,
                  debug_2d_id=None):
         """
         :param pts: [ (x, y, w), ... ] x18
@@ -105,7 +129,7 @@ class Hypothesis:
             to drop the joint that causes the problem
         """
         self.scale_to_mm = scale_to_mm
-        self.variance_threshold = variance_threshold
+        self.distance_threshold = distance_threshold
         self.points = [pts]
         self.cams = [cam]
         self.threshold = threshold
@@ -117,6 +141,8 @@ class Hypothesis:
 
     def get_3d_person(self):
         assert self.size() > 1
+        distance_threshold = self.distance_threshold
+        scale_to_mm = self.scale_to_mm
 
         humans2d = []
         for cid, (cam, human) in enumerate(zip(self.cams, self.points)):
@@ -146,6 +172,7 @@ class Hypothesis:
 
         strong_human3d = get_single_human3d(strong_humans3d)
 
+        merge_targets = []
         for weak_human2d in weak_humans2d:
             humans3d_normal = []
             for strong_human2d in strong_humans2d:
@@ -160,101 +187,32 @@ class Hypothesis:
                 humans3d_mirror.append(person3d)
             human3d_mirror = get_single_human3d(humans3d_mirror)
 
-            d_normal = get_distance3d(strong_human3d, human3d_normal)
-            d_mirror = get_distance3d(strong_human3d, human3d_mirror)
+            d_normal = np.mean(
+                get_distance3d(strong_human3d, human3d_normal) * scale_to_mm)
+            d_mirror = np.mean(
+                get_distance3d(strong_human3d, human3d_mirror) * scale_to_mm)
 
-            print("D NORMAL")
-            print(d_normal)
+            human3d_select = human3d_normal
+            if d_normal > d_mirror:
+                human3d_select = human3d_mirror
 
-            print("\nD MIRROR")
-            print(d_mirror)
+            if distance_threshold > 0:
+                if min(d_normal, d_mirror) < distance_threshold:
+                    merge_targets.append(human3d_select)
+            else:
+                merge_targets.append(human3d_select)  # always choose
 
+        n = len(merge_targets)
+        if n > 0:
+            weights = [1] + [1/(n+1)] * n
+            weights = np.array(weights)
+            weights = weights/np.sum(weights)
 
-        return strong_human3d
+            human3d = merge3d([strong_human3d] + merge_targets, weights)
+        else:
+            human3d = strong_human3d
 
-    # def get_3d_person_old(self):
-    #     assert self.size() > 1
-    #     # ===================
-    #     scale_to_mm = self.scale_to_mm
-    #     variance_threshold = self.variance_threshold
-    #     n = self.size()
-    #     m = 18
-    #     Points_undist = np.array([[(-1, -1, 1)] * m] * n)
-    #     for cid, (human, cam) in enumerate(zip(self.points, self.cams)):
-    #         lookup = []
-    #         points2d_distorted = []
-    #         for jid, pt in enumerate(human):
-    #             if pt[0] >= 0:
-    #                 points2d_distorted.append(pt)
-    #                 lookup.append(jid)
-    #
-    #         points2d_distorted = np.array(points2d_distorted)
-    #         pts_undist = cam.undistort_points(points2d_distorted)
-    #         for jid, pt in zip(lookup, pts_undist):
-    #             Points_undist[cid, jid] = pt
-    #             Points_undist[cid, jid, 2] = 1
-    #
-    #     Points_undist = Points_undist.astype('float32')
-    #
-    #     # ===================
-    #     points3d = []
-    #     for jid in range(18):
-    #         points2d = []
-    #         weights = []
-    #         cam_ids = []
-    #         for cid, human2d in enumerate(Points_undist):
-    #             u, v, w = human2d[jid]
-    #             if u >= 0:
-    #                 points2d.append((u, v))
-    #                 weights.append(w)
-    #                 cam_ids.append(cid)
-    #
-    #         if len(cam_ids) > 1:
-    #             Pts1 = []
-    #             Pts2 = []
-    #             P1s = []
-    #             P2s = []
-    #             n_points = len(cam_ids)
-    #             for i in range(n_points - 1):
-    #                 for j in range(i+1, n_points):
-    #                     Pts1.append(points2d[i])
-    #                     Pts2.append(points2d[j])
-    #                     P1s.append(self.cams[cam_ids[i]].P)
-    #                     P2s.append(self.cams[cam_ids[j]].P)
-    #
-    #             all_3d = []
-    #             for pt1, pt2, P1, P2 in zip(Pts1, Pts2, P1s, P2s):
-    #                 _pt1 = np.transpose([pt1])
-    #                 _pt2 = np.transpose([pt2])
-    #                 pt3d = np.squeeze(
-    #                     gm.from_homogeneous(
-    #                         np.transpose(
-    #                             cv2.triangulatePoints(P1, P2, _pt1, _pt2))))
-    #                 all_3d.append(pt3d)
-    #
-    #             # pt3d = np.mean(all_3d, axis=0)
-    #             # points3d.append(pt3d)
-    #             points3d.append(all_3d)
-    #         else:
-    #             points3d.append(None)
-    #
-    #     # now merge!
-    #     if self.size() > 2:
-    #         # check for outliers
-    #         var = get_variance(points3d, scale_to_mm)
-    #         print(var)
-    #
-    #     # -- actually merge --
-    #     result = []
-    #     for jid in range(18):
-    #         if points3d[jid] is None:
-    #             result.append(None)
-    #         else:
-    #             all_3d = points3d[jid]
-    #             pt3d = np.mean(all_3d, axis=0)
-    #             result.append(pt3d)
-    #
-    #     return result
+        return human3d
 
     def calculate_cost(self, o_points, o_cam):
         """
