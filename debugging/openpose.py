@@ -5,11 +5,13 @@ from os.path import join, isfile
 
 class OpenPose:
 
-    def __init__(self, tmp='/tmp'):
+    def __init__(self, tmp='/tmp', peak_threshold=0.1):
         """
         :param tmp:
+        :param peak_threshold:
         """
-        self.pe = model.PoseEstimator()
+        self.pe = model.PoseEstimator(
+            peak_threshold=peak_threshold)
         self.tmp = tmp
 
     def predict(self, Im, dataset, frame):
