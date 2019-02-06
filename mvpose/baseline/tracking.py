@@ -8,6 +8,7 @@ def tracking(calib_per_frame, poses_per_frame,
              actual_frames=None,
              epi_threshold=40,
              merge_distance=-1,
+             last_seen_delay=2,
              scale_to_mm=1,
              min_track_length=4,
              max_distance_between_tracks=100):
@@ -20,6 +21,8 @@ def tracking(calib_per_frame, poses_per_frame,
         that means: if our scale is in [m] we need to set
         scale_to_mm = 1000
     :param min_track_length:
+    :param last_seen_delay: how long can a track be "forgotten" to
+        be recovered
     :param max_distance_between_tracks: maximal distance between
         two tracks in [mm]
     :return:
@@ -35,7 +38,6 @@ def tracking(calib_per_frame, poses_per_frame,
     if actual_frames is not None:
         assert len(actual_frames) == n_frames
 
-    last_seen_delay = 2
     all_tracks = []
 
     for t in range(n_frames):
@@ -127,8 +129,26 @@ class Track:
         n_frames = last_frame - first_frame
 
         relevant_jids_lookup = {}
+        relevant_jids = set(relevant_jids)
 
-        poses = []
+        delete_jids = []
+
+        # step 0: make sure all relevent jids have entries
+        for jid in relevant_jids:
+            jid_found = False
+            for frame in range(first_frame, last_frame):
+                pose = track.get_by_frame(frame)
+                if pose is not None and pose[jid] is not None:
+                    jid_found = True
+                    break
+
+            if not jid_found:
+                delete_jids.append(jid)
+
+        for jid in delete_jids:
+            relevant_jids.remove(jid)
+
+        # step 1:
         for jid in relevant_jids:
             XYZ = np.empty((n_frames, 3))
             for frame in range(first_frame, last_frame):
@@ -143,11 +163,20 @@ class Track:
                         if _pose is None or _pose[jid] is None:
                             continue
                         pts.append(_pose[jid])
-                    assert len(pts) > 0, 'jid=' + str(jid)
-                    pt = np.mean(pts, axis=0)
+
+                    if len(pts) > 0:
+                        pt = np.mean(pts, axis=0)
+                    else:
+                        print("JID", jid)
+                        print('n frames', n_frames)
+                        print('current frame', frame)
+
+                        assert len(pts) > 0, 'jid=' + str(jid)
+                        pt = np.array([0., 0., 0.])
+
                 else:
                     pt = pose[jid]
-                XYZ[frame] = pt
+                XYZ[frame - first_frame] = pt
 
             XYZ_sm = np.empty_like(XYZ)
             for dim in [0, 1, 2]:
@@ -158,14 +187,12 @@ class Track:
 
         new_track = None
 
-        print('FRAMES', first_frame, last_frame)
-
         for frame in range(first_frame, last_frame):
             person = []
             for jid in range(track.J):
                 if jid in relevant_jids_lookup:
                     XYZ_sm = relevant_jids_lookup[jid]
-                    pt = XYZ_sm[frame]
+                    pt = XYZ_sm[frame - first_frame]
                     person.append(pt)
                 else:
                     pose = track.get_by_frame(frame)

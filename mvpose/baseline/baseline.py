@@ -2,6 +2,7 @@ import numpy as np
 import numpy.linalg as la
 from mvpose.baseline.hypothesis import Hypothesis, HypothesisList, get_believe
 from scipy.optimize import linear_sum_assignment
+from mvpose.data.default_limbs import DEFAULT_SENSIBLE_LIMB_LENGTH
 
 
 def distance_between_poses(pose1, pose2):
@@ -200,7 +201,65 @@ def estimate(calib, poses,
         surviving_H = merged_surviving_H
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+    # --- remove limbs with bad length ---
+    ua_range = DEFAULT_SENSIBLE_LIMB_LENGTH[2]
+    la_range = DEFAULT_SENSIBLE_LIMB_LENGTH[3]
+    ul_range = DEFAULT_SENSIBLE_LIMB_LENGTH[7]
+    ll_range = DEFAULT_SENSIBLE_LIMB_LENGTH[8]
+
+    for human in humans:
+        # check left arm
+        if test_distance(human, scale_to_mm, 5, 6, *ua_range):
+            human[6] = None
+            human[7] = None  # we need to disable hand too
+        elif test_distance(human, scale_to_mm, 6, 7, *la_range):
+            human[7] = None
+
+        # check right arm
+        if test_distance(human, scale_to_mm, 2, 3, *ua_range):
+            human[3] = None
+            human[4] = None  # we need to disable hand too
+        elif test_distance(human, scale_to_mm, 3, 4, *la_range):
+            human[4] = None
+
+        # check left leg
+        if test_distance(human, scale_to_mm, 11, 12, *ul_range):
+            human[12] = None
+            human[13] = None  # we need to disable foot too
+        elif test_distance(human, scale_to_mm, 12, 13, *ll_range):
+            human[13] = None
+
+        # check right leg
+        if test_distance(human, scale_to_mm, 8, 9, *ul_range):
+            human[9] = None
+            human[10] = None  # we need to disable foot too
+        elif test_distance(human, scale_to_mm, 9, 10, *ll_range):
+            human[10] = None
+    # ------------------------------------
+
     if get_hypothesis:
         return humans, surviving_H
     else:
         return humans
+
+
+def test_distance(human, scale_to_mm, jid1, jid2, lower, higher):
+    """
+
+    :param human: [ (x, y, z) ] * J
+    :param scale_to_mm:
+    :param jid1:
+    :param jid2:
+    :param lower:
+    :param higher:
+    :return:
+    """
+    a = human[jid1]
+    b = human[jid2]
+    if a is None or b is None:
+        return False
+    distance = la.norm(a - b) * scale_to_mm
+    if lower <= distance <= higher:
+        return False
+    else:
+        return True

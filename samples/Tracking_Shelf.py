@@ -26,8 +26,8 @@ from openpose import OpenPose
 pe = OpenPose(tmp=tmp)
 
 poses_per_frame = []
-start_frame = 380
-end_frame = 440
+start_frame = 300
+end_frame = 600
 actual_frames = list(range(start_frame, end_frame))
 
 calib = None
@@ -45,14 +45,19 @@ print('\telapsed:', time() - _start)
 _start = time()
 tracks = tracking(calib, poses_per_frame,
                   actual_frames=actual_frames,
-                  epi_threshold=80)
+                  epi_threshold=70,
+                  scale_to_mm=1000,
+                  max_distance_between_tracks=200,
+                  min_track_length=10,
+                  merge_distance=80,
+                  last_seen_delay=15)
 print('extract ' + str(len(tracks)) + ' tracks')
 print('\telapsed:', time() - _start)
 
 for track in tracks:
     print("len", len(track))
 
-colors = ['red', 'blue', 'green', 'teal', 'yellow', 'gray']
+colors = ['red', 'blue', 'green', 'teal', 'yellow', 'gray', 'cornflowerblue', 'cyan', 'black', 'white', 'magenta']
 
 fig = plt.figure(figsize=(16, 12))
 Axs = [fig.add_subplot(2, 3, 1 + cid) for cid in range(len(calib))]
