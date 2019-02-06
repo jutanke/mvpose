@@ -1,6 +1,7 @@
 import numpy as np
 from mvpose.baseline.baseline import estimate, distance_between_poses
 from scipy.optimize import linear_sum_assignment
+from scipy.ndimage.filters import gaussian_filter1d
 
 
 def tracking(calib_per_frame, poses_per_frame,
@@ -110,6 +111,75 @@ def tracking(calib_per_frame, poses_per_frame,
 
 class Track:
 
+    @staticmethod
+    def smoothing(track, sigma,
+                  interpolation_range=4,
+                  relevant_jids=[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]):
+        """ smoothing of a track
+        :param track:
+        :param sigma:
+        :param interpolation_range:
+        :param relevant_jids: is set up for mscoco
+        :return:
+        """
+        first_frame = track.first_frame()
+        last_frame = track.last_seen()
+        n_frames = last_frame - first_frame
+
+        relevant_jids_lookup = {}
+
+        poses = []
+        for jid in relevant_jids:
+            XYZ = np.empty((n_frames, 3))
+            for frame in range(first_frame, last_frame):
+                pose = track.get_by_frame(frame)
+
+                if pose is None or pose[jid] is None:
+                    pts = []
+                    start_frame = max(first_frame, frame - interpolation_range)
+                    end_frame = min(last_frame, frame + interpolation_range)
+                    for _frame in range(start_frame, end_frame):
+                        _pose = track.get_by_frame(_frame)
+                        if _pose is None or _pose[jid] is None:
+                            continue
+                        pts.append(_pose[jid])
+                    assert len(pts) > 0, 'jid=' + str(jid)
+                    pt = np.mean(pts, axis=0)
+                else:
+                    pt = pose[jid]
+                XYZ[frame] = pt
+
+            XYZ_sm = np.empty_like(XYZ)
+            for dim in [0, 1, 2]:
+                D = XYZ[:, dim]
+                D = gaussian_filter1d(D, sigma, mode='reflect')
+                XYZ_sm[:, dim] = D
+            relevant_jids_lookup[jid] = XYZ_sm
+
+        new_track = None
+
+        print('FRAMES', first_frame, last_frame)
+
+        for frame in range(first_frame, last_frame):
+            person = []
+            for jid in range(track.J):
+                if jid in relevant_jids_lookup:
+                    XYZ_sm = relevant_jids_lookup[jid]
+                    pt = XYZ_sm[frame]
+                    person.append(pt)
+                else:
+                    pose = track.get_by_frame(frame)
+                    if pose is None:
+                        person.append(None)
+                    else:
+                        person.append(pose[jid])
+            if new_track is None:
+                new_track = Track(frame, person, track.last_seen_delay)
+            else:
+                new_track.add_pose(frame, person)
+
+        return new_track
+
     def __init__(self, t, pose, last_seen_delay):
         """
         :param t: {int} time
@@ -117,6 +187,7 @@ class Track:
         :param last_seen_delay: max delay between times
         """
         self.frames = [int(t)]
+        self.J = len(pose)
         self.poses = [pose]
         self.last_seen_delay = last_seen_delay
         self.lookup = None
@@ -131,6 +202,9 @@ class Track:
 
     def last_seen(self):
         return self.frames[-1]
+
+    def first_frame(self):
+        return self.frames[0]
 
     def add_pose(self, t, pose):
         """ add pose

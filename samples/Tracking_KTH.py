@@ -1,3 +1,5 @@
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
 import json
 Settings = json.load(open('../settings.txt'))
 import matplotlib.pyplot as plt
@@ -23,6 +25,7 @@ from mvpose.evaluation import pcp
 from mvpose.plot.limbs import draw_mscoco_human3d
 from mvpose.baseline.baseline import estimate
 from openpose import OpenPose
+from mvpose.baseline.tracking import Track
 
 seq1_zipname = 'player2sequence1.zip'
 seq1_dir = 'Sequence 1'
@@ -53,7 +56,16 @@ tracks = tracking(Calib, poses_per_frame)
 
 track = tracks[0]
 
-track.interpolate()
+# track.interpolate()
+track_ = Track.smoothing(track, sigma=1.7)
+#
+#
+# print(track.frames)
+#
+# print("q")
+# print(track_.frames)
+#
+# exit(1)
 
 fig = plt.figure(figsize=(12, 12))
 ax = fig.add_subplot(111, projection='3d')
@@ -73,5 +85,9 @@ for frame in range(0, end_frame):
     person = track.get_by_frame(frame)
     if person is not None:
         draw_mscoco_human3d(ax, person, 'red')
+
+    person = track_.get_by_frame(frame)
+    if person is not None:
+        draw_mscoco_human3d(ax, person, 'blue')
 
     plt.pause(1/15)
