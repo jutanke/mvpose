@@ -155,14 +155,28 @@ class Track:
                 pose = track.get_by_frame(frame)
 
                 if pose is None or pose[jid] is None:
-                    pts = []
                     start_frame = max(first_frame, frame - interpolation_range)
                     end_frame = min(last_frame, frame + interpolation_range)
-                    for _frame in range(start_frame, end_frame):
+
+                    from_left = []
+                    for _frame in range(start_frame, frame):
                         _pose = track.get_by_frame(_frame)
                         if _pose is None or _pose[jid] is None:
                             continue
-                        pts.append(_pose[jid])
+                        from_left.append(_pose[jid])
+
+                    from_right = []
+                    for _frame in range(frame, end_frame):
+                        _pose = track.get_by_frame(_frame)
+                        if _pose is None or _pose[jid] is None:
+                            continue
+                        from_right.append(_pose[jid])
+
+                    pts = []
+                    if len(from_left) > 0:
+                        pts.append(from_left[-1])
+                    if len(from_right) > 0:
+                        pts.append(from_right[0])
 
                     if len(pts) > 0:
                         pt = np.mean(pts, axis=0)
@@ -270,116 +284,3 @@ class Track:
         """
         last_pose = self.poses[-1]
         return distance_between_poses(pose, last_pose)
-
-    def interpolate(self):
-        """ interpolates the values
-        :return:
-        """
-        interpolation_range = 3
-
-        frames = self.frames
-        poses = self.poses
-        last_seen_delay = self.last_seen_delay
-
-        new_poses = []
-        new_frames = []
-
-        start_frame = frames[0]
-        end_frame = frames[-1]
-
-        # -- step 1 --
-        # fill in easy-to-fill ins
-        for frame in range(start_frame+1, end_frame - 1):
-
-            prev_pose = self.get_by_frame(frame - 1)
-            pose = self.get_by_frame(frame)
-            next_pose = self.get_by_frame(frame + 1)
-
-            if pose is None or \
-                    prev_pose is None or \
-                    next_pose is None:
-                continue
-
-            for jid in range(18):
-                prev_ok = prev_pose[jid] is not None
-                next_ok = next_pose[jid] is not None
-                cur_not_ok = pose[jid] is None
-
-                if prev_ok and next_ok and cur_not_ok:
-                    prev = prev_pose[jid]
-                    next = next_pose[jid]
-                    pose[jid] = (prev + next) / 2
-
-        # -- step 2 --
-        # fill in hard-to-fill ins
-        for frame in range(start_frame+interpolation_range,
-                           end_frame-interpolation_range-1):
-            pose = self.get_by_frame(frame)
-
-            if pose is None:
-                continue
-
-            for jid in range(18):
-                if pose[jid] is not None:
-                    continue
-
-                # fix jid
-                before = []
-                after = []
-                for frame_prev in range(frame - interpolation_range, frame):
-                    prev_pose = self.get_by_frame(frame_prev)
-                    if prev_pose is not None and prev_pose[jid] is not None:
-                        before.append(prev_pose[jid])
-
-                for frame_next in range(frame + 1,
-                                        frame + interpolation_range + 1):
-                    next_pose = self.get_by_frame(frame_next)
-                    if next_pose is not None and next_pose[jid] is not None:
-                        after.append(next_pose[jid])
-                        break
-
-                can_interpolate_from_left = len(before) > 0
-                can_interpolate_from_right = len(after) > 0
-
-                if can_interpolate_from_left and \
-                        can_interpolate_from_right:
-                    next = after[0]
-                    prev = before[-1]
-                    pose[jid] = (next + prev) / 2
-                elif can_interpolate_from_right:
-                    pose[jid] = after[0]
-                elif can_interpolate_from_left:
-                    pose[jid] = before[-1]
-
-
-
-
-
-
-
-
-
-        # # -- step 1 --
-        # # fill whole gaps
-        # for i, frame in enumerate(range(start_frame, end_frame - 1)):
-        #     pose = poses[i]
-        #
-        #     print('handle ' + str(frame))
-        #     print('\t', pose is None)
-        #
-        #     if pose is None:
-        #         # fill gap
-        #         prev_pose = poses[i-1]
-        #         next_pose = None
-        #
-        #         for frame_ahead in range(frame + 1, frame + 1 + last_seen_delay):
-        #             pose = poses[frame_ahead]
-        #             if pose is not None:
-        #                 next_pose = pose
-        #                 break
-        #
-        #         assert next_pose is not None
-        #         steps = frame_ahead - frame
-        #         print('steps', steps)
-
-

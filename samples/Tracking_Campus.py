@@ -36,13 +36,14 @@ from mvpose.plot.limbs import draw_mscoco_human, draw_mscoco_human2d
 
 from openpose import OpenPose
 
-pe = OpenPose(tmp=tmp)
+pe = OpenPose(tmp=tmp, peak_threshold=0.05)
 valid_frames = list(range(350, 470)) + list(range(650, 750))
 
 Calib = []
 poses_per_frame = []
 Pos3d = {}
 Imgs = {}
+peak_threshold = 0.05
 
 _start = time()
 for frame in valid_frames:
@@ -50,7 +51,8 @@ for frame in valid_frames:
     Imgs[frame] = Im
     Calib.append(calib)
     Pos3d[frame] = Y
-    predictions = pe.predict(Im, 'cvpr_campus', frame)
+    predictions = pe.predict(Im, 'cvpr_campus' + str(peak_threshold),
+                             frame)
     poses_per_frame.append(predictions)
 _end = time()
 print('elapsed', _end - _start)
@@ -73,10 +75,29 @@ print("#tracks", len(tracks))
 for track in tracks:
     print(len(track))
 
+Enable_Smoothing = True
+
+# -- smooth tracks --
+if Enable_Smoothing:
+    _start = time()
+    tracks_ = []
+    for track in tracks:
+        track = Track.smoothing(track,
+                                sigma=1.7,
+                                interpolation_range=50)
+        tracks_.append(track)
+    tracks = tracks_
+    _end = time()
+    print("elapsed", _end - _start)
+# -----------------
+
 
 # ---- video ----
 CREATE_VIDEO = True
-video_dir = './video_campus'
+if Enable_Smoothing:
+    video_dir = './video_campus'
+else:
+    video_dir = './video_campus_smooth'
 if CREATE_VIDEO:
     if isdir(video_dir):
         shutil.rmtree(video_dir)
