@@ -218,24 +218,3 @@ def remove_distortion(I, cam):
     K_new, roi = cv2.getOptimalNewCameraMatrix(K, distCoef, (w,h), alpha)
     mapx, mapy = cv2.initUndistortRectifyMap(K, distCoef, None, K_new, (w, h), 5)
     return cv2.remap(I, mapx, mapy, cv2.INTER_LINEAR), K_new
-
-
-def undistort_points(points, mapx, mapy):
-    """
-    :param points:
-    :param mapx:
-    :param mapy:
-    :return:
-    """
-    # TODO maybe use numba
-    # TODO: This function is wrong!
-    new_points = points.copy()
-    for idx,(x,y,_) in enumerate(points):
-        x = int(x)
-        y = int(y)
-        dx = x - mapx[y, x]
-        dy = y - mapy[y, x]
-        new_points[idx, 0] = x + dx
-        new_points[idx, 1] = y + dy
-
-    return new_points

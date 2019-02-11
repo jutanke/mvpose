@@ -118,27 +118,25 @@ class ProjectiveCamera(Camera):
         :param points2d: [ (x,y,w), ...]
         :return:
         """
-        return gm.undistort_points(points2d, self.mapx, self.mapy)
+        points2d_ = points2d[:, 0:2].astype('float32')
+        points2d_ = np.expand_dims(points2d_, axis=1)  # (n, 1, 2)
 
-        # points2d_ = points2d[:, 0:2].astype('float32')
-        # points2d_ = np.expand_dims(points2d_, axis=1)  # (n, 1, 2)
-        #
-        # result = np.squeeze(cv2.undistortPoints(points2d_, self.K, self.distCoef))
-        # if len(result.shape) == 1:  # only a single point
-        #     result = np.expand_dims(result, 0)
-        #
-        # fx = self.K[0, 0]
-        # fy = self.K[1, 1]
-        # cx = self.K[0, 2]
-        # cy = self.K[1, 2]
-        #
-        # points2d_undist = np.empty_like(points2d)
-        # for i, (px, py) in enumerate(result):
-        #     points2d_undist[i, 0] = px * fx + cx
-        #     points2d_undist[i, 1] = py * fy + cy
-        #     points2d_undist[i, 2] = points2d[i, 2]
-        #
-        # return points2d_undist
+        result = np.squeeze(cv2.undistortPoints(points2d_, self.K, self.distCoef))
+        if len(result.shape) == 1:  # only a single point
+            result = np.expand_dims(result, 0)
+
+        fx = self.K_new[0, 0]
+        fy = self.K_new[1, 1]
+        cx = self.K_new[0, 2]
+        cy = self.K_new[1, 2]
+
+        points2d_undist = np.empty_like(points2d)
+        for i, (px, py) in enumerate(result):
+            points2d_undist[i, 0] = px * fx + cx
+            points2d_undist[i, 1] = py * fy + cy
+            points2d_undist[i, 2] = points2d[i, 2]
+
+        return points2d_undist
 
     def projectPoints_undist(self, points3d):
         """
