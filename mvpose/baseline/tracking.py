@@ -11,7 +11,8 @@ def tracking(calib_per_frame, poses_per_frame,
              last_seen_delay=2,
              scale_to_mm=1,
              min_track_length=4,
-             max_distance_between_tracks=100):
+             max_distance_between_tracks=100,
+             z_axis=2):
     """
     :param calib_per_frame: [ [cam1, ... ], ... ] * frames
     :param poses_per_frame: [ [pose1, ...], ... ] * frames
@@ -25,6 +26,7 @@ def tracking(calib_per_frame, poses_per_frame,
         be recovered
     :param max_distance_between_tracks: maximal distance between
         two tracks in [mm]
+    :param z_axis: some datasets are rotated around one axis
     :return:
     """
     # check if we only have one set of cameras
@@ -94,13 +96,13 @@ def tracking(calib_per_frame, poses_per_frame,
                 if pid in handled_pids:
                     continue
                 track = Track(real_t, pose,
-                              last_seen_delay=last_seen_delay)
+                              last_seen_delay=last_seen_delay, z_axis=z_axis)
                 all_tracks.append(track)
 
         else:  # no tracks yet... add them
             for pose in predictions:
                 track = Track(real_t, pose,
-                              last_seen_delay=last_seen_delay)
+                              last_seen_delay=last_seen_delay, z_axis=z_axis)
                 all_tracks.append(track)
 
     surviving_tracks = []
@@ -215,13 +217,13 @@ class Track:
                     else:
                         person.append(pose[jid])
             if new_track is None:
-                new_track = Track(frame, person, track.last_seen_delay)
+                new_track = Track(frame, person, track.last_seen_delay, track.z_axis)
             else:
                 new_track.add_pose(frame, person)
 
         return new_track
 
-    def __init__(self, t, pose, last_seen_delay, z_axis=2):
+    def __init__(self, t, pose, last_seen_delay, z_axis):
         """
         :param t: {int} time
         :param pose: 3d * J
