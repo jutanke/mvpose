@@ -30,6 +30,10 @@ Frames_Pizza = list(range(1000, 8000))
 Frames_Ultimatum = list(range(300, 6880))
 Frames_Haggling = list(range(4209, 5315)) + list(range(6440, 8200)) + list(range(26510, 27168))
 
+# pizza: 1000 - 3866
+# ultimatum: 300 - 3166
+# haggling 4209 - 5315 + 6440 - 8200
+
 sequences = ['160906_pizza1', '160422_ultimatum1', '160224_haggling1']
 
 print(len(Frames_Haggling))
