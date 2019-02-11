@@ -5,10 +5,11 @@ from scipy.optimize import linear_sum_assignment
 from mvpose.data.default_limbs import DEFAULT_SENSIBLE_LIMB_LENGTH
 
 
-def distance_between_poses(pose1, pose2):
+def distance_between_poses(pose1, pose2, z_axis):
     """
     :param pose1:
     :param pose2:
+    :param z_axis: some datasets are rotated around one axis
     :return:
     """
     J = len(pose1)
@@ -39,8 +40,8 @@ def distance_between_poses(pose1, pose2):
         assert len(mean2) == 3
 
         # we only care about xy coordinates
-        mean1[2] = 0
-        mean2[2] = 0
+        mean1[z_axis] = 0
+        mean2[z_axis] = 0
 
         return la.norm(mean1 - mean2)
     else:
@@ -52,6 +53,7 @@ def estimate(calib, poses,
              merge_distance=-1,
              epi_threshold=40,
              distance_threshold=-1,
+             z_axis=2,
              get_hypothesis=False):
     """
     :param calib:
@@ -61,6 +63,7 @@ def estimate(calib, poses,
         scale_to_mm = 1000
     :param merge_distance: in [mm]
     :param epi_threshold:
+    :param z_axis: some datasets are rotated around one axis
     :param get_hypothesis:
     :return:
     """
@@ -155,7 +158,7 @@ def estimate(calib, poses,
             for j in range(i+1, n):
                 pose1 = humans[i]
                 pose2 = humans[j]
-                distance = distance_between_poses(pose1, pose2)
+                distance = distance_between_poses(pose1, pose2, z_axis)
                 distances.append((i, j, distance * scale_to_mm))
 
         # the root merge is always the smallest hid

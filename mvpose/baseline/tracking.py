@@ -221,17 +221,19 @@ class Track:
 
         return new_track
 
-    def __init__(self, t, pose, last_seen_delay):
+    def __init__(self, t, pose, last_seen_delay, z_axis=2):
         """
         :param t: {int} time
         :param pose: 3d * J
         :param last_seen_delay: max delay between times
+        :param z_axis: some datasets are rotated around one axis
         """
         self.frames = [int(t)]
         self.J = len(pose)
         self.poses = [pose]
         self.last_seen_delay = last_seen_delay
         self.lookup = None
+        self.z_axis = z_axis
 
     def __len__(self):
         if len(self.frames) == 1:
@@ -283,4 +285,4 @@ class Track:
         :return:
         """
         last_pose = self.poses[-1]
-        return distance_between_poses(pose, last_pose)
+        return distance_between_poses(pose, last_pose, self.z_axis)
