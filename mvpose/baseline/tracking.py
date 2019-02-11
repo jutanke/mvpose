@@ -151,6 +151,7 @@ class Track:
             relevant_jids.remove(jid)
 
         # step 1:
+        unrecoverable = set()
         for jid in relevant_jids:
             XYZ = np.empty((n_frames, 3))
             for frame in range(first_frame, last_frame):
@@ -183,11 +184,11 @@ class Track:
                     if len(pts) > 0:
                         pt = np.mean(pts, axis=0)
                     else:
-                        print("JID", jid)
-                        print('n frames', n_frames)
-                        print('current frame', frame)
-
-                        assert len(pts) > 0, 'jid=' + str(jid)
+                        # print("JID", jid)
+                        # print('n frames', n_frames)
+                        # print('current frame', frame)
+                        # assert len(pts) > 0, 'jid=' + str(jid)
+                        unrecoverable.add((jid, frame))
                         pt = np.array([0., 0., 0.])
 
                 else:
@@ -207,9 +208,12 @@ class Track:
             person = []
             for jid in range(track.J):
                 if jid in relevant_jids_lookup:
-                    XYZ_sm = relevant_jids_lookup[jid]
-                    pt = XYZ_sm[frame - first_frame]
-                    person.append(pt)
+                    if (jid, frame) in unrecoverable:
+                        person.append(None)
+                    else:
+                        XYZ_sm = relevant_jids_lookup[jid]
+                        pt = XYZ_sm[frame - first_frame]
+                        person.append(pt)
                 else:
                     pose = track.get_by_frame(frame)
                     if pose is None:

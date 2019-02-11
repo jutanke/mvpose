@@ -43,7 +43,7 @@ def transform_y(Y):
     return result
 
 
-def get(cmu_root, seq_name, panels, nodes, frame=0):
+def get(cmu_root, seq_name, panels, nodes, frame=0, ignore_videos=False):
     """ Gets the data from the cmu panoptic dataset.
         Due to how the authors of the dataset want it to
         be handled we do not download it on our own..
@@ -51,6 +51,7 @@ def get(cmu_root, seq_name, panels, nodes, frame=0):
         the folder given by the cmu_root
     :param cmu_root:
     :param seq_name:
+    :param ignore_videos: If True do not load images (only gt and meta)
     :return:
     """
     assert len(panels) > 0 and len(panels) == len(nodes)
@@ -80,9 +81,6 @@ def get(cmu_root, seq_name, panels, nodes, frame=0):
 
     Calib = []
     # get all the videos
-    # all_videos = sorted([d for d in listdir(vga_img_path) if isdir(join(vga_img_path,d))])
-    # if len(all_videos) > len(panels):
-    #
     all_videos = []
     for p, n in zip(panels, nodes):
         all_videos.append('{0:02d}_{1:02d}'.format(p, n))
@@ -90,29 +88,27 @@ def get(cmu_root, seq_name, panels, nodes, frame=0):
         assert isdir(join(vga_img_path, v), ), 'does not exist:' + join(vga_img_path, v)
 
     nbr_videos = len(all_videos)
-    #w = 640; h = 480  # vga resolution!
     w = 1920; h = 1080  # hd resolution
     # get shortest videonbr_frames
     nbr_frames = min([len(listdir(join(vga_img_path, v))) for v in all_videos])
     assert frame < nbr_frames
 
-    X = np.zeros((nbr_videos, h, w, 3), 'uint8')
+    if ignore_videos:
+        X = None
+    else:
+        X = np.zeros((nbr_videos, h, w, 3), 'uint8')
 
     cams = zip(panels, nodes)
     sel_cameras = [cameras[cam].copy() for cam in cams]
 
     for icam, cam in enumerate(sel_cameras):
-        image_path = vga_img_path + '/{0:02d}_{1:02d}/{0:02d}_{1:02d}_{2:08d}.jpg'.format(cam['panel'], cam['node'],
-                                                                                                                frame)
-        im = imread(image_path)
-        X[icam] = im
-        #
-        # cam = {
-        #     'K': cam['K'],
-        #     'tvec': cam['t'],
-        #     'rvec': cv2.Rodrigues(cam['R'])[0],
-        #     'distCoeff': cam['distCoef']
-        # }
+        if not ignore_videos:
+            image_path = vga_img_path + '/{0:02d}_{1:02d}/{0:02d}_{1:02d}_{2:08d}.jpg'.format(cam['panel'],
+                                                                                              cam['node'],
+                                                                                              frame)
+            im = imread(image_path)
+            X[icam] = im
+
         cam = ProjectiveCamera(
             cam['K'], cv2.Rodrigues(cam['R'])[0], cam['t'],
             cam['distCoef'], w, h)
@@ -126,7 +122,6 @@ def get(cmu_root, seq_name, panels, nodes, frame=0):
 
             for body in bframe['bodies']:
                 pid = body['id']
-                #skel = np.array(body['joints15']).reshape((-1, 4))
                 skel = np.array(body['joints19']).reshape((-1, 4))
 
                 Y.append((pid, skel))
