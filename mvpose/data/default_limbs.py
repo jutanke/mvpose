@@ -81,10 +81,10 @@ DEFAULT_SYMMETRIC_JOINTS.setflags(write=False)  # read-only
 DEFAULT_SENSIBLE_LIMB_LENGTH = np.array([
     (30, 400),  # neck - shoulder right             # 0
     (30, 400),  # neck - shoulder left
-    (150, 500),  # shoulder right - elbow right
-    (150, 550),  # elbow right - hand right
-    (150, 500),  # shoulder left - elbow left
-    (150, 550),  # elbow left - hand left           # 5
+    (50, 500),  # shoulder right - elbow right
+    (50, 550),  # elbow right - hand right
+    (50, 500),  # shoulder left - elbow left
+    (50, 550),  # elbow left - hand left           # 5
     (200, 800),  # neck - hip right
     (200, 600),  # hip right - knee right
     (200, 600),  # knee right - foot right

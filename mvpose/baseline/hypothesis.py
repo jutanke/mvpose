@@ -155,7 +155,7 @@ class Hypothesis:
         strong_humans2d = []
         weak_humans2d = []
         for person in humans2d:
-            if person.believe > 0.4:
+            if person.believe > 0.45:
                 strong_humans2d.append(person)
             else:
                 weak_humans2d.append(person)
@@ -356,13 +356,15 @@ class Person2d:
         Pts1 = np.transpose(Pts1)
         Pts2 = np.transpose(Pts2)
 
-        Pts3d = gm.from_homogeneous(
-            np.transpose(cv2.triangulatePoints(
-                self.cam.P, other.cam.P, Pts1, Pts2)))
-
         Points3d = [None] * 18
         w = [-1] * 18
-        for jid, pt3d, w1, w2 in zip(jids, Pts3d, W1, W2):
-            Points3d[jid] = pt3d
-            w[jid] = min(w1, w2)
+        if len(Pts1) > 0:
+            Pts3d = gm.from_homogeneous(
+                np.transpose(cv2.triangulatePoints(
+                    self.cam.P, other.cam.P, Pts1, Pts2)))
+
+            for jid, pt3d, w1, w2 in zip(jids, Pts3d, W1, W2):
+                Points3d[jid] = pt3d
+                w[jid] = min(w1, w2)
+
         return Points3d, np.array(w)

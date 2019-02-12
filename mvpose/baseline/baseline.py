@@ -53,6 +53,7 @@ def estimate(calib, poses,
              merge_distance=-1,
              epi_threshold=40,
              distance_threshold=-1,
+             correct_limb_size=True,
              z_axis=2,
              get_hypothesis=False):
     """
@@ -64,6 +65,7 @@ def estimate(calib, poses,
     :param merge_distance: in [mm]
     :param epi_threshold:
     :param z_axis: some datasets are rotated around one axis
+    :param correct_limb_size: if True remove limbs that are too long or short
     :param get_hypothesis:
     :return:
     """
@@ -204,40 +206,42 @@ def estimate(calib, poses,
         surviving_H = merged_surviving_H
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    # --- remove limbs with bad length ---
-    ua_range = DEFAULT_SENSIBLE_LIMB_LENGTH[2]
-    la_range = DEFAULT_SENSIBLE_LIMB_LENGTH[3]
-    ul_range = DEFAULT_SENSIBLE_LIMB_LENGTH[7]
-    ll_range = DEFAULT_SENSIBLE_LIMB_LENGTH[8]
+    if correct_limb_size:
 
-    for human in humans:
-        # check left arm
-        if test_distance(human, scale_to_mm, 5, 6, *ua_range):
-            human[6] = None
-            human[7] = None  # we need to disable hand too
-        elif test_distance(human, scale_to_mm, 6, 7, *la_range):
-            human[7] = None
+        # --- remove limbs with bad length ---
+        ua_range = DEFAULT_SENSIBLE_LIMB_LENGTH[2]
+        la_range = DEFAULT_SENSIBLE_LIMB_LENGTH[3]
+        ul_range = DEFAULT_SENSIBLE_LIMB_LENGTH[7]
+        ll_range = DEFAULT_SENSIBLE_LIMB_LENGTH[8]
 
-        # check right arm
-        if test_distance(human, scale_to_mm, 2, 3, *ua_range):
-            human[3] = None
-            human[4] = None  # we need to disable hand too
-        elif test_distance(human, scale_to_mm, 3, 4, *la_range):
-            human[4] = None
+        for human in humans:
+            # check left arm
+            if test_distance(human, scale_to_mm, 5, 6, *ua_range):
+                human[6] = None
+                human[7] = None  # we need to disable hand too
+            elif test_distance(human, scale_to_mm, 6, 7, *la_range):
+                human[7] = None
 
-        # check left leg
-        if test_distance(human, scale_to_mm, 11, 12, *ul_range):
-            human[12] = None
-            human[13] = None  # we need to disable foot too
-        elif test_distance(human, scale_to_mm, 12, 13, *ll_range):
-            human[13] = None
+            # check right arm
+            if test_distance(human, scale_to_mm, 2, 3, *ua_range):
+                human[3] = None
+                human[4] = None  # we need to disable hand too
+            elif test_distance(human, scale_to_mm, 3, 4, *la_range):
+                human[4] = None
 
-        # check right leg
-        if test_distance(human, scale_to_mm, 8, 9, *ul_range):
-            human[9] = None
-            human[10] = None  # we need to disable foot too
-        elif test_distance(human, scale_to_mm, 9, 10, *ll_range):
-            human[10] = None
+            # check left leg
+            if test_distance(human, scale_to_mm, 11, 12, *ul_range):
+                human[12] = None
+                human[13] = None  # we need to disable foot too
+            elif test_distance(human, scale_to_mm, 12, 13, *ll_range):
+                human[13] = None
+
+            # check right leg
+            if test_distance(human, scale_to_mm, 8, 9, *ul_range):
+                human[9] = None
+                human[10] = None  # we need to disable foot too
+            elif test_distance(human, scale_to_mm, 9, 10, *ll_range):
+                human[10] = None
     # ------------------------------------
 
     if get_hypothesis:

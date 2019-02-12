@@ -56,18 +56,19 @@ def draw_mscoco_human3d(ax, human, color, alpha=1):
                         color=color, alpha=alpha)
 
 
-def draw_mscoco_human2d(ax, human, color, alpha=1, linewidth=1):
+def draw_mscoco_human2d(ax, human, color, lcolor=None, alpha=1, linewidth=1):
     """ draws a 2d person
     :param ax:
     :param human:
     :param color:
+    :param lcolor:
     :param alpha:
     :param linewidth:
     :return:
     """
     RIGHT = {2, 3, 4, 8, 9, 10, 14, 16}
     LEFT = {5, 6, 7, 11, 12, 13, 15, 17}
-    lcolor = lighten_color(color)
+    lcolor = lighten_color(color) if lcolor is None else lcolor
     rcolor = color
     assert len(human) == 18
     for jid, pt2d in enumerate(human):
@@ -96,7 +97,7 @@ def draw_mscoco_human2d(ax, human, color, alpha=1, linewidth=1):
                     alpha=alpha, linewidth=linewidth)
 
 
-def draw_mscoco_human(ax, human, cam, color, alpha=1, linewidth=1):
+def draw_mscoco_human(ax, human, cam, color, lcolor=None, alpha=1, linewidth=1):
     """
     :param ax
     :param human: [ (x,y), None, ... ]
@@ -122,7 +123,8 @@ def draw_mscoco_human(ax, human, cam, color, alpha=1, linewidth=1):
         for a, b in DEFAULT_LIMB_SEQ:
             cur_color = color
             if a in RIGHT_JOINT or b in RIGHT_JOINT:
-                cur_color = lighten_color(color)
+                cur_color = lighten_color(color) if lcolor is None else lcolor
+
             ptA = human[a]
             ptB = human[b]
             if ptA is not None and ptB is not None:

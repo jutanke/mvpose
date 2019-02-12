@@ -9,6 +9,8 @@ def tracking(calib_per_frame, poses_per_frame,
              epi_threshold=40,
              merge_distance=-1,
              last_seen_delay=2,
+             distance_threshold=-1,
+             correct_limb_size=True,
              scale_to_mm=1,
              min_track_length=4,
              max_distance_between_tracks=100,
@@ -22,6 +24,7 @@ def tracking(calib_per_frame, poses_per_frame,
         that means: if our scale is in [m] we need to set
         scale_to_mm = 1000
     :param min_track_length:
+    :param correct_limb_size: if True remove limbs that are too long or short
     :param last_seen_delay: how long can a track be "forgotten" to
         be recovered
     :param max_distance_between_tracks: maximal distance between
@@ -60,6 +63,8 @@ def tracking(calib_per_frame, poses_per_frame,
                                scale_to_mm=scale_to_mm,
                                epi_threshold=epi_threshold,
                                merge_distance=merge_distance,
+                               distance_threshold=distance_threshold,
+                               correct_limb_size=correct_limb_size,
                                get_hypothesis=False)
 
         possible_tracks = []
@@ -127,8 +132,9 @@ class Track:
         :return:
         """
         first_frame = track.first_frame()
-        last_frame = track.last_seen()
+        last_frame = track.last_seen() + 1
         n_frames = last_frame - first_frame
+        print("n frames", n_frames)
 
         relevant_jids_lookup = {}
         relevant_jids = set(relevant_jids)
@@ -276,8 +282,8 @@ class Track:
         """
         if self.lookup is None:
             self.lookup = {}
-            for t, pose in zip(self.frames, self.poses):
-                self.lookup[t] = pose
+            for f, pose in zip(self.frames, self.poses):
+                self.lookup[f] = pose
 
         if t in self.lookup:
             return self.lookup[t]
