@@ -155,7 +155,7 @@ class Hypothesis:
         strong_humans2d = []
         weak_humans2d = []
         for person in humans2d:
-            if person.believe > 0.45:
+            if person.believe > 0.35:  # .45
                 strong_humans2d.append(person)
             else:
                 weak_humans2d.append(person)
