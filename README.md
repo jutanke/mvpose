@@ -1,5 +1,24 @@
 # mvpose
-off-the shelf multiple view multi-person pose estimation.
+off-the shelf multiple view multi-person pose estimation:
+
+## Abstract
+
+   In this work we address the problem of estimating multiple 3D human poses 
+   from a set of calibrated cameras. Estimating 3D human poses from 
+   multiple views has several compelling properties: humans can be 
+   projected into a joint global coordinate space, 
+   sets of cameras can cover a much larger area than a single camera could, 
+   and ambiguities, occlusions and motion blurs can be resolved by other views.
+   We propose a bottom-up approach where we first triangulate geometrically
+   reasonable 2D joint pairs from which we then build a sparse graph
+   with edges between close-by joints of the same type and edges between
+   joints that form limbs. Partitioning this graph 
+   yields a set of 3D human pose estimations.
+   Our approach is robust and can handle
+   situations where each camera only has a small field of view with
+   people only partially visible.
+   We obtain competitive results for single person 3D pose estimation
+   and state-of-the art results for multi-person 3D pose estimation.
 
 ```python
 import cv2
